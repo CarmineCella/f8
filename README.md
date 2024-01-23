@@ -1,4 +1,4 @@
-#F8 (fate)
+# F8 (fate)
 
 *functional programning*
 
