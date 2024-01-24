@@ -11,6 +11,10 @@
 #include <regex>
 #include <cmath>
 #include <fstream>
+#if defined (ENABLE_READLINE)
+	#include <readline/readline.h>
+	#include <readline/history.h>
+#endif
 
 #define BOLDWHITE   "\033[1m\033[37m"
 #define RED     	"\033[31m" 
@@ -636,19 +640,39 @@ AtomPtr make_env () {
 
 // interface
 void repl (AtomPtr env, std::istream& in, std::ostream& out) {
-	while (true) {
-		out << BOLDWHITE << ">> " << RESET;
-		try {			
-			print (eval (read (in), env), out);
+	#if defined (ENABLE_READLINE)
+	char* line_read = 0;
+	#endif
+	std::istream* current = &in;
+	while (true){
+		#if defined (ENABLE_READLINE)
+			if (line_read) {
+				delete [] line_read;
+				line_read = 0;
+			}
+			line_read = readline (">> ");
+			if (!line_read) break;
+			if (line_read && *line_read) add_history (line_read);
+			std::string input (line_read);
+			if (!input.size ()) { continue; }
+			std::stringstream tmp_str; 
+			tmp_str << line_read << "\n"; // lf added
+			current = &tmp_str;
+		#else
+			out << ">> ";
+		#endif	
+		try {
+			print (eval (read (*current), env), out);
 			out << std::endl;
-		} catch (AtomPtr& e) {
-			out << RED << "exception: "; print (e, std::cout) << RESET << std::endl;
 		} catch (std::exception& e) {
 			out << RED << "error: " << e.what () << RESET << std::endl;
+		} catch (AtomPtr& e) {
+			out << RED << "error: uncaught expection " << RESET;
+			print (e, out); out << std::endl;
 		} catch (...) {
-			out << RED << "fatal unknown error" << RESET << std::endl;
+			out << RED << "fatal error: execution stopped" << RESET << std::endl;
 		}
-	}
+	} 
 }
 
 #endif // F8_H
