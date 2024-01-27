@@ -21,6 +21,7 @@
 #define RESET   	"\033[0m"
 
 // TODO:
+
 // system
 // audio I/O
 // load db
@@ -35,6 +36,8 @@
 // ambienc3
 // ambidec (?)
 // musicxml output
+
+// examples
 
 // ast
 struct Atom;
@@ -225,7 +228,7 @@ AtomPtr assoc (AtomPtr node, AtomPtr env) {
     error ("unbound identifier", node);
     return make_node (); // not reached
 }
-AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env) {
+AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env, bool recurse) {
     for (unsigned i = 1; i < env->tail.size (); ++i) {
         AtomPtr e = env->tail.at (i);
         if (e->tail.at (0)->lexeme == sym->lexeme) {
@@ -233,8 +236,13 @@ AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env) {
             return v;
         }
     }
-    if (!is_nil (env->tail.at (0))) return extend (sym, v, env->tail.at (0));
-    error ("unbound identifier", sym);
+    if (recurse) { // set!
+        if (!is_nil (env->tail.at (0))) return extend (sym, v, env->tail.at (0), recurse);
+        error ("unbound identifier", sym);
+    } else { // def
+        env->tail.push_back (make_entry (sym, v));
+        return v;
+    }
     return make_node ();
 }
 void browse (AtomPtr env, AtomPtr output) {
@@ -242,7 +250,7 @@ void browse (AtomPtr env, AtomPtr output) {
         AtomPtr s = env->tail.at (i);
         output->tail.push_back (s->tail.at (0));
     }
-    if (!is_nil (env->tail.at (0))) return browse (env, output);
+    if (!is_nil (env->tail.at (0))) return browse (env->tail.at (0), output);
 }
 bool atom_eq (AtomPtr x, AtomPtr y) {
 	if (x->type != y->type) { return 0; }
@@ -286,13 +294,11 @@ tail_call:
     }
     if (car->action == &fn_def) {
         argnum_check (node, 3);
-        AtomPtr entry = make_entry (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env));
-        env->tail.push_back (entry);
-        return node->tail.at (2);
+        return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, false); // not recursive
     }
     if (car->action == &fn_set) {
         argnum_check (node, 3);
-        return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env);
+        return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, true); // recursive
     }        
     if (car->action == &fn_lambda<0> || car->action == &fn_lambda<1>) {
         argnum_check (node, 3);
@@ -358,14 +364,14 @@ tail_call:
 		int minargs = args->tail.size () < params->tail.size () ? args->tail.size () 
 			: params->tail.size ();
 		for (unsigned i = 0; i < minargs; ++i) {
-		    nenv->tail.push_back (make_entry (args->tail. at (i), params->tail.at (i)));
+		    extend (args->tail. at (i), params->tail.at (i), nenv, false); // not recursive
 		}
 		if (args->tail.size () > params->tail.size ()) {
 			AtomPtr args_cut = make_node ();
 			for (unsigned i = minargs; i < args->tail.size (); ++i) {
 				args_cut->tail.push_back (args->tail.at (i));
 			}
-			return make_node (std::deque<AtomPtr> ({args_cut, body, nenv}));
+			return make_node (std::deque<AtomPtr> ({args_cut, body, nenv})); // return lambda
 		}
         env = nenv;
         node = body;
@@ -575,66 +581,66 @@ AtomPtr fn_exit (AtomPtr node, AtomPtr env) {
 	exit (0);
 	return make_node ();
 }
-AtomPtr make_op (const std::string& name, Op action, int minargs) {
+AtomPtr make_op (const std::string& name, Op action, int minargs, AtomPtr env) {
     AtomPtr op = make_node (action);
     op->lexeme = name;
     op->minargs = minargs;
-    AtomPtr entry = make_entry (make_node (name), op);
-    return entry;
+    return extend (make_node (name), op, env, false);;
 }
 AtomPtr make_env () {
     AtomPtr env = make_node ();
     env->tail.push_back (make_node ()); // no parent env
     env->tail.push_back (make_entry (make_node ("#t"), make_node ("#t")));
     env->tail.push_back (make_entry (make_node ("#f"), make_node ("#f")));
-    env->tail.push_back (make_op ("quote", &fn_quote, -1));
-    env->tail.push_back (make_op ("def", &fn_def, -1));
-    env->tail.push_back (make_op ("set!", &fn_set, -1));
-    env->tail.push_back (make_op ("if", &fn_if, -1));
-    env->tail.push_back (make_op ("lambda", &fn_lambda<0>, -1));
-    env->tail.push_back (make_op ("dynamic", &fn_lambda<1>, -1));
-    env->tail.push_back (make_op ("do", &fn_do, -1));
-    env->tail.push_back (make_op ("catch", &fn_catch, -1));
-    env->tail.push_back (make_op ("eval", &fn_eval, -1));
-    env->tail.push_back (make_op ("apply", &fn_apply, -1));
-    env->tail.push_back (make_op ("env", &fn_env, 0));
-    env->tail.push_back (make_op ("typeof", &fn_typeof, 1));
-    env->tail.push_back (make_op ("unbind", &fn_unbind, 1));
-    env->tail.push_back (make_op ("throw", &fn_throw, 1));
-    env->tail.push_back (make_op ("list", &fn_list, 0));
-    env->tail.push_back (make_op ("join", &fn_join, 2));
-    env->tail.push_back (make_op ("car", &fn_car, 1));
-    env->tail.push_back (make_op ("cdr", &fn_cdr, 1));
-    env->tail.push_back (make_op ("eq", &fn_eqp, 2));
-    env->tail.push_back (make_op ("+", &fn_add, 1));
-    env->tail.push_back (make_op ("*", &fn_mul, 1));
-    env->tail.push_back (make_op ("-", &fn_sub, 1));
-    env->tail.push_back (make_op ("/", &fn_div, 1));
-    env->tail.push_back (make_op ("<", &fn_less, 1));
-    env->tail.push_back (make_op ("<=", &fn_lesseq, 1));
-    env->tail.push_back (make_op (">", &fn_greater, 1));
-    env->tail.push_back (make_op (">=", &fn_greatereq, 1));
-    env->tail.push_back (make_op ("sqrt", &fn_less, 1));
-    env->tail.push_back (make_op ("sin", &fn_sin, 1));
-    env->tail.push_back (make_op ("cos", &fn_cos, 1));
-    env->tail.push_back (make_op ("tan", &fn_tan, 1));
-    env->tail.push_back (make_op ("log", &fn_log, 1));
-    env->tail.push_back (make_op ("log10", &fn_log10, 1));
-    env->tail.push_back (make_op ("exp", &fn_exp, 1));
-    env->tail.push_back (make_op ("abs", &fn_abs, 1));
-    env->tail.push_back (make_op ("print", &fn_format<0>, 1));
-    env->tail.push_back (make_op ("nl", &fn_nl, 0));
-    env->tail.push_back (make_op ("str", &fn_format<1>, 1));
-    env->tail.push_back (make_op ("read", &fn_read, 0));
-    env->tail.push_back (make_op ("load", &fn_load, 1));
-    env->tail.push_back (make_op ("save", &fn_format<2>, 2));
-    env->tail.push_back (make_op ("length", &fn_string<0>, 1));
-    env->tail.push_back (make_op ("find", &fn_string<1>, 2));
-    env->tail.push_back (make_op ("range", &fn_string<2>, 3));
-    env->tail.push_back (make_op ("replace", &fn_string<3>, 3));
-    env->tail.push_back (make_op ("regex", &fn_string<4>, 2));
-    env->tail.push_back (make_op ("exec", &fn_exec, 1));
-    env->tail.push_back (make_op ("exit", &fn_exit, 0));
+    
+    make_op ("quote", &fn_quote, -1, env);
+    make_op ("def", &fn_def, -1, env);
+    make_op ("set!", &fn_set, -1, env);
+    make_op ("if", &fn_if, -1, env);
+    make_op ("lambda", &fn_lambda<0>, -1, env);
+    make_op ("dynamic", &fn_lambda<1>, -1, env);
+    make_op ("do", &fn_do, -1, env);
+    make_op ("catch", &fn_catch, -1, env);
+    make_op ("eval", &fn_eval, -1, env);
+    make_op ("apply", &fn_apply, -1, env);
+    make_op ("env", &fn_env, 0, env);
+    make_op ("typeof", &fn_typeof, 1, env);
+    make_op ("unbind", &fn_unbind, 1, env);
+    make_op ("throw", &fn_throw, 1, env);
+    make_op ("list", &fn_list, 0, env);
+    make_op ("join", &fn_join, 2, env);
+    make_op ("car", &fn_car, 1, env);
+    make_op ("cdr", &fn_cdr, 1, env);
+    make_op ("eq", &fn_eqp, 2, env);
+    make_op ("+", &fn_add, 1, env);
+    make_op ("*", &fn_mul, 1, env);
+    make_op ("-", &fn_sub, 1, env);
+    make_op ("/", &fn_div, 1, env);
+    make_op ("<", &fn_less, 1, env);
+    make_op ("<=", &fn_lesseq, 1, env);
+    make_op (">", &fn_greater, 1, env);
+    make_op (">=", &fn_greatereq, 1, env);
+    make_op ("sqrt", &fn_less, 1, env);
+    make_op ("sin", &fn_sin, 1, env);
+    make_op ("cos", &fn_cos, 1, env);
+    make_op ("tan", &fn_tan, 1, env);
+    make_op ("log", &fn_log, 1, env);
+    make_op ("log10", &fn_log10, 1, env);
+    make_op ("exp", &fn_exp, 1, env);
+    make_op ("abs", &fn_abs, 1, env);
+    make_op ("print", &fn_format<0>, 1, env);
+    make_op ("nl", &fn_nl, 0, env);
+    make_op ("str", &fn_format<1>, 1, env);
+    make_op ("read", &fn_read, 0, env);
+    make_op ("load", &fn_load, 1, env);
+    make_op ("save", &fn_format<2>, 2, env);
+    make_op ("length", &fn_string<0>, 1, env);
+    make_op ("find", &fn_string<1>, 2, env);
+    make_op ("range", &fn_string<2>, 3, env);
+    make_op ("replace", &fn_string<3>, 3, env);
+    make_op ("regex", &fn_string<4>, 2, env);
+    make_op ("exec", &fn_exec, 1, env);
+    make_op ("exit", &fn_exit, 0, env);
     return env;
 }
 
