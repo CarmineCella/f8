@@ -9,7 +9,7 @@ if (ENABLE_READLINE)
     add_definitions (-DENABLE_READLINE)
 endif()
 
-add_executable(f8 f8.cpp f8.h system.h numeric.h FFT.h BPF.h WavFile.h)
+add_executable(f8 f8.cpp f8.h system.h numeric.h FFT.h BPF.h WavFile.h plotting.h svg_tools.h)
 target_link_libraries (f8 dl ${LIBS})
 
 INSTALL(FILES f8.h DESTINATION include)

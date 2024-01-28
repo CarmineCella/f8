@@ -6,6 +6,7 @@
 #include "core.h"
 #include "system.h"
 #include "numeric.h"
+#include "plotting.h"
 
 // interface
 AtomPtr make_env () {
@@ -16,6 +17,7 @@ AtomPtr make_env () {
     add_core (env);
     add_system (env);
     add_numeric (env);
+	add_plotting (env);
     return env;
 }
 void repl (AtomPtr env, std::istream& in, std::ostream& out) {
