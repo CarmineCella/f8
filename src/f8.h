@@ -21,27 +21,9 @@ AtomPtr make_env () {
     return env;
 }
 void repl (AtomPtr env, std::istream& in, std::ostream& out) {
-	#if defined (ENABLE_READLINE)
-	char* line_read = 0;
-	#endif
-	std::istream* current = &in;
+	std::istream* current = &in;	
 	while (true){
-		#if defined (ENABLE_READLINE)
-			if (line_read) {
-				delete [] line_read;
-				line_read = 0;
-			}
-			line_read = readline (">> ");
-			if (!line_read) break;
-			if (line_read && *line_read) add_history (line_read);
-			std::string input (line_read);
-			if (!input.size ()) { continue; }
-			std::stringstream tmp_str; 
-			tmp_str << line_read << "\n"; // lf added
-			current = &tmp_str;
-		#else
-			out << ">> ";
-		#endif	
+		out << ">> ";
 		try {
 			print (eval (read (*current), env), out);
 			out << std::endl;

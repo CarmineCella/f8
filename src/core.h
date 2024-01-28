@@ -118,15 +118,18 @@ bool is_number (std::string token) {
 bool is_string (const std::string& s) {
 	return s.find ("\"") != std::string::npos;
 }
+void error (const std::string& msg, AtomPtr ctx);
 AtomPtr read (std::istream& in) {
     std::string token = next (in);
     if (token == "(") {
         AtomPtr l = make_node();
+        AtomPtr a = make_node ();
         while (!in.eof ()) {
-            AtomPtr a = read (in);
+            a = read (in);
             if (a->lexeme == ")" && a->type != STRING) break;
             l->tail.push_back (a);
         }
+        if (a->lexeme != ")") error ("invalid syntax - missing ')'", l);
         return l;
     } else if (is_number (token)) {
         return make_node (atof (token.c_str ()));
@@ -283,7 +286,18 @@ tail_call:
     }
     if (car->action == &fn_def) {
         argnum_check (node, 3);
-        return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, false); // not recursive
+        if (node->tail.at (1)->type == SYMBOL) {
+            return extend (node->tail.at (1), eval (node->tail.at (2), env), env, false); // not recursive
+        } else if (node->tail.at (1)->type == LIST) {
+            argnum_check (node->tail.at (1), 1);
+            AtomPtr name = node->tail.at (1)->tail.at (0);
+            AtomPtr args = make_node ();
+            for (unsigned i = 1; i < node->tail.at (1)->tail.size (); ++i) {
+                args->tail.push_back (type_check (node->tail.at (1)->tail.at (i), SYMBOL));
+            }
+            AtomPtr body = node->tail.at (2);
+            return extend (name, make_node (std::deque<AtomPtr> ({args, body, env})), env, false);
+        }
     }
     if (car->action == &fn_set) {
         argnum_check (node, 3);
@@ -412,8 +426,18 @@ AtomPtr fn_nth (AtomPtr node, AtomPtr env) {
     int p  = (int) type_check (node->tail.at (0), NUMBER)->val;
 	AtomPtr o = type_check (node->tail.at (1), LIST);
 	if (!o->tail.size ()) return make_node  ();
-    if (p < 0 || p > node->tail.size ()) error ("invalid index", node);
+    if (p < 0 || p >= o->tail.size ()) error ("invalid index", node);
 	return o->tail.at (p);
+}
+AtomPtr fn_head (AtomPtr params, AtomPtr env) {
+	AtomPtr l = params->tail.at (0);
+	if ((l->type == LIST)
+		 && l->tail.size ()) {
+		AtomPtr n = make_node ();
+		n->tail.push_back (l->tail.at (0));
+		return n;
+	}
+	else return make_node ();
 }
 AtomPtr fn_cdr (AtomPtr node, AtomPtr env) {
 	AtomPtr l = make_node ();
@@ -424,12 +448,20 @@ AtomPtr fn_cdr (AtomPtr node, AtomPtr env) {
 	}
 	return l;
 }
-AtomPtr fn_join (AtomPtr node, AtomPtr env) {
-    AtomPtr ctr = type_check (node->tail.at (0), LIST);
-    for (unsigned i = 0; i < type_check (node->tail.at (1), LIST)->tail.size (); ++i) {
-        ctr->tail.push_back (node->tail.at (1)->tail.at (i));
-    }
-    return ctr;
+AtomPtr join (AtomPtr dst, AtomPtr ll) {
+	if (ll->type == LIST) {
+		for (unsigned i = 0; i < ll->tail.size (); ++i) {
+			dst->tail.push_back (ll->tail.at (i));
+		}
+	} else dst->tail.push_back (ll);
+	return dst;
+}
+AtomPtr fn_join (AtomPtr n, AtomPtr env) {
+	AtomPtr dst = n->tail.at(0);
+	for (unsigned i = 1; i < n->tail.size (); ++i){
+		dst = join (dst, n->tail.at(i));
+	}	
+	return dst;
 }
 AtomPtr fn_eqp (AtomPtr node, AtomPtr env) {
 	if (atom_eq (node->tail[0], node->tail[1])) return make_node ("#t");
@@ -604,8 +636,9 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("unbind", &fn_unbind, 1, env);
     add_builtin ("throw", &fn_throw, 1, env);
     add_builtin ("list", &fn_list, 0, env);
-    add_builtin ("join", &fn_join, 2, env);
+    add_builtin ("join", &fn_join, 1, env);
     add_builtin ("nth", &fn_nth, 1, env);
+    add_builtin ("head", &fn_head, 1, env);
     add_builtin ("tail", &fn_cdr, 1, env);
     add_builtin ("eq", &fn_eqp, 2, env);
     add_builtin ("+", &fn_add, 1, env);
