@@ -2,6 +2,8 @@
 //
 
 #include "f8.h"
+#include "system.h"
+#include "numeric.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -12,7 +14,7 @@
 using namespace std;
 
 int main (int argc, char* argv[]) {
-	AtomPtr environment = make_env ();
+	AtomPtr environment = add_system (add_core (make_env ()));
 	try {
 		if (argc == 1) {
 			cout << BOLDWHITE << "[f8 (\"fate\"), ver. " << VER  << "]"

@@ -11,6 +11,7 @@
 #include <regex>
 #include <cmath>
 #include <fstream>
+#include <valarray>
 #if defined (ENABLE_READLINE)
 	#include <readline/readline.h>
 	#include <readline/history.h>
@@ -35,6 +36,10 @@ typedef double Real;
 bool is_string (const std::string& s);
 struct Atom {
     Atom () {type = LIST;}
+    Atom (std::valarray<Real>& values) {
+        type = LIST;
+        for (unsigned i = 0; i < values.size (); ++i) tail.push_back (make_node (values[i]));
+    }
     Atom (Real v) {type = NUMBER; val = v;}
     Atom (const std::string& s) {
         if (is_string (s)) {
@@ -52,9 +57,9 @@ struct Atom {
         tail.push_back (ll.at (1));
         tail.push_back (ll.at (2));
     }
-	Atom (const std::string& type, void * o, AtomPtr cb) { 
+	Atom (void * o) { 
 		type = OBJECT;
-		obj = o; lexeme = type; tail.push_back (cb);
+		obj = o;
 	}    
     AtomType type;
     Real val;
@@ -576,7 +581,7 @@ AtomPtr fn_exit (AtomPtr node, AtomPtr env) {
 	exit (0);
 	return make_node ();
 }
-AtomPtr make_op (const std::string& name, Op action, int minargs, AtomPtr env) {
+AtomPtr add_builtin (const std::string& name, Op action, int minargs, AtomPtr env) {
     AtomPtr op = make_node (action);
     op->lexeme = name;
     op->minargs = minargs;
@@ -587,57 +592,59 @@ AtomPtr make_env () {
     env->tail.push_back (make_node ()); // no parent env
     env->tail.push_back (make_entry (make_node ("#t"), make_node ("#t")));
     env->tail.push_back (make_entry (make_node ("#f"), make_node ("#f")));
-    
-    make_op ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
-    make_op ("def", &fn_def, -1, env);
-    make_op ("set!", &fn_set, -1, env);
-    make_op ("if", &fn_if, -1, env);
-    make_op ("while", &fn_while, -1, env);
-    make_op ("lambda", &fn_lambda<0>, -1, env);
-    make_op ("dynamic", &fn_lambda<1>, -1, env);
-    make_op ("do", &fn_do, -1, env);
-    make_op ("catch", &fn_catch, -1, env);
-    make_op ("eval", &fn_eval, -1, env);
-    make_op ("apply", &fn_apply, -1, env);
-    make_op ("env", &fn_env, 0, env);
-    make_op ("typeof", &fn_typeof, 1, env);
-    make_op ("unbind", &fn_unbind, 1, env);
-    make_op ("throw", &fn_throw, 1, env);
-    make_op ("list", &fn_list, 0, env);
-    make_op ("join", &fn_join, 2, env);
-    make_op ("nth", &fn_nth, 1, env);
-    make_op ("tail", &fn_cdr, 1, env);
-    make_op ("eq", &fn_eqp, 2, env);
-    make_op ("+", &fn_add, 1, env);
-    make_op ("*", &fn_mul, 1, env);
-    make_op ("-", &fn_sub, 1, env);
-    make_op ("/", &fn_div, 1, env);
-    make_op ("<", &fn_less, 1, env);
-    make_op ("<=", &fn_lesseq, 1, env);
-    make_op (">", &fn_greater, 1, env);
-    make_op (">=", &fn_greatereq, 1, env);
-    make_op ("sqrt", &fn_less, 1, env);
-    make_op ("sin", &fn_sin, 1, env);
-    make_op ("cos", &fn_cos, 1, env);
-    make_op ("tan", &fn_tan, 1, env);
-    make_op ("log", &fn_log, 1, env);
-    make_op ("log10", &fn_log10, 1, env);
-    make_op ("exp", &fn_exp, 1, env);
-    make_op ("abs", &fn_abs, 1, env);
-    make_op ("print", &fn_format<0>, 1, env);
-    make_op ("nl", &fn_nl, 0, env);
-    make_op ("str", &fn_format<1>, 1, env);
-    make_op ("read", &fn_read, 0, env);
-    make_op ("load", &fn_load, 1, env);
-    make_op ("save", &fn_format<2>, 2, env);
-    make_op ("length", &fn_string<0>, 1, env);
-    make_op ("find", &fn_string<1>, 2, env);
-    make_op ("range", &fn_string<2>, 3, env);
-    make_op ("replace", &fn_string<3>, 3, env);
-    make_op ("regex", &fn_string<4>, 2, env);
-    make_op ("exec", &fn_exec, 1, env);
-    make_op ("exit", &fn_exit, 0, env);
     return env;
+}
+AtomPtr add_core (AtomPtr env) {
+    add_builtin ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
+    add_builtin ("def", &fn_def, -1, env);
+    add_builtin ("set!", &fn_set, -1, env);
+    add_builtin ("if", &fn_if, -1, env);
+    add_builtin ("while", &fn_while, -1, env);
+    add_builtin ("lambda", &fn_lambda<0>, -1, env);
+    add_builtin ("dynamic", &fn_lambda<1>, -1, env);
+    add_builtin ("do", &fn_do, -1, env);
+    add_builtin ("catch", &fn_catch, -1, env);
+    add_builtin ("eval", &fn_eval, -1, env);
+    add_builtin ("apply", &fn_apply, -1, env);
+    add_builtin ("env", &fn_env, 0, env);
+    add_builtin ("typeof", &fn_typeof, 1, env);
+    add_builtin ("unbind", &fn_unbind, 1, env);
+    add_builtin ("throw", &fn_throw, 1, env);
+    add_builtin ("list", &fn_list, 0, env);
+    add_builtin ("join", &fn_join, 2, env);
+    add_builtin ("nth", &fn_nth, 1, env);
+    add_builtin ("tail", &fn_cdr, 1, env);
+    add_builtin ("eq", &fn_eqp, 2, env);
+    add_builtin ("+", &fn_add, 1, env);
+    add_builtin ("*", &fn_mul, 1, env);
+    add_builtin ("-", &fn_sub, 1, env);
+    add_builtin ("/", &fn_div, 1, env);
+    add_builtin ("<", &fn_less, 1, env);
+    add_builtin ("<=", &fn_lesseq, 1, env);
+    add_builtin (">", &fn_greater, 1, env);
+    add_builtin (">=", &fn_greatereq, 1, env);
+    add_builtin ("sqrt", &fn_less, 1, env);
+    add_builtin ("sin", &fn_sin, 1, env);
+    add_builtin ("cos", &fn_cos, 1, env);
+    add_builtin ("tan", &fn_tan, 1, env);
+    add_builtin ("log", &fn_log, 1, env);
+    add_builtin ("log10", &fn_log10, 1, env);
+    add_builtin ("exp", &fn_exp, 1, env);
+    add_builtin ("abs", &fn_abs, 1, env);
+    add_builtin ("print", &fn_format<0>, 1, env);
+    add_builtin ("nl", &fn_nl, 0, env);
+    add_builtin ("str", &fn_format<1>, 1, env);
+    add_builtin ("read", &fn_read, 0, env);
+    add_builtin ("load", &fn_load, 1, env);
+    add_builtin ("save", &fn_format<2>, 2, env);
+    add_builtin ("length", &fn_string<0>, 1, env);
+    add_builtin ("find", &fn_string<1>, 2, env);
+    add_builtin ("range", &fn_string<2>, 3, env);
+    add_builtin ("replace", &fn_string<3>, 3, env);
+    add_builtin ("regex", &fn_string<4>, 2, env);
+    add_builtin ("exec", &fn_exec, 1, env);
+    add_builtin ("exit", &fn_exit, 0, env);
+    return env;    
 }
 
 // interface
