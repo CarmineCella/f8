@@ -13,7 +13,7 @@
 #include <vector>
 #include <valarray>
 
-// SUPPORT  -----------------------------------------------------------------------
+// support  -----------------------------------------------------------------------
 void gen10 (const std::valarray<Real>& coeff, std::valarray<Real>& values) {
 	for (unsigned i = 0; i < values.size () - 1; ++i) {
 		values[i] = 0;
@@ -66,7 +66,7 @@ std::valarray<Real> to_array (AtomPtr list) {
 	for (unsigned i = 0; i < sz; ++i) out[i] = type_check (list->tail.at (i), NUMBER)->val;
 	return out;
 }
-// NUMERIC --------------------------------------------------------------------------------------
+// numeric --------------------------------------------------------------------------------------
 AtomPtr fn_bpf (AtomPtr node, AtomPtr env) {
 	Real init = type_check (node->tail.at (0), NUMBER)->val;
 	int len  = (int) type_check (node->tail.at (1), NUMBER)->val;
@@ -264,7 +264,7 @@ AtomPtr fn_sndread (AtomPtr node, AtomPtr env) {
 	} else error ("invalid number of channels in", node->tail.at (0));
 	return l;
 }
-void add_numeric (AtomPtr env) {
+AtomPtr add_numeric (AtomPtr env) {
 	add_builtin ("bpf", fn_bpf, 3, env);
 	add_builtin ("mix", fn_mix, 2, env);	
 	add_builtin ("gen", fn_gen, 2, env);
@@ -279,6 +279,7 @@ void add_numeric (AtomPtr env) {
 	// // I/O
 	add_builtin ("sndwrite", fn_sndwrite, 3, env);
 	add_builtin ("sndread", fn_sndread, 1, env);
+	return env;
 }
 #endif	// NUMERIC_H 
 
