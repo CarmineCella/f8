@@ -1,0 +1,18 @@
+// TODO:
+
+// system
+// audio I/O
+// load db
+// features + pitch + onsets
+// rt playback
+
+// clustering
+// maple
+// orchidea
+// sparkle / blockconv / pvoc
+// plotting (SVG)
+// ambienc3
+// ambidec (?)
+// musicxml output
+
+// examples

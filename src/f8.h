@@ -20,40 +20,16 @@
 #define RED     	"\033[31m" 
 #define RESET   	"\033[0m"
 
-// TODO:
-
-// system
-// audio I/O
-// load db
-// features + pitch + onsets
-// rt playback
-
-// clustering
-// maple
-// orchidea
-// sparkle / blockconv / pvoc
-// plotting (SVG)
-// ambienc3
-// ambidec (?)
-// musicxml output
-
-// examples
-
 // ast
 struct Atom;
 typedef std::shared_ptr<Atom> AtomPtr;
 typedef AtomPtr (*Op) (AtomPtr, AtomPtr);
 #define make_node(type)(std::make_shared<Atom>(type))
 enum AtomType {
-    NUMBER,
-    SYMBOL,
-    STRING,
-    LIST,
-    PROCEDURE,
-    LAMBDA
+    NUMBER, SYMBOL, STRING, LIST, PROCEDURE, LAMBDA, OBJECT
 };
 const char* TYPE_NAMES[] = {
-	"number", "symbol", "string", "list", "proc", "lambda"
+	"number", "symbol", "string", "list", "proc", "lambda", "object"
 };
 typedef double Real;
 bool is_string (const std::string& s);
@@ -76,12 +52,17 @@ struct Atom {
         tail.push_back (ll.at (1));
         tail.push_back (ll.at (2));
     }
+	Atom (const std::string& type, void * o, AtomPtr cb) { 
+		type = OBJECT;
+		obj = o; lexeme = type; tail.push_back (cb);
+	}    
     AtomType type;
     Real val;
     std::string lexeme;
     Op action;
     std::deque<AtomPtr> tail;
     int minargs;
+    void* obj;
 };
 
 // parsing
@@ -165,8 +146,7 @@ std::ostream& print (AtomPtr node, std::ostream& out) {
         out << node->lexeme;
     }
     if (node->type == PROCEDURE) {
-        //  out << <"<operator " << node->lexeme << " @" << (std::hex) << node << ">";
-        out << "<proc>";
+        out << "<operator @" << (std::hex) << node << ">";
     }
     if (node->type == LAMBDA) {
         out << "(lambda ";
@@ -181,6 +161,9 @@ std::ostream& print (AtomPtr node, std::ostream& out) {
             if (i != node->tail.size () - 1) out << " ";
         }
         out << ")";
+    }
+    if (node->type == OBJECT) {
+        out << "<object: " << node->lexeme << ", " << &node->obj << ">";    
     }
     return out;
 }
@@ -245,12 +228,12 @@ AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env, bool recurse) {
     }
     return make_node ();
 }
-void browse (AtomPtr env, AtomPtr output) {
+void browse_env (AtomPtr env, AtomPtr output) {
+    if (!is_nil (env->tail.at (0))) browse_env (env->tail.at (0), output);
     for (unsigned i = 1; i < env->tail.size (); ++i) {
         AtomPtr s = env->tail.at (i);
         output->tail.push_back (s->tail.at (0));
     }
-    if (!is_nil (env->tail.at (0))) return browse (env->tail.at (0), output);
 }
 bool atom_eq (AtomPtr x, AtomPtr y) {
 	if (x->type != y->type) { return 0; }
@@ -267,6 +250,7 @@ bool atom_eq (AtomPtr x, AtomPtr y) {
     case PROCEDURE: return (x->action == y->action);
 	case LAMBDA: return (atom_eq (x->tail[0], y->tail[0]) 
 		&& atom_eq (x->tail[1], y->tail[1]));
+    case OBJECT: return (x->lexeme == y->lexeme && x->obj == y->obj);        
 	default:
 		return 0;
 	}
@@ -275,6 +259,7 @@ AtomPtr fn_quote (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_def (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_set (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_if (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+AtomPtr fn_while (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 template <bool dynamic> AtomPtr fn_lambda (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_do (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_catch (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
@@ -288,7 +273,6 @@ tail_call:
     // composite type
     AtomPtr car = eval (node->tail.at (0), env);
     if (car->action == &fn_quote) {
-        std::cout << "quote" << std::endl;
         argnum_check (node, 2);
         return node->tail.at (1);
     }
@@ -315,6 +299,14 @@ tail_call:
         }
         goto tail_call;
     }
+    if (car->action == &fn_while) {
+        argnum_check (node, 2);
+        AtomPtr res = make_node ();
+        while (eval (node->tail.at (1), env)->lexeme == "#t") {
+            res = eval (node->tail.at (2), env);
+        }
+        return res;
+    }    
     if (car->action == &fn_catch) {
         argnum_check(node, 3);
         try {
@@ -335,6 +327,7 @@ tail_call:
         }
         node = node->tail.at (node->tail.size () - 1);
         goto tail_call;
+        return res;
     }        
 
     // executable
@@ -384,7 +377,7 @@ tail_call:
 // procedures
 AtomPtr fn_env (AtomPtr node, AtomPtr env) {
     AtomPtr coll = make_node ();
-    browse (env, coll);
+    browse_env (env, coll);
     return coll;
 }
 AtomPtr fn_typeof (AtomPtr node, AtomPtr env) {
@@ -410,10 +403,12 @@ AtomPtr fn_throw (AtomPtr node, AtomPtr env) {
 AtomPtr fn_list (AtomPtr node, AtomPtr env) {
     return node;
 }
-AtomPtr fn_car (AtomPtr node, AtomPtr env) {
-	AtomPtr o = type_check (node->tail.at (0), LIST);
+AtomPtr fn_nth (AtomPtr node, AtomPtr env) {
+    int p  = (int) type_check (node->tail.at (0), NUMBER)->val;
+	AtomPtr o = type_check (node->tail.at (1), LIST);
 	if (!o->tail.size ()) return make_node  ();
-	else return o->tail.at (0);
+    if (p < 0 || p > node->tail.size ()) error ("invalid index", node);
+	return o->tail.at (p);
 }
 AtomPtr fn_cdr (AtomPtr node, AtomPtr env) {
 	AtomPtr l = make_node ();
@@ -593,10 +588,11 @@ AtomPtr make_env () {
     env->tail.push_back (make_entry (make_node ("#t"), make_node ("#t")));
     env->tail.push_back (make_entry (make_node ("#f"), make_node ("#f")));
     
-    make_op ("quote", &fn_quote, -1, env);
+    make_op ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
     make_op ("def", &fn_def, -1, env);
     make_op ("set!", &fn_set, -1, env);
     make_op ("if", &fn_if, -1, env);
+    make_op ("while", &fn_while, -1, env);
     make_op ("lambda", &fn_lambda<0>, -1, env);
     make_op ("dynamic", &fn_lambda<1>, -1, env);
     make_op ("do", &fn_do, -1, env);
@@ -609,8 +605,8 @@ AtomPtr make_env () {
     make_op ("throw", &fn_throw, 1, env);
     make_op ("list", &fn_list, 0, env);
     make_op ("join", &fn_join, 2, env);
-    make_op ("car", &fn_car, 1, env);
-    make_op ("cdr", &fn_cdr, 1, env);
+    make_op ("nth", &fn_nth, 1, env);
+    make_op ("tail", &fn_cdr, 1, env);
     make_op ("eq", &fn_eqp, 2, env);
     make_op ("+", &fn_add, 1, env);
     make_op ("*", &fn_mul, 1, env);
