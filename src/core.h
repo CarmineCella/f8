@@ -103,7 +103,8 @@ std::ostream& print (AtomPtr node, std::ostream& out) {
 }
 void error (const std::string& msg, AtomPtr ctx) {
     std::stringstream err;
-    err << msg << " ";
+    std::cout << "eeeeee " << (int) ctx->lexeme[0] << std::endl;
+    err << msg << " "; 
     if (!is_nil (ctx)) {
         err << "[";
         print (ctx, err);
@@ -134,7 +135,7 @@ std::string next (std::istream& input) {
 	while (!input.eof ()) {
 		char c = input.get ();
 		switch (c) { 			
-			case '(': case ')': case '\'': case '{': case '}':	case '\n':
+			case '(': case ')': case '\'': case '{': case '}':
  				if (accum.str ().size ()) {
 					input.unget();
 					return accum.str ();
@@ -146,7 +147,7 @@ std::string next (std::istream& input) {
 			case ';':
 				while (c != '\n' && !input.eof ())  { c = input.get (); }
 			break;		            
-			case ' ': case '\t': case '\r':
+			case ' ': case '\t': case '\r': case '\n':
 				if (accum.str ().size ()) return accum.str ();
 				else continue;
 			break;   
@@ -176,74 +177,31 @@ bool is_number (std::string token) {
 bool is_string (const std::string& s) {
 	return s.find ("\"") != std::string::npos;
 }
-void error (const std::string& msg, AtomPtr ctx);
-// AtomPtr read (std::istream& in) {
-//     std::string token = next (in);
-//     if (token == "(") {
-//         AtomPtr l = make_node();
-//         AtomPtr a = make_node ();
-//         while (!in.eof ()) {
-//             a = read (in);
-//             if (a->lexeme == ")" && a->type != STRING) break;
-//             l->tail.push_back (a);
-//         }
-//         // if (a->lexeme != ")") error ("invalid syntax - missing ')'", l);
-//         return l;
-//     } else if (token == "{") {
-//         AtomPtr l = make_node();
-//         l->tail.push_back (make_node("do"));
-//         AtomPtr a = make_node ();
-//         while (!in.eof ()) {
-//             a = read (in);
-//             if (a->lexeme == "}" && a->type != STRING) break;
-//             l->tail.push_back (a);
-//         }
-//         if (a->lexeme != "}") error ("invalid syntax - missing '}'", l);
-//         return l;
-//     } else if (is_number (token)) {
-//         return make_node (atof (token.c_str ()));
-//     } else if (token == "'") {
-//         AtomPtr list = make_node ();
-//         list->tail.push_back (make_node("quote"));
-//         list->tail.push_back (read (in));
-//         return list;			
-//     }  else {
-//         if (token.size ()) return make_node (token);
-//         else return make_node ();
-//     }
-// }
-AtomPtr read (std::istream& input, int& nesting, const std::string& terminator) {
-	AtomPtr code = make_node ();
-    if (terminator == "}") code->tail.push_back (make_node ("do"));
-	while (!input.eof ()) {
-		std::string token = next (input);
-		if (token.size() == 0) continue;
-		if (token == terminator) {
-			--nesting;
-			break;
-		}
-		if (token == "(" || token == "{") {
-			++nesting;
-			std::string valid_terminator = ")";
-			if (token == "{") {
-                code = read(input, nesting, "}");
-            } else {
-                code->tail.push_back(read(input, nesting, ")"));
-            }
-		} else if (is_number (token)) {
-			code->tail.push_back(make_node(atof (token.c_str ())));
-		} else {
-			code->tail.push_back(make_node (token));
-		}
-	}
-    print (code, std::cout) << " ----"; std::cout << std::endl;
-	return code;
-}
-AtomPtr read (std::istream& input) {
-	int nesting = 1;
-	AtomPtr r = read (input, nesting, "\n");
-	if (nesting && !is_nil (r)) error ("syntax error (missing newline/invalid nesting) in", r);
-	return r;
+AtomPtr read (std::istream& in) {
+    std::string token = next (in);
+    if (token == "(" || token == "{") {
+        std::string terminator = (token == "(" ? ")" : "}");
+        AtomPtr l = make_node();
+        if (terminator == "}") l->tail.push_back (make_node("do"));
+        AtomPtr a = make_node ();
+        while (!in.eof ()) {
+            a = read (in);
+            if (a->lexeme == terminator && a->type != STRING) break;
+            l->tail.push_back (a);
+        }
+        if (a->lexeme != terminator) error ("invalid syntax; missing terminator", l);
+        return l;
+    } else if (is_number (token)) {
+        return make_node (atof (token.c_str ()));
+    } else if (token == "'") {
+        AtomPtr list = make_node ();
+        list->tail.push_back (make_node("quote"));
+        list->tail.push_back (read (in));
+        return list;			
+    }  else {
+        if (token.size ()) return make_node (token);
+        else return make_node ();
+    }
 }
 
 // evaluation
@@ -320,7 +278,9 @@ AtomPtr fn_apply (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr eval (AtomPtr node, AtomPtr env) {
 tail_call:
     if (is_nil (node)) return make_node ();
-    if (node->type == SYMBOL) return assoc (node, env);
+    if (node->type == SYMBOL) {
+        return assoc (node, env);
+    }
     if (node->type != LIST) return node;
     // composite type
     AtomPtr car = eval (node->tail.at (0), env);
