@@ -673,6 +673,25 @@ AtomPtr add_core (AtomPtr env) {
     return env;    
 }
 
+// interface
+void repl (AtomPtr env, std::istream& in, std::ostream& out) {
+	std::istream* current = &in;	
+	while (true){
+		out << ">> ";
+		try {
+			print (eval (read (*current), env), out);
+			out << std::endl;
+		} catch (std::exception& e) {
+			out << RED << "error: " << e.what () << RESET << std::endl;
+		} catch (AtomPtr& e) {
+			out << RED << "error: uncaught expection " << RESET;
+			print (e, out); out << std::endl;
+		} catch (...) {
+			out << RED << "fatal error: execution stopped" << RESET << std::endl;
+		}
+	} 
+}
+
 #endif // CORE_H
 
 // eof
