@@ -149,7 +149,7 @@ bool is_nil (AtomPtr node) {
     return node == nullptr || (node->type == LIST && node->tail.size () == 0);
 }
 std::ostream& print (AtomPtr node, std::ostream& out) {
-    if (node->type == NUMBER) out << node->val;
+    if (node->type == NUMBER) out << std::fixed  << node->val;
     if (node->type == SYMBOL || node->type == STRING) {
         out << node->lexeme;
     }
@@ -311,7 +311,7 @@ tail_call:
     }
     if (car->action == &fn_if) {
         argnum_check (node, 3);
-        if (eval (node->tail.at (1), env)->lexeme == "#t") node = node->tail.at (2);
+        if (eval (node->tail.at (1), env)->lexeme != "#f") node = node->tail.at (2);
         else {
             if (node->tail.size () == 4) node = node->tail.at (3);
             else return make_node ();
@@ -321,7 +321,7 @@ tail_call:
     if (car->action == &fn_while) {
         argnum_check (node, 2);
         AtomPtr res = make_node ();
-        while (eval (node->tail.at (1), env)->lexeme == "#t") {
+        while (eval (node->tail.at (1), env)->lexeme != "#f") {
             res = eval (node->tail.at (2), env);
         }
         return res;
@@ -507,7 +507,8 @@ MAKE_CMPOP(fn_greatereq,>=);
         for (unsigned i = 0; i < node->tail.size (); ++i) { \
             r->tail.push_back (make_node (o (type_check (node->tail[i], NUMBER)->val))); \
         } \
- 		return r; \
+        if (r->tail.size () == 1) return r->tail[0]; \
+ 		else return r; \
 	} \
 
 MAKE_SINGOP(fn_sqrt, sqrt);
@@ -649,7 +650,7 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("<=", &fn_lesseq, 1, env);
     add_builtin (">", &fn_greater, 1, env);
     add_builtin (">=", &fn_greatereq, 1, env);
-    add_builtin ("sqrt", &fn_less, 1, env);
+    add_builtin ("sqrt", &fn_sqrt, 1, env);
     add_builtin ("sin", &fn_sin, 1, env);
     add_builtin ("cos", &fn_cos, 1, env);
     add_builtin ("tan", &fn_tan, 1, env);
@@ -657,6 +658,7 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("log10", &fn_log10, 1, env);
     add_builtin ("exp", &fn_exp, 1, env);
     add_builtin ("abs", &fn_abs, 1, env);
+    add_builtin ("floor", &fn_floor, 1, env);
     add_builtin ("print", &fn_format<0>, 1, env);
     add_builtin ("nl", &fn_nl, 0, env);
     add_builtin ("str", &fn_format<1>, 1, env);
