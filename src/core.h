@@ -76,7 +76,7 @@ std::string next (std::istream& input) {
 	while (!input.eof ()) {
 		char c = input.get ();
 		switch (c) { 			
-			case '(': case ')': case '\'':	
+			case '(': case ')': case '\'': case '{': case '}':	
  				if (accum.str ().size ()) {
 					input.unget();
 					return accum.str ();
@@ -129,7 +129,18 @@ AtomPtr read (std::istream& in) {
             if (a->lexeme == ")" && a->type != STRING) break;
             l->tail.push_back (a);
         }
-        if (a->lexeme != ")") error ("invalid syntax - missing ')'", l);
+        // if (a->lexeme != ")") error ("invalid syntax - missing ')'", l);
+        return l;
+    } else if (token == "{") {
+        AtomPtr l = make_node();
+        l->tail.push_back (make_node("do"));
+        AtomPtr a = make_node ();
+        while (!in.eof ()) {
+            a = read (in);
+            if (a->lexeme == "}" && a->type != STRING) break;
+            l->tail.push_back (a);
+        }
+        if (a->lexeme != "}") error ("invalid syntax - missing '}'", l);
         return l;
     } else if (is_number (token)) {
         return make_node (atof (token.c_str ()));
@@ -313,7 +324,7 @@ tail_call:
         argnum_check (node, 3);
         if (eval (node->tail.at (1), env)->lexeme != "#f") node = node->tail.at (2);
         else {
-            if (node->tail.size () == 4) node = node->tail.at (3);
+            if (node->tail.size () >= 4) node = node->tail.at (3);
             else return make_node ();
         }
         goto tail_call;

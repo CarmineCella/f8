@@ -15,5 +15,3 @@
 // tests
 // review language syntax
 // unify error messages
-// add {} for the "do" block (?)
-// review formatting of std library
