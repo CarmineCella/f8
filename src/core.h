@@ -12,6 +12,7 @@
 #include <cmath>
 #include <fstream>
 #include <valarray>
+#include <dlfcn.h>
 #if defined (ENABLE_READLINE)
 	#include <readline/readline.h>
 	#include <readline/history.h>
@@ -69,6 +70,12 @@ struct Atom {
     int minargs;
     void* obj;
 };
+AtomPtr make_obj (const std::string& otype, void* ptr, AtomPtr cb) {
+    AtomPtr o = make_node (ptr);
+    o->lexeme = otype;
+    o->tail.push_back (cb);
+    return o;
+}
 
 // helpers
 bool is_nil (AtomPtr node) {
@@ -77,7 +84,7 @@ bool is_nil (AtomPtr node) {
 std::ostream& print (AtomPtr node, std::ostream& out) {
     if (node->type == NUMBER) out << std::fixed  << node->val;
     if (node->type == SYMBOL || node->type == STRING) {
-        out << "'" <<node->lexeme << "'";
+        out << node->lexeme;
     }
     if (node->type == PROCEDURE) {
         out << "<operator @" << (std::hex) << node << ">";
@@ -97,7 +104,7 @@ std::ostream& print (AtomPtr node, std::ostream& out) {
         out << ")";
     }
     if (node->type == OBJECT) {
-        out << "<object: " << node->lexeme << ", " << &node->obj << ">";    
+        out << "<object: " << node->lexeme << " @" << &node->obj << ">";    
     }
     return out;
 }
@@ -397,13 +404,41 @@ tail_call:
 }
 
 // procedures
-AtomPtr fn_env (AtomPtr node, AtomPtr env) {
-    AtomPtr coll = make_node ();
-    browse_env (env, coll);
-    return coll;
-}
-AtomPtr fn_typeof (AtomPtr node, AtomPtr env) {
-	return make_node (TYPE_NAMES[node->tail.at (0)->type]);
+AtomPtr fn_info (AtomPtr b, AtomPtr env) {
+	std::string cmd = b->tail.at (0)->lexeme;
+	AtomPtr l = make_node();
+	std::regex r;
+	if (cmd == "vars") {
+		if (b->tail.size () > 1) {
+			r.assign (b->tail.at(1)->lexeme);
+		} else r.assign (".*");
+        AtomPtr vars = make_node (); 
+        browse_env (env, vars);
+		for (unsigned i = 0; i < vars->tail.size () ; ++i) {
+			std::string k = vars->tail.at (i)->lexeme;
+			if (std::regex_match(k, r)) {
+				l->tail.push_back(make_node(k));
+			}
+		}
+    } else if (cmd == "exists") {
+    	for (unsigned i = 1; i < b->tail.size (); ++i) {
+			AtomPtr key = b->tail.at (i);		
+			std::string ans = "#t";
+			try {
+				AtomPtr r = assoc (key, env);
+			} catch (...) {
+				ans = "#f";
+			}    	
+			l->tail.push_back(make_node(ans));
+		}
+	} else if (cmd == "typeof") {
+    	for (unsigned i = 1; i < b->tail.size (); ++i) {
+			l->tail.push_back(make_node(TYPE_NAMES[b->tail.at (i)->type]));
+		}
+	} else {
+		error ("invalid info request", b->tail.at (0));
+	}
+    return l;
 }
 std::string unbind (AtomPtr k, AtomPtr env) {
 	for (std::deque<AtomPtr>::iterator it = env->tail.begin() + 1; it != env->tail.end (); ++it) {
@@ -425,14 +460,14 @@ AtomPtr fn_throw (AtomPtr node, AtomPtr env) {
 AtomPtr fn_list (AtomPtr node, AtomPtr env) {
     return node;
 }
-AtomPtr fn_nth (AtomPtr node, AtomPtr env) {
+AtomPtr fn_lget (AtomPtr node, AtomPtr env) {
     int p  = (int) type_check (node->tail.at (0), NUMBER)->val;
 	AtomPtr o = type_check (node->tail.at (1), LIST);
 	if (!o->tail.size ()) return make_node  ();
     if (p < 0 || p >= o->tail.size ()) error ("invalid index", node);
 	return o->tail.at (p);
 }
-AtomPtr fn_head (AtomPtr params, AtomPtr env) {
+AtomPtr fn_lhead (AtomPtr params, AtomPtr env) {
 	AtomPtr l = params->tail.at (0);
 	if ((l->type == LIST)
 		 && l->tail.size ()) {
@@ -442,7 +477,7 @@ AtomPtr fn_head (AtomPtr params, AtomPtr env) {
 	}
 	else return make_node ();
 }
-AtomPtr fn_cdr (AtomPtr node, AtomPtr env) {
+AtomPtr fn_ltail (AtomPtr node, AtomPtr env) {
 	AtomPtr l = make_node ();
 	AtomPtr o = type_check (node->tail[0], LIST);
 	if (o->tail.size () < 2) return make_node ();
@@ -459,7 +494,7 @@ AtomPtr join (AtomPtr dst, AtomPtr ll) {
 	} else dst->tail.push_back (ll);
 	return dst;
 }
-AtomPtr fn_join (AtomPtr n, AtomPtr env) {
+AtomPtr fn_ljoin (AtomPtr n, AtomPtr env) {
 	AtomPtr dst = n->tail.at(0);
 	for (unsigned i = 1; i < n->tail.size (); ++i){
 		dst = join (dst, n->tail.at(i));
@@ -617,33 +652,66 @@ AtomPtr fn_exit (AtomPtr node, AtomPtr env) {
 	exit (0);
 	return make_node ();
 }
+#define DECLFFI(name, f) \
+	AtomPtr name (AtomPtr node, AtomPtr env) { \
+		AtomPtr out = nullptr; 	\
+	 	f (node, env, out);\
+	 	return out;\
+	}
+
 AtomPtr add_builtin (const std::string& name, Op action, int minargs, AtomPtr env) {
     AtomPtr op = make_node (action);
     op->lexeme = name;
     op->minargs = minargs;
     return extend (make_node (name), op, env, false);;
 }
+AtomPtr fn_import (AtomPtr params, AtomPtr env) {
+		std::string name = getenv ("HOME");
+#ifdef __APPLE__
+		name += "/.f8/" + type_check (params->tail.at(0), AtomType::STRING)->lexeme + ".so";
+#elif __linux
+		name += "/.f8/" + type_check (params->sequence.at(0), AtomType::STRING, params)->token + ".so";
+#else
+		name += "/.f8/" + type_check (params->sequence.at(0), AtomType::STRING.params)->token + ".dll";
+#endif
+	void* handle = dlopen (name.c_str (), RTLD_NOW);
+	if (!handle) {
+		error (dlerror (), params);
+	}
+	unsigned ct = 0;
+	for (unsigned i = 0; i < params->tail.at(1)->tail.size() / 2; ++i) {
+		Op f = (Op) dlsym (handle, 
+			type_check (params->tail.at(1)->tail.at(2 * i), AtomType::SYMBOL)->lexeme.c_str ());
+		
+		if (f) {
+			add_builtin(params->tail.at(1)->tail.at(2 * i)->lexeme, 
+				f, 
+				type_check (params->tail.at(1)->tail.at(2 * i + 1), NUMBER)->val, env); // silent error
+			++ct;
+		}
+	}
+	return ct == 0 ? make_node("#f") : make_node(ct); // number of proc imported
+}
 AtomPtr add_core (AtomPtr env) {
     add_builtin ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
     add_builtin ("def", &fn_def, -1, env);
-    add_builtin ("set!", &fn_set, -1, env);
+    add_builtin ("set", &fn_set, -1, env);
     add_builtin ("if", &fn_if, -1, env);
     add_builtin ("while", &fn_while, -1, env);
-    add_builtin ("lambda", &fn_lambda<0>, -1, env);
-    add_builtin ("dynamic", &fn_lambda<1>, -1, env);
+    add_builtin ("\\", &fn_lambda<0>, -1, env);
+    add_builtin ("@", &fn_lambda<1>, -1, env);
     add_builtin ("do", &fn_do, -1, env);
     add_builtin ("catch", &fn_catch, -1, env);
     add_builtin ("eval", &fn_eval, 1, env);
-    add_builtin ("apply", &fn_apply, 2, env);
-    add_builtin ("env", &fn_env, 0, env);
-    add_builtin ("typeof", &fn_typeof, 1, env);
+    add_builtin ("->", &fn_apply, 2, env);
+    add_builtin ("info", &fn_info, 1, env);
     add_builtin ("unbind", &fn_unbind, 1, env);
     add_builtin ("throw", &fn_throw, 1, env);
     add_builtin ("list", &fn_list, 0, env);
-    add_builtin ("join", &fn_join, 1, env);
-    add_builtin ("nth", &fn_nth, 1, env);
-    add_builtin ("head", &fn_head, 1, env);
-    add_builtin ("tail", &fn_cdr, 1, env);
+    add_builtin ("ljoin", &fn_ljoin, 1, env);
+    add_builtin ("lget", &fn_lget, 1, env);
+    add_builtin ("lhead", &fn_lhead, 1, env);
+    add_builtin ("ltail", &fn_ltail, 1, env);
     add_builtin ("eq", &fn_eqp, 2, env);
     add_builtin ("+", &fn_add, 1, env);
     add_builtin ("*", &fn_mul, 1, env);
@@ -664,17 +732,18 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("floor", &fn_floor, 1, env);
     add_builtin ("print", &fn_format<0>, 1, env);
     add_builtin ("nl", &fn_nl, 0, env);
-    add_builtin ("str", &fn_format<1>, 1, env);
     add_builtin ("read", &fn_read, 0, env);
     add_builtin ("load", &fn_load, 1, env);
     add_builtin ("save", &fn_format<2>, 2, env);
-    add_builtin ("length", &fn_string<0>, 1, env);
-    add_builtin ("find", &fn_string<1>, 2, env);
-    add_builtin ("range", &fn_string<2>, 3, env);
-    add_builtin ("replace", &fn_string<3>, 3, env);
+    add_builtin ("str", &fn_format<1>, 1, env); 
+    add_builtin ("strlen", &fn_string<0>, 1, env);
+    add_builtin ("strfind", &fn_string<1>, 2, env);
+    add_builtin ("strrange", &fn_string<2>, 3, env);
+    add_builtin ("strrepl", &fn_string<3>, 3, env);
     add_builtin ("regex", &fn_string<4>, 2, env);
     add_builtin ("exec", &fn_exec, 1, env);
     add_builtin ("exit", &fn_exit, 0, env);
+    add_builtin ("import", &fn_import, 1, env);
     return env;    
 }
 

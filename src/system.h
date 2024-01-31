@@ -22,12 +22,6 @@
 
 using namespace std;
 
-AtomPtr make_obj (const std::string& otype, void* ptr, AtomPtr cb) {
-    AtomPtr o = make_node (ptr);
-    o->lexeme = otype;
-    o->tail.push_back (cb);
-    return o;
-}
 AtomPtr fn_ticks (AtomPtr params, AtomPtr env) {
     return  make_node (clock ());
 }
@@ -35,7 +29,7 @@ AtomPtr fn_thread (AtomPtr params, AtomPtr env) {
     AtomPtr t = make_node ();
     t->tail.push_back (params->tail.at(0));
     std::thread* pt = new std::thread (&eval, t, env);
-    return  make_obj ("thread", (void*) pt,  make_node());
+    return make_obj ("thread", (void*) pt,  make_node());
 }
 AtomPtr fn_attach (AtomPtr params, AtomPtr env) {
     AtomPtr tt = params->tail.at(0);
@@ -122,7 +116,7 @@ AtomPtr fn_udprecv (AtomPtr n, AtomPtr env) {
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock == -1) {
-        return  make_node (0);
+        return  make_node ("#f");
     }
 
     server.sin_addr.s_addr = inet_addr(type_check (n->tail.at(0), STRING)->lexeme.c_str ());
@@ -130,12 +124,12 @@ AtomPtr fn_udprecv (AtomPtr n, AtomPtr env) {
     server.sin_port = htons((long)type_check (n->tail.at(1), NUMBER)->val);
   
    if(::bind(sock,(struct sockaddr *)&server , sizeof(server)) < 0) {
-        return  make_node();
+        return make_node("#f");
     }
     int c = sizeof(struct sockaddr_in);
     if (recvfrom(sock, client_message, MESSAGE_SIZE, 0, 
         (struct sockaddr *) &client, (socklen_t*) &c) < 0) {
-        return  make_node();   
+        return  make_node("#f");   
     }
 
     ::close (sock);
@@ -148,7 +142,7 @@ AtomPtr fn_udpsend (AtomPtr n, AtomPtr env) {
 
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock == -1) {
-        return  make_node();
+        return  make_node("#f");
     }
      
     server.sin_addr.s_addr = inet_addr(type_check (n->tail.at (0), STRING)->lexeme.c_str ());
@@ -160,12 +154,12 @@ AtomPtr fn_udpsend (AtomPtr n, AtomPtr env) {
 
     if (sendto(sock, nf.str ().c_str (), n->tail.at(2)->lexeme.size (), 0, 
         (struct sockaddr *)&server , sizeof(server)) < 0) {
-        return  make_node();
+        return  make_node("#f");
     }
     ::close (sock);
-    return  make_node (1);
+    return  make_node ("#t");
 }
-
+ // I/O  -----------------------------------------------------------------------
 AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
 	std::string name = type_check (node->tail.at(0), STRING)->lexeme;
 	std::string direction = type_check (node->tail.at(1), STRING)->lexeme;
@@ -187,12 +181,14 @@ AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
         std::istream* f = nullptr;
         if (binary) f = new std::ifstream (name, std::ios::binary);
         else f = new std::ifstream (name);
+        if (!f->good ()) return make_node ("#f");
         s = ( make_obj ("instream", f, ll));
     }
 	else {
         std::ostream* f = nullptr;
         if (binary) f = new std::ofstream (name, std::ios::binary);
         else f = new std::ofstream (name);
+        if (!f->good ()) return make_node ("#f");
         s = ( make_obj ("outstream", f, ll));        
      }
 	return s;
@@ -205,60 +201,60 @@ AtomPtr fn_closestream (AtomPtr node, AtomPtr env) {
         istr->close ();
 		delete istr;
         p->obj = 0;
-		return  make_node(1);
+		return  make_node ("#t");
 	} else if (p->lexeme == "outstream") {
 		std::ofstream* ostr = static_cast<std::ofstream*> (p->obj);
         ostr->close ();
 		delete ostr;
         p->obj = 0;
-		return  make_node(1);
+		return  make_node("#t");
 	}
-    return  make_node();
+    return  make_node("#f");
 }
 AtomPtr fn_isgood (AtomPtr node, AtomPtr env) {
 	AtomPtr p = type_check (node->tail.at(0), OBJECT);
-    if (p->obj == 0) return  make_node();
+    if (p->obj == 0) return  make_node("#f");
 	if (p->lexeme == "instream") {
-		return  make_node((Real) static_cast<std::istream*> (p->obj)->good ());
+		return  make_node(static_cast<std::istream*> (p->obj)->good () ? "#t" : "#f");
 	} else if (p->lexeme == "outstream") {
-		return  make_node((Real) static_cast<std::ostream*> (p->obj)->good ());
+		return  make_node(static_cast<std::ostream*> (p->obj)->good () ? "#t" : "#f");
 	}
 	return  make_node();
 }
 AtomPtr fn_rwndstream (AtomPtr node, AtomPtr env) {
 	AtomPtr p = type_check (node->tail.at(0), OBJECT);
-    if (p->obj == 0) return  make_node();
+    if (p->obj == 0) return  make_node("#f");
 	if (p->lexeme == "instream") {
         std::istream* istr = static_cast<std::istream*>(p->obj);
 		istr->clear();
 		istr->seekg (0);
-		return  make_node (1);
+		return  make_node ("#t");
 	} else if (p->lexeme == "outstream") {
         std::ostream* ostr = static_cast<std::ostream*>(p->obj);
 		ostr->clear();
 		ostr->seekp (0);
-		return  make_node(1);
+		return  make_node("#t");
 	}
 
-	return  make_node();
+	return  make_node("#f");
 }
 AtomPtr fn_writestream (AtomPtr n, AtomPtr env) {
     AtomPtr p = type_check (n->tail.at(0), OBJECT);
-    if (p->obj == 0 || p->lexeme != "outstream") return  make_node();
+    if (p->obj == 0 || p->lexeme != "outstream") return  make_node("#f");
     std::ostream* out = static_cast<std::ostream*> (p->obj);
     for (unsigned  i = 1; i < n->tail.size (); ++i)  {
         print (n->tail.at (i), *out);  
         out->flush();
     }
-    return make_node ("");    
+    return make_node ("#t");    
 }
 AtomPtr fn_readstream (AtomPtr n, AtomPtr env) {
     AtomPtr p = type_check (n->tail.at(0), OBJECT);
-    if (p->obj == 0 || p->lexeme != "instream") return  make_node();
+    if (p->obj == 0 || p->lexeme != "instream") return  make_node("#f");
     std::istream* in = static_cast<std::istream*> (p->obj);
     std::string name = p->tail.at(0)->lexeme; // exists by default
-    if (!in->good () || in->eof ()) return  make_node();
-    return make_node (""); //read (*in);    
+    if (!in->good () || in->eof ()) return  make_node("#f");
+    return make_node ("#t"); //read (*in);    
 }
 AtomPtr add_system (AtomPtr env) {
     add_builtin ("ticks", &fn_ticks, 0, env);
@@ -273,7 +269,7 @@ AtomPtr add_system (AtomPtr env) {
     add_builtin ("openstream", &fn_openstream, 3, env);
     add_builtin ("closestream", &fn_closestream, 1, env);
     add_builtin ("isgood", &fn_isgood, 1, env);
-    add_builtin ("rewind", &fn_rwndstream, 1, env);
+    add_builtin ("rewindstream", &fn_rwndstream, 1, env);
     add_builtin ("writestream", &fn_writestream, 2, env);
     add_builtin ("readstream", &fn_readstream, 1, env);
     return env;

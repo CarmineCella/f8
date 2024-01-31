@@ -224,45 +224,108 @@ AtomPtr fn_noise (AtomPtr n, AtomPtr env) {
 	return make_node (out);
 }
 // I/O  -----------------------------------------------------------------------
-AtomPtr fn_sndwrite (AtomPtr node, AtomPtr env) {
-	Real sr = type_check (node->tail.at (0), NUMBER)->val;
-	std::valarray<Real> vals;
-	if (node->tail.size () == 3) {
-		WavOutFile outf (type_check (node->tail.at (1), STRING)->lexeme.c_str(), sr, 16, 1);
-		vals = to_array (type_check (node->tail.at (2), LIST));
-		outf.write (&vals[0], vals.size ());
-	} else if (node->tail.size () == 4) {
-		WavOutFile outf (type_check (node->tail.at (1), STRING)->lexeme.c_str(), sr, 16, 2);
-		std::valarray<Real> left = to_array (type_check (node->tail.at (2), LIST));
-		std::valarray<Real> right = to_array (type_check (node->tail.at (3), LIST));
-		vals.resize (2 * left.size ());
-		interleave (&vals[0], &left[0], &right[0], left.size ());
-		outf.write (&vals[0], vals.size ());
-	} else error ("invalid number of channels in", node->tail.at(0));
+ AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
+	std::string name = type_check (node->tail.at(0), AtomType::STRING)->lexeme;
+	std::string direction = type_check (node->tail.at(1), AtomType::STRING)->lexeme;
+	int sr = 44100; 
+	int ch = 1; 
+
+	if (node->tail.size () == 4) {
+		sr = type_check (node->tail.at(2), AtomType::NUMBER)->val;
+		ch = type_check (node->tail.at(3), AtomType::NUMBER)->val;
+	}
+
+	bool input = false;
+
+	if (direction == "input") input = true;
+	else if (direction == "output") input = false;
+	else error ("unsopported direction for stream", node);
 	
-	return make_node (vals.size ());
+	AtomPtr s = make_node();
+    AtomPtr ll =  make_node();
+    ll->tail.push_back (make_node((std::string) "\"" + name));
+
+	if (input) {
+        WavInFile* f = new WavInFile (name.c_str ());
+        s = (make_obj ("inwav", f, ll));
+    }
+	else {
+        WavOutFile* f = new WavOutFile (name.c_str (), sr, 16, ch);
+        s = (make_obj ("outwav", f, ll));        
+     }
+	return s;
 }
-AtomPtr fn_sndread (AtomPtr node, AtomPtr env) {
-	WavInFile infile (type_check (node->tail.at (0), STRING)->lexeme.c_str());
-	AtomPtr l = make_node ();
-	int s = infile.getNumSamples ();
-	std::valarray<Real> input (s);
-	infile.read (&input[0], s);
-	std::valarray<Real> info (3);
-	info[0] = infile.getSampleRate ();
-	info[1] = infile.getNumChannels ();
-	info[2] = s;
-	l->tail.push_back (make_node (info));
-	if (infile.getNumChannels () == 1) {
-		l->tail.push_back (make_node (input));
-	} else if (infile.getNumChannels () == 2) {
-		std::valarray<Real> left (s/2);
-		std::valarray<Real> right (s/2);
-		deinterleave (&input[0], &left[0], &right[0], s);
-		l->tail.push_back (make_node (left));
-		l->tail.push_back (make_node (right));
-	} else error ("invalid number of channels in", node->tail.at (0));
-	return l;
+AtomPtr fn_readwav (AtomPtr node, AtomPtr env) {
+    AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+    if (p->obj == 0 || p->lexeme != "inwav") return make_node();
+    WavInFile* in = static_cast<WavInFile*> (p->obj);
+
+	AtomPtr final = make_node();
+	long sz = in->getNumSamples ();
+	long ch = in->getNumChannels ();
+
+	if (node->tail.size () == 2) sz = type_check (node->tail.at(1), AtomType::NUMBER)->val;
+
+	std::vector<Real> data (sz * ch);
+	in->read (&data[0], sz * ch);
+	std::vector<std::vector<Real>> deinterleaved (ch);
+
+	// int offset = sz / ch;
+	for (unsigned j = 0; j < sz; ++j) {
+		for (int i = 0; i < ch; ++i) {
+			deinterleaved[i].push_back(data[i + (j * ch)]);
+		}
+	}
+
+	for (unsigned i = 0; i < deinterleaved.size (); ++i) {
+		AtomPtr wave = make_node();
+		for (unsigned j = 0; j < deinterleaved[i].size (); ++j) {
+			wave->tail.push_back(make_node(deinterleaved[i][j]));
+		}
+		final->tail.push_back (wave);
+	}
+	return final;
+}
+AtomPtr fn_writewav (AtomPtr node, AtomPtr env) {
+    AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+    if (p->obj == 0 || p->lexeme != "outwav") return make_node();
+    WavOutFile* out = static_cast<WavOutFile*> (p->obj);
+	uint ch = type_check (node->tail.at(1), AtomType::NUMBER)->val;
+	
+	int sz = 0;
+	for (unsigned i = 2; i < node->tail.size (); ++i) {
+		if (sz <= node->tail.at (i)->tail.size ()) {
+			sz = node->tail.at (i)->tail.size ();
+		}
+	}
+	std::vector<Real> interleaved;
+
+	for (unsigned j = 0; j < sz; ++j) {
+		for (unsigned i = 2; i < node->tail.size (); ++i) {
+			AtomPtr channel = node->tail.at (i);
+			interleaved.push_back (type_check (node->tail.at (i)->tail.at (j),
+				AtomType::NUMBER)->val);
+		}
+	}
+
+	out->write(&interleaved[0], ch * sz);
+	return make_node (sz * ch);
+}
+AtomPtr fn_closewav (AtomPtr node, AtomPtr env) {
+	AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+    if (p->obj == 0) return make_node();
+	if (p->lexeme == "inwav") {
+		WavInFile* istr = static_cast<WavInFile*> (p->obj);
+		delete istr;
+        p->obj = 0;
+		return make_node(1);
+	} else if (p->lexeme == "outwav") {
+		WavOutFile* ostr = static_cast<WavOutFile*> (p->obj);
+		delete ostr;
+        p->obj = 0;
+		return make_node(1);
+	}
+    return make_node();
 }
 AtomPtr add_numeric (AtomPtr env) {
 	add_builtin ("bpf", fn_bpf, 3, env);
@@ -276,9 +339,10 @@ AtomPtr add_numeric (AtomPtr env) {
 	add_builtin ("pol2car", fn_pol2car, 1, env);
 	add_builtin ("conv", fn_conv, 3, env);
 	add_builtin ("noise", fn_noise, 1, env);
-	// // I/O
-	add_builtin ("sndwrite", fn_sndwrite, 3, env);
-	add_builtin ("sndread", fn_sndread, 1, env);
+	add_builtin ("openwav", fn_openwav, 2, env);
+	add_builtin ("writewav", fn_writewav, 3, env);
+	add_builtin ("writewav", fn_writewav, 1, env);
+	add_builtin ("closewav", fn_closewav, 1, env);
 	return env;
 }
 #endif	// NUMERIC_H 
