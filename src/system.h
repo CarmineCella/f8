@@ -258,7 +258,7 @@ AtomPtr fn_readstream (AtomPtr n, AtomPtr env) {
     std::istream* in = static_cast<std::istream*> (p->obj);
     std::string name = p->tail.at(0)->lexeme; // exists by default
     if (!in->good () || in->eof ()) return  make_node();
-    return read (*in);    
+    return make_node (""); //read (*in);    
 }
 AtomPtr add_system (AtomPtr env) {
     add_builtin ("ticks", &fn_ticks, 0, env);

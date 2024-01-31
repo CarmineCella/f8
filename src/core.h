@@ -77,7 +77,7 @@ bool is_nil (AtomPtr node) {
 std::ostream& print (AtomPtr node, std::ostream& out) {
     if (node->type == NUMBER) out << std::fixed  << node->val;
     if (node->type == SYMBOL || node->type == STRING) {
-        out << node->lexeme;
+        out << "'" <<node->lexeme << "'";
     }
     if (node->type == PROCEDURE) {
         out << "<operator @" << (std::hex) << node << ">";
@@ -103,7 +103,6 @@ std::ostream& print (AtomPtr node, std::ostream& out) {
 }
 void error (const std::string& msg, AtomPtr ctx) {
     std::stringstream err;
-    std::cout << "eeeeee " << (int) ctx->lexeme[0] << std::endl;
     err << msg << " "; 
     if (!is_nil (ctx)) {
         err << "[";
@@ -147,7 +146,7 @@ std::string next (std::istream& input) {
 			case ';':
 				while (c != '\n' && !input.eof ())  { c = input.get (); }
 			break;		            
-			case ' ': case '\t': case '\r': case '\n':
+			case ' ': case '\t': case '\r':  case '\n':
 				if (accum.str ().size ()) return accum.str ();
 				else continue;
 			break;   
