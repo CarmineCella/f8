@@ -436,7 +436,7 @@ AtomPtr fn_info (AtomPtr b, AtomPtr env) {
 			l->tail.push_back(make_node(TYPE_NAMES[b->tail.at (i)->type]));
 		}
 	} else {
-		error ("invalid info request", b->tail.at (0));
+		error ("[info] invalid request", b->tail.at (0));
 	}
     return l;
 }
@@ -464,7 +464,7 @@ AtomPtr fn_lget (AtomPtr node, AtomPtr env) {
     int p  = (int) type_check (node->tail.at (0), NUMBER)->val;
 	AtomPtr o = type_check (node->tail.at (1), LIST);
 	if (!o->tail.size ()) return make_node  ();
-    if (p < 0 || p >= o->tail.size ()) error ("invalid index", node);
+    if (p < 0 || p >= o->tail.size ()) error ("[lget] invalid index", node);
 	return o->tail.at (p);
 }
 AtomPtr fn_lhead (AtomPtr params, AtomPtr env) {
@@ -589,14 +589,19 @@ AtomPtr fn_nl (AtomPtr node, AtomPtr env) {
 AtomPtr fn_read (AtomPtr node, AtomPtr env) {
 	return read (std::cin);
 }
-AtomPtr load (const std::string& filename, AtomPtr env) {
-	std::ifstream in (filename);
-	if (!in.good ()) return make_node ("#f");
+AtomPtr load (const std::string& name, AtomPtr env) {
+	std::ifstream in (name.c_str ());
+	if (!in.good ()) {
+		std::string longname = getenv("HOME");
+		longname += "/.fb/" + name;
+		in.open (longname.c_str());
+		if (!in.good ()) return make_node("#f");
+	}
     AtomPtr res = make_node ();
 	while (!in.eof ()) {
 		res = eval (read (in), env);
 	}
-	return make_node ("#t");
+	return res;
 }
 AtomPtr fn_load (AtomPtr node, AtomPtr env) {
 	return load (type_check (node->tail.at (0), STRING)->lexeme, env);
@@ -676,7 +681,7 @@ AtomPtr fn_import (AtomPtr params, AtomPtr env) {
 #endif
 	void* handle = dlopen (name.c_str (), RTLD_NOW);
 	if (!handle) {
-		error (dlerror (), params);
+		error ((std::string) "[import] " + dlerror (), params);
 	}
 	unsigned ct = 0;
 	for (unsigned i = 0; i < params->tail.at(1)->tail.size() / 2; ++i) {

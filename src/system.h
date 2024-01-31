@@ -169,10 +169,10 @@ AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
 	bool binary = false;
 	if (direction == "input") input = true;
 	else if (direction == "output") input = false;
-	else error ("unsopported direction for stream", node);
+	else error ("[openstream] unsopported direction", node);
 	if (mode == "binary") binary = true;
 	else if (mode == "text") binary = false;
-	else error ("unsopported mode for stream", node);
+	else error ("[openstream] unsopported mode", node);
 	AtomPtr s =  make_node();
     AtomPtr ll =   make_node();
     ll->tail.push_back (make_node ((std::string) "\"" + name));

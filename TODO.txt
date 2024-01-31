@@ -13,5 +13,4 @@
 // osc (?)
 // examples
 // tests
-// review language syntax
-// unify error messages
+// improve error messages (ctx and/or linenum..)

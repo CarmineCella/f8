@@ -8,25 +8,25 @@
 (def (<> n1 n2) (not (= n1 n2)))
 
 ;; lists
-(def (first l) (nth 0 l))
-(def (second l) (nth 0 (tail l)))
-(def (third l) (nth 0 (tail (tail l))))
+(def (first l) (lget 0 l))
+(def (second l) (lget 0 (ltail l)))
+(def (third l) (lget 0 (ltail (ltail l))))
 (def (len l) {
 	(def (len_runner i l)
-		(if (eq l ()) i	(len_runner (+ i 1) (tail l))))
+		(if (eq l ()) i	(len_runner (+ i 1) (ltail l))))
 	(len_runner 0 l)
 })
-(def (last l) (nth (- (len l) 1) l))
+(def (last l) (lget (- (len l) 1) l))
 (def (take n l) {
 	(def (take_runner acc n l) 
 		(if (<= n 0) acc {
-			(join acc (first l))
-			(take_runner acc (- n 1) (tail l))
+			(ljoin acc (first l))
+			(take_runner acc (- n 1) (ltail l))
 		}))
 	(take_runner () n l)
 })
 (def (drop n l) 
-	(if (<= n 0) l (drop (- n 1) (tail l)))
+	(if (<= n 0) l (drop (- n 1) (ltail l)))
 )
 (def (split n l) 
 	(list (take n l) (drop n l))
@@ -34,8 +34,8 @@
 (def (match e l) {
 	(def (match_runner acc n e l) 
 		(if (eq l ()) acc {
-			(if (eq (first l) e) (join acc n))
-			(match_runner acc (+ n 1) e (tail l))
+			(if (eq (first l) e) (ljoin acc n))
+			(match_runner acc (+ n 1) e (ltail l))
 		}))
 	(match_runner () 0 e l)
 })
@@ -44,7 +44,7 @@
 )
 (def (reverse l) {
 	(def (reverse-runner l acc)
-		(if (eq l ()) acc (reverse-runner (tail l) (join (head l) acc))))
+		(if (eq l ()) acc (reverse-runner (ltail l) (ljoin (lhead l) acc))))
 	(reverse-runner l ())
 })
 
@@ -52,30 +52,30 @@
 (def (map f l) {
 	(def (map-runner acc f l)
 		(if (eq l ()) acc {
-			(join acc (f (first l)))
-			(map-runner acc f (tail l))
+			(ljoin acc (f (first l)))
+			(map-runner acc f (ltail l))
 		}))
 	(map-runner () f l)
 })
 (def (filter f l) {
 	(def (filter-runner acc f l)
 		(if (eq l ()) acc {
-			(join acc (if (f (first l)) (head l)))
-			(filter-runner acc f (tail l))
+			(ljoin acc (if (f (first l)) (lhead l)))
+			(filter-runner acc f (ltail l))
 		})	
 	)
 	(filter-runner () f l)
 })
-(def (unpack f l) (eval (join () f l)))
+(def (unpack f l) (eval (ljoin () f l)))
 (def (foldl f z l)
-	(if (eq () l) z (foldl f (f z (first l)) (tail l)))
+	(if (eq () l) z (foldl f (f z (first l)) (ltail l)))
 )
 (def (flip f a b) (f b a))
 (def (comp f g x) (f (g x)))
 (def (dup n x) {
 	(def (dup_runner acc n x) 
 		(if (<= n 0) acc {
-			(join acc x)
+			(ljoin acc x)
 			(dup_runner acc (- n 1) x)
 		}))
 	(dup_runner () n x)
@@ -87,11 +87,11 @@
    		(throw "case not found" x)
     	(if (== x (first (first &))) 
     		(second (first &)) 
-    		(unpack case (join (coll) x (tail &)))
+    		(unpack case (ljoin (coll) x (ltail &)))
     	)
    )
 )
-(def (test x y)(if (eq (join (list) (eval x)) y) (do (print x  " passed" (nl)) )(throw "*** FAILED ***" x)))
+(def (test x y)(if (eq (ljoin (list) (eval x)) y) (do (print x  " passed" (nl)) )(throw "*** FAILED ***" x)))
 
 ;; arithmetics
 (def (succ x) (+ x 1))
@@ -119,8 +119,8 @@
 		(if (eq n 0)
 			(ack (- m 1) 1)
 			(ack (- m 1) (ack m (- n 1))))))
-(def (birandn n m)(map (lambda (x)(* x n)) (noise m)))
-(def (randn n m)(map (lambda (x) (/ (+ n x) 2)) (birandn n m)))
+(def (birandn n m)(map (\ (x)(* x n)) (noise m)))
+(def (randn n m)(map (\ (x) (/ (+ n x) 2)) (birandn n m)))
 
 ;; list-based operators
 ;(def (zeros)(flip dup 0))
@@ -129,17 +129,17 @@
 (def (ones n)(dup n 1))
 (def (diff l) {
 	(def (diff_runner acc l) 
-		(if (eq (tail l) ()) acc {
-			(join acc (- (first (tail l)) (first l)))
-			(diff_runner acc (tail l))
+		(if (eq (ltail l) ()) acc {
+			(ljoin acc (- (first (ltail l)) (first l)))
+			(diff_runner acc (ltail l))
 		}))
 	(diff_runner () l)
 })
 (def (sign l) {
 	(def (sign_runner acc l) 
 		(if (eq l ()) acc {
-			(if (>= (first l) 0) (join acc 1) (join acc -1))
-			(sign_runner acc (tail l))
+			(if (>= (first l) 0) (ljoin acc 1) (ljoin acc -1))
+			(sign_runner acc (ltail l))
 		}))
 	(sign_runner () l)
 })
@@ -149,31 +149,31 @@
 (def (stddev l) {
 	(def mu (mean l))
 	(def normal (/ 1. (- (len l) 1)))
-	(sqrt (* (sum (map square (map (lambda (x)(- x mu)) l))) normal))
+	(sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal))
 })
 (def (dot a b)
 	(if (or (eq a ()) (eq b ())) 0
-		(+ (* (first a) (first b)) (dot (tail a) (tail b)))))
+		(+ (* (first a) (first b)) (dot (ltail a) (ltail b)))))
 (def (ortho a b)(eq (dot a b) 0))
 (def (standard l) {
 	(def mu (mean l))
 	(def s (stddev l))
-	(map (lambda (x)(/ x s)) (map (lambda (x)(-  x mu)) l))
+	(map (\ (x)(/ x s)) (map (\ (x)(-  x mu)) l))
 })
 (def (compare op l) {	
 	(def (cmprunner n l)
 		(if (eq l ())
 			n
 			(if (op (first l) n) {
-				(set! n (first l)) (cmprunner n (tail l))
-			} (cmprunner n (tail l)))))
+				(set! n (first l)) (cmprunner n (ltail l))
+			} (cmprunner n (ltail l)))))
 	(cmprunner (first l) l)
 })
 (def (min l) ((compare <) l))
 (def (max l) ((compare >) l))
 (def (normal l) {
 	(def m (max l))
-	(map (lambda (x)(/ x m)) l)
+	(map (\ (x)(/ x m)) l)
 })
 
  ;; constants

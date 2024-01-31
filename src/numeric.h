@@ -72,7 +72,7 @@ AtomPtr fn_bpf (AtomPtr node, AtomPtr env) {
 	int len  = (int) type_check (node->tail.at (1), NUMBER)->val;
 	Real end = type_check (node->tail.at (2), NUMBER)->val;
 	node->tail.pop_front (); node->tail.pop_front (); node->tail.pop_front ();
-	if (node->tail.size () % 2 != 0) error ("invalid number of arguments for bpf", node);
+	if (node->tail.size () % 2 != 0) error ("[bpf] invalid number of arguments", node);
 	BPF<Real> bpf (len);
 	bpf.add_segment (init, len, end);
 	Real curr = end;
@@ -88,7 +88,7 @@ AtomPtr fn_bpf (AtomPtr node, AtomPtr env) {
 }
 AtomPtr fn_mix (AtomPtr node, AtomPtr env) {
 	std::vector<Real> out;
-	if (node->tail.size () % 2 != 0) error ("invalid number of arguments for mix", node);
+	if (node->tail.size () % 2 != 0) error ("[mix] invalid number of arguments", node);
 	for (unsigned i = 0; i < node->tail.size () / 2; ++i) {
 		int p = (int) type_check (node->tail.at (i * 2), NUMBER)->val;
 		AtomPtr l = type_check (node->tail.at (i * 2 + 1), LIST);
@@ -188,7 +188,7 @@ AtomPtr fn_conv (AtomPtr n, AtomPtr env) {
 	if (n->tail.size () == 4) mix = type_check(n->tail.at (3), NUMBER)->val;
     long irsamps = ir.size ();
     long sigsamps = sig.size ();
-    if (irsamps <= 0 || sigsamps <= 0) error ("invalid lengths for conv", n);
+    if (irsamps <= 0 || sigsamps <= 0) error ("[conv] invalid lengths", n);
     int max = irsamps > sigsamps ? irsamps : sigsamps;
     int N = next_pow2(max) << 1;
 	std::valarray<Real> fbuffir(2 * N);
