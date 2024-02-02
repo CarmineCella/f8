@@ -167,10 +167,10 @@ namespace f8 {
                         return accum.str ();
                     }
                 break;
-                case ';':
+                case '#':
                     while (c != '\n' && !input.eof ())  { c = input.get (); }
                 break;		            
-                case ' ': case '\t': case '\r':  case '\0': // case '\n':
+                case ' ': case '\t': case '\r':  case '\0':
                     if (accum.str ().size ()) return accum.str ();
                     else continue;
                 break;   
