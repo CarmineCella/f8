@@ -2,7 +2,7 @@
 //
 
 #include "f8.h"
-#include "svg_tools.h"
+#include "plotting/svg_tools.h"
 
 #include <iomanip>
 

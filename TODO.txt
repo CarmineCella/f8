@@ -10,7 +10,7 @@
 // ambienc
 // ambidec
 // musicxml output
-// osc (?)
 // examples
 // tests
 // improve error messages (ctx and/or linenum..)
+// review stdlib (add let, proc, .. from quile)

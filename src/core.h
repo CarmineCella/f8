@@ -528,6 +528,42 @@ namespace f8 {
         }	
         return dst;
     }
+    AtomPtr fn_lrange (AtomPtr params, AtomPtr env) {
+        AtomPtr l = type_check (params->tail.at (0), AtomType::LIST);
+        int i = (int) (type_check(params->tail.at (1), AtomType::NUMBER)->val);
+        int len = (int) (type_check(params->tail.at (2), AtomType::NUMBER)->val);
+        int end = i + len;
+        int stride = 1;
+        if (params->tail.size () == 4) {
+            stride  = (int) (type_check(params->tail.at (3), AtomType::NUMBER)->val);
+        }
+        if (i < 0) i = 0;
+        if (len < i) len = i;
+        if (end > l->tail.size ()) end = l->tail.size ();
+        AtomPtr nl = make_node();
+        for (int j = i; j < end; j += stride) nl->tail.push_back(l->tail.at (j));
+        return nl;
+    }
+    AtomPtr fn_lreplace (AtomPtr params, AtomPtr env) {
+        AtomPtr l = type_check (params->tail.at (0), AtomType::LIST);
+        AtomPtr r = type_check (params->tail.at (1), AtomType::LIST);
+        int i = (int) (type_check(params->tail.at (2), AtomType::NUMBER)->val);
+        int len = (int) (type_check(params->tail.at (3), AtomType::NUMBER)->val);
+        int stride = 1;
+        if (params->tail.size () == 5) {
+            stride  = (int) (type_check(params->tail.at (4), AtomType::NUMBER)->val);
+        }
+        if (i < 0 || len < 0 || stride < 1 || i + len  > l->tail.size () || (int) (len / stride) > r->tail.size ()) {
+            return make_node();
+        }
+        AtomPtr nl = make_node();
+        int p = 0;
+        for (int j = i; j < i + len; j += stride) {
+            l->tail.at(j) = r->tail.at (p);
+            ++p;
+        }
+        return r;
+    }    
     AtomPtr fn_eqp (AtomPtr node, AtomPtr env) {
         if (atom_eq (node->tail[0], node->tail[1])) return make_node ("#t");
         else return make_node ("#f");	
@@ -647,27 +683,27 @@ namespace f8 {
             return make_node(type_check (node->tail.at(1), STRING)->lexeme.size ());
         } else if (cmd == "find") {
             argnum_check (node, 3);
-            unsigned long pos = type_check (node->tail.at(2), STRING)->lexeme.find (
-                type_check (node->tail.at(1), STRING)->lexeme);
+            unsigned long pos = type_check (node->tail.at(1), STRING)->lexeme.find (
+                type_check (node->tail.at(2), STRING)->lexeme);
             if (pos == std::string::npos) return make_node ("#f");
             else return make_node (pos);		
         } else if (cmd == "range") {
             argnum_check (node, 4);
-            std::string tmp = type_check (node->tail.at(3), STRING)->lexeme.substr(
-                type_check (node->tail.at(1), NUMBER)->val, 
-                type_check (node->tail.at(2), NUMBER)->val);
+            std::string tmp = type_check (node->tail.at(1), STRING)->lexeme.substr(
+                type_check (node->tail.at(2), NUMBER)->val, 
+                type_check (node->tail.at(3), NUMBER)->val);
             return make_node ((std::string) "\"" + tmp);
         } else if (cmd == "replace") {
             argnum_check (node, 4);
-            std::string tmp = type_check (node->tail.at(3), STRING)->lexeme;
+            std::string tmp = type_check (node->tail.at(1), STRING)->lexeme;
             replace (tmp,
-                type_check (node->tail.at(1), STRING)->lexeme, 
-                type_check (node->tail.at(2), STRING)->lexeme);
+                type_check (node->tail.at(2), STRING)->lexeme, 
+                type_check (node->tail.at(3), STRING)->lexeme);
             return make_node((std::string) "\"" + tmp);
         } else if (cmd == "regex") {
             argnum_check (node, 3);
-            std::string str = type_check (node->tail.at(2), STRING)->lexeme;
-            std::regex r (type_check (node->tail.at(1), STRING)->lexeme);
+            std::string str = type_check (node->tail.at(1), STRING)->lexeme;
+            std::regex r (type_check (node->tail.at(2), STRING)->lexeme);
             std::smatch m; 
             std::regex_search(str, m, r);
             AtomPtr l = make_node();
@@ -704,9 +740,9 @@ namespace f8 {
     #ifdef __APPLE__
             name += "/.f8/" + type_check (params->tail.at(0), AtomType::STRING)->lexeme + ".so";
     #elif __linux
-            name += "/.f8/" + type_check (params->sequence.at(0), AtomType::STRING, params)->token + ".so";
+            name += "/.f8/" + type_check (params->tail.at(0), AtomType::STRING)->lexeme + ".so";
     #else
-            name += "/.f8/" + type_check (params->sequence.at(0), AtomType::STRING.params)->token + ".dll";
+            name += "/.f8/" + type_check (params->tail.at(0), AtomType::STRING)->lexeme + ".dll";
     #endif
         void* handle = dlopen (name.c_str (), RTLD_NOW);
         if (!handle) {
@@ -744,6 +780,8 @@ namespace f8 {
         add_builtin ("throw", &fn_throw, 1, env);
         add_builtin ("list", &fn_list, 0, env);
         add_builtin ("ljoin", &fn_ljoin, 1, env);
+        add_builtin ("lreplace", &fn_lreplace, 4, env);
+        add_builtin ("lrange", &fn_lrange, 3, env);
         add_builtin ("lget", &fn_lget, 1, env);
         add_builtin ("lhead", &fn_lhead, 1, env);
         add_builtin ("ltail", &fn_ltail, 1, env);

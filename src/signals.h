@@ -1,12 +1,12 @@
-// numeric.h
+// signals.h
 // 
 
-#ifndef NUMERIC_H
-#define NUMERIC_H 
+#ifndef SIGNALS_H
+#define SIGNALS_H 
 
-#include "BPF.h"
-#include "WavFile.h"
-#include "FFT.h"
+#include "signals/BPF.h"
+#include "signals/WavFile.h"
+#include "signals/FFT.h"
 
 #include "f8.h"
 
@@ -328,7 +328,7 @@ namespace f8 {
 		}
 		return make_node();
 	}
-	AtomPtr add_numeric (AtomPtr env) {
+	AtomPtr add_signals (AtomPtr env) {
 		add_builtin ("bpf", fn_bpf, 3, env);
 		add_builtin ("mix", fn_mix, 2, env);	
 		add_builtin ("gen", fn_gen, 2, env);

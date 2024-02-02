@@ -4,7 +4,7 @@
 #include "f8.h"
 #include <iostream>
 #include <stdexcept>
-#include <signal.h>
+#include <csignal>
 
 #define VER 0.2
 #define COPYRIGHT 2024

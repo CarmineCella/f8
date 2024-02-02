@@ -5,7 +5,7 @@
 
 #include "core.h"
 #include "system.h"
-#include "numeric.h"
+#include "signals.h"
 #include "plotting.h"
 
 namespace f8 {
@@ -18,7 +18,7 @@ namespace f8 {
         env->tail.push_back (make_entry (make_node ("tab"), make_node ("\t")));
         add_core (env);
         add_system (env);
-        add_numeric (env);
+        add_signals (env);
         add_plotting (env);
         return env;
     }

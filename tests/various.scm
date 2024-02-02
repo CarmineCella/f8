@@ -27,10 +27,10 @@ def (fib n) {
 
 print (fib 20)
 
-print "test    toast" (nl)
+print "test    toast" (nl) pluto
 if #t (print "true" (nl)) {
 	if #t {
-		print "hallo" (nl)
+		print "hallo" (nl) pippo
 		print "world" (nl)
 	}
 } 
