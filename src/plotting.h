@@ -20,7 +20,7 @@ namespace f8 {
 		Document* doc = new Document (name, Layout (dim, Layout::BottomLeft));
 		if (doc) {
 		return make_obj ("svgdoc", (void*) doc, ll);
-		} else return make_node("#f");
+		} else return make_node("false");
 	}
 	AtomPtr fn_polyline (AtomPtr node, AtomPtr env) {
 		AtomPtr p = type_check (node->tail.at(0), OBJECT);
@@ -31,9 +31,9 @@ namespace f8 {
 			Real height = doc->get_layout ().dimensions.height - 160;
 			
 			AtomPtr pl = node->tail.at (1);
-			if (!pl->tail.size ()) return make_node("#f");
+			if (!pl->tail.size ()) return make_node("false");
 			AtomPtr color = node->tail.at (2);
-			if (color->tail.size () != 3) return make_node("#f");
+			if (color->tail.size () != 3) return make_node("false");
 			
 			Real hstep = ((Real) width / pl->tail.size ());
 
@@ -55,7 +55,7 @@ namespace f8 {
 			*doc << chart;
 		}
 
-		return make_node("#t");
+		return make_node("true");
 	}
 	AtomPtr fn_scatter (AtomPtr node, AtomPtr env) {
 		AtomPtr p = node->tail.at(0);
@@ -66,12 +66,12 @@ namespace f8 {
 			Real height = doc->get_layout ().dimensions.height - 160;
 				
 			AtomPtr x = node->tail.at (1);
-			if (!x->tail.size ()) return make_node("#f");
+			if (!x->tail.size ()) return make_node("false");
 			AtomPtr y = node->tail.at (2);
-			if (!y->tail.size ()) return make_node("#f");	
-			if (x->tail.size () != y->tail.size ()) return make_node ("#f");	
+			if (!y->tail.size ()) return make_node("false");	
+			if (x->tail.size () != y->tail.size ()) return make_node ("false");	
 			AtomPtr color = node->tail.at (3);
-			if (color->tail.size () != 3) return make_node("#f");
+			if (color->tail.size () != 3) return make_node("false");
 
 			Real minx = x->tail.at (0)->val;
 			Real maxx = x->tail.at (0)->val;
@@ -99,11 +99,11 @@ namespace f8 {
 						color->tail.at (1)->val, color->tail.at (2)->val)));
 			}
 		}
-		return make_node("#t");
+		return make_node("true");
 	}
 	AtomPtr fn_grid (AtomPtr node, AtomPtr env) {
 		AtomPtr p = node->tail.at(0);
-		if (p->obj == 0) return make_node("#f");
+		if (p->obj == 0) return make_node("false");
 		if (p->lexeme == "svgdoc") {
 			Document* doc = (Document*) p->obj;
 			Real width = doc->get_layout ().dimensions.width - 60;
@@ -130,11 +130,11 @@ namespace f8 {
 			Line l2 (Point(30, height / 2 + 30), Point(30 + width, height / 2 + 30), Stroke (1, Color::Black));
 			*doc << l2;	
 		}
-		return  make_node("#t");
+		return  make_node("true");
 	}
 	AtomPtr fn_title (AtomPtr node, AtomPtr env) {
 		AtomPtr p = node->tail.at(0);
-		if (p->obj == 0) return make_node("#f");
+		if (p->obj == 0) return make_node("false");
 		if (p->lexeme == "svgdoc") {
 			Document* doc = (Document*) p->obj;
 			Real height = doc->get_layout ().dimensions.height - 160;
@@ -143,11 +143,11 @@ namespace f8 {
 			*doc << Text(Point(30, height + 100), tit,
 				Color::Black, Font(24, "Verdana"));
 		}
-		return make_node("#t");
+		return make_node("true");
 	}
 	AtomPtr fn_legend (AtomPtr node, AtomPtr env) {
 		AtomPtr p = node->tail.at(0);
-		if (p->obj == 0) return make_node("#f");
+		if (p->obj == 0) return make_node("false");
 		if (p->lexeme == "svgdoc") {
 			Document* doc = (Document*) p->obj;
 			Real width = doc->get_layout ().dimensions.width - 60;
@@ -160,9 +160,9 @@ namespace f8 {
 				if (i >= 5) {
 					x = 3 * width / 4; y = height + 100 - (10 * (i - 5));
 				}
-				if (i >= 10) return make_node("#f");
+				if (i >= 10) return make_node("false");
 
-				if (color->tail.size () != 3) return make_node("#f");
+				if (color->tail.size () != 3) return make_node("false");
 				*doc << Text (Point (x, y), 
 					item->lexeme, 
 					Color (color->tail.at (0)->val,
@@ -170,20 +170,20 @@ namespace f8 {
 					Font (8, "Verdana"));
 			}
 
-		} else return make_node("#f");
+		} else return make_node("false");
 
-		return make_node("#t");
+		return make_node("true");
 	}
 	AtomPtr fn_closesvg (AtomPtr node, AtomPtr env) {
 		AtomPtr p = node->tail.at(0);
-		if (p->obj == 0) return make_node("#f");
+		if (p->obj == 0) return make_node("false");
 		if (p->lexeme == "svgdoc") {
 			Document* doc = (Document*) p->obj;
 			doc->save ();
 			delete doc;
 			p->obj = 0;
-			return make_node("#t");
-		} else return make_node("#f");
+			return make_node("true");
+		} else return make_node("false");
 	}
 	AtomPtr add_plotting (AtomPtr env) {
 		add_builtin ("opensvg", fn_opensvg, 3, env);

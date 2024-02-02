@@ -348,17 +348,21 @@ namespace f8 {
         }
         if (car->action == &fn_if) {
             argnum_check (node, 3);
-            if (eval (node->tail.at (1), env)->lexeme != "#f") node = node->tail.at (2);
+            if (eval (node->tail.at (1), env)->lexeme != "false") node = node->tail.at (2);
             else {
-                if (node->tail.size () >= 4) node = node->tail.at (3);
-                else return make_node ();
+                if (node->tail.size () > 3) {
+                    argnum_check (node, 5);
+                    if (type_check (node->tail.at (3), SYMBOL)->lexeme == "else") {
+                        node = node->tail.at (4);
+                    } else error ("invalid if/else syntax in ", node);
+                } else return make_node ();
             }
             goto tail_call;
         }
         if (car->action == &fn_while) {
             argnum_check (node, 2);
             AtomPtr res = make_node ();
-            while (eval (node->tail.at (1), env)->lexeme != "#f") {
+            while (eval (node->tail.at (1), env)->lexeme != "false") {
                 res = eval (node->tail.at (2), env);
             }
             return res;
@@ -450,11 +454,11 @@ namespace f8 {
         } else if (cmd == "exists") {
             for (unsigned i = 1; i < b->tail.size (); ++i) {
                 AtomPtr key = b->tail.at (i);		
-                std::string ans = "#t";
+                std::string ans = "true";
                 try {
                     AtomPtr r = assoc (key, env);
                 } catch (...) {
-                    ans = "#f";
+                    ans = "false";
                 }    	
                 l->tail.push_back(make_node(ans));
             }
@@ -471,11 +475,11 @@ namespace f8 {
         for (std::deque<AtomPtr>::iterator it = env->tail.begin() + 1; it != env->tail.end (); ++it) {
             if (atom_eq ((*it)->tail.at (0), k)) {
                 env->tail.erase(it);
-                return "#t";
+                return "true";
             }
         }
         if (!is_nil(env->tail.at(0))) return unbind(k, env->tail.at(0));
-        return "#f";
+        return "false";
     }
     AtomPtr fn_unset (AtomPtr n, AtomPtr env) {
         return make_node(unbind(type_check (n->tail.at(0), SYMBOL), env));
@@ -565,8 +569,8 @@ namespace f8 {
         return r;
     }    
     AtomPtr fn_eqp (AtomPtr node, AtomPtr env) {
-        if (atom_eq (node->tail[0], node->tail[1])) return make_node ("#t");
-        else return make_node ("#f");	
+        if (atom_eq (node->tail[0], node->tail[1])) return make_node ("true");
+        else return make_node ("false");	
     }
     #define MAKE_BINOP(op,name, unit)									\
         AtomPtr name (AtomPtr n, AtomPtr env) {							\
@@ -589,10 +593,10 @@ namespace f8 {
 
     #define MAKE_CMPOP(f,o) \
         AtomPtr f (AtomPtr node, AtomPtr env) { \
-            std::string v = "#f"; \
+            std::string v = "false"; \
             for (unsigned i = 0; i < node->tail.size () - 1; ++i) { \
-                if (type_check (node->tail[i], NUMBER)->val o node->tail[i + 1]->val) v = "#t"; \
-                else return make_node ("#f"); \
+                if (type_check (node->tail[i], NUMBER)->val o node->tail[i + 1]->val) v = "true"; \
+                else return make_node ("false"); \
             } \
             return make_node (v); \
         } \
@@ -639,10 +643,10 @@ namespace f8 {
             case 2: // save
                 std::string fname = node->tail.at (0)->lexeme;
                 std::ofstream out (fname);
-                if (!out.good ()) return make_node ("#f");
+                if (!out.good ()) return make_node ("false");
                 out << tmp.str ();
                 out.close ();
-                return make_node("#t");
+                return make_node("true");
             break;	
         }
     }
@@ -655,14 +659,14 @@ namespace f8 {
             std::string longname = getenv("HOME");
             longname += "/.fb/" + name;
             in.open (longname.c_str());
-            if (!in.good ()) return make_node("#f");
+            if (!in.good ()) return make_node("false");
         }
         AtomPtr res = make_node ();
         while (!in.eof ()) {
             res = read_line (in);
             if (!is_nil (res)) eval (res, env);
         }
-        return make_node ("#t");
+        return make_node ("true");
     }
     AtomPtr fn_load (AtomPtr node, AtomPtr env) {
         return load (type_check (node->tail.at (0), STRING)->lexeme, env);
@@ -685,7 +689,7 @@ namespace f8 {
             argnum_check (node, 3);
             unsigned long pos = type_check (node->tail.at(1), STRING)->lexeme.find (
                 type_check (node->tail.at(2), STRING)->lexeme);
-            if (pos == std::string::npos) return make_node ("#f");
+            if (pos == std::string::npos) return make_node ("false");
             else return make_node (pos);		
         } else if (cmd == "range") {
             argnum_check (node, 4);
@@ -760,7 +764,7 @@ namespace f8 {
                 ++ct;
             }
         }
-        return ct == 0 ? make_node("#f") : make_node(ct); // number of proc imported
+        return ct == 0 ? make_node("false") : make_node(ct); // number of proc imported
     }
     AtomPtr add_core (AtomPtr env) {
         add_builtin ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
