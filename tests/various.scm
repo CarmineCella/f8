@@ -13,9 +13,24 @@
 if (> 0 3) (print "hallo") (print 30)
 
 if (< 0 3) {
-    print "hallo"
-    print "world"
+    print "hallo" (nl)
+    print "world" (nl)
 } {
     def a 30
-    print (+ a 30)
+    print (+ a 30) (nl)
 }
+
+def (fib n) {
+	def (fib-worker a b count) (if (<= count 1) b (fib-worker (+ a b) a (- count 1)))
+	fib-worker 1 1 n
+}
+
+print (fib 20)
+
+print "test    toast" (nl)
+if #t (print "true" (nl)) {
+	if #t {
+		print "hallo" (nl)
+		print "world" (nl)
+	}
+} 

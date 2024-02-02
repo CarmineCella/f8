@@ -70,14 +70,34 @@ struct Atom {
     int minargs;
     void* obj;
 };
+
+// helpers
 AtomPtr make_obj (const std::string& otype, void* ptr, AtomPtr cb) {
     AtomPtr o = make_node (ptr);
     o->lexeme = otype;
     o->tail.push_back (cb);
     return o;
 }
-
-// helpers
+bool atom_eq (AtomPtr x, AtomPtr y) {
+	if (x->type != y->type) { return 0; }
+	switch (x->type) {
+    case NUMBER: return (x->val == y->val);
+    case SYMBOL: case STRING: return (x->lexeme == y->lexeme);
+    case LIST: {
+		if (x->tail.size () != y->tail.size ()) { return 0; }
+		for (unsigned i = 0; i < x->tail.size (); ++i) {
+			if (!atom_eq (x->tail[i], y->tail[i])) { return 0; }
+		}
+		return 1;
+	}
+    case PROCEDURE: return (x->action == y->action);
+	case LAMBDA: return (atom_eq (x->tail[0], y->tail[0]) 
+		&& atom_eq (x->tail[1], y->tail[1]));
+    case OBJECT: return (x->lexeme == y->lexeme && x->obj == y->obj);        
+	default:
+		return 0;
+	}
+}
 bool is_nil (AtomPtr node) {
     return node == nullptr || (node->type == LIST && node->tail.size () == 0);
 }
@@ -141,7 +161,7 @@ std::string next (std::istream& input) {
 	while (!input.eof ()) {
 		char c = input.get ();
 		switch (c) { 			
-			case '(': case ')': case '\'': case '{': case '}':
+			case '(': case ')': case '\'': case '{': case '}': case '\n':
  				if (accum.str ().size ()) {
 					input.unget();
 					return accum.str ();
@@ -153,7 +173,7 @@ std::string next (std::istream& input) {
 			case ';':
 				while (c != '\n' && !input.eof ())  { c = input.get (); }
 			break;		            
-			case ' ': case '\t': case '\r':  case '\n':
+			case ' ': case '\t': case '\r':  case '\0': // case '\n':
 				if (accum.str ().size ()) return accum.str ();
 				else continue;
 			break;   
@@ -183,20 +203,34 @@ bool is_number (std::string token) {
 bool is_string (const std::string& s) {
 	return s.find ("\"") != std::string::npos;
 }
+AtomPtr read_line (std::istream& in);
 AtomPtr read (std::istream& in) {
     std::string token = next (in);
-    if (token == "(" || token == "{") {
-        std::string terminator = (token == "(" ? ")" : "}");
+    if (token == "(") {
         AtomPtr l = make_node();
-        if (terminator == "}") l->tail.push_back (make_node("do"));
         AtomPtr a = make_node ();
         while (!in.eof ()) {
             a = read (in);
-            if (a->lexeme == terminator && a->type != STRING) break;
+            if (a->lexeme == "\n" && a->type != STRING) continue;
+            if (a->lexeme == ")" && a->type != STRING) break;
             l->tail.push_back (a);
         }
-        if (a->lexeme != terminator) error ("invalid syntax; missing terminator", l);
         return l;
+    } else if (token == "{") {
+        AtomPtr l = make_node();
+        l->tail.push_back (make_node ("do"));
+        AtomPtr a = make_node ();
+        while (!in.eof ()) {
+            a = read_line (in);
+            if (a->tail.size () && atom_eq (a->tail.at (a->tail.size () - 1),
+                make_node ("}"))) {
+                a->tail.pop_back ();
+                if (!is_nil (a)) l->tail.push_back (a);
+                break;
+            }
+            if (!is_nil (a)) l->tail.push_back (a);
+        }
+        return l;  
     } else if (is_number (token)) {
         return make_node (atof (token.c_str ()));
     } else if (token == "'") {
@@ -208,6 +242,23 @@ AtomPtr read (std::istream& in) {
         if (token.size ()) return make_node (token);
         else return make_node ();
     }
+}
+AtomPtr read_line (std::istream& in) {
+    AtomPtr l = make_node ();
+    while (!in.eof ()) {
+        AtomPtr a = read (in);
+        if (in.eof ()) break;
+        if (atom_eq (a, make_node ("}"))) {
+            l->tail.push_back (a);
+            break;
+        }
+        if (atom_eq (a, make_node ("\n"))) {
+            if (l->tail.size () == 0) continue;
+            else break;        
+        }
+        l->tail.push_back (a);
+    }
+    return l;
 }
 
 // evaluation
@@ -223,8 +274,6 @@ AtomPtr assoc (AtomPtr node, AtomPtr env) {
         if (s->tail.at (0)->lexeme == node->lexeme) return s->tail.at (1);
     }
     if (!is_nil (env->tail.at (0))) return assoc (node, env->tail.at (0));
-
-    error ("unbound identifier", node);
     return make_node (); // not reached
 }
 AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env, bool recurse) {
@@ -251,26 +300,6 @@ void browse_env (AtomPtr env, AtomPtr output) {
         output->tail.push_back (s->tail.at (0));
     }
 }
-bool atom_eq (AtomPtr x, AtomPtr y) {
-	if (x->type != y->type) { return 0; }
-	switch (x->type) {
-    case NUMBER: return (x->val == y->val);
-    case SYMBOL: case STRING: return (x->lexeme == y->lexeme);
-    case LIST: {
-		if (x->tail.size () != y->tail.size ()) { return 0; }
-		for (unsigned i = 0; i < x->tail.size (); ++i) {
-			if (!atom_eq (x->tail[i], y->tail[i])) { return 0; }
-		}
-		return 1;
-	}
-    case PROCEDURE: return (x->action == y->action);
-	case LAMBDA: return (atom_eq (x->tail[0], y->tail[0]) 
-		&& atom_eq (x->tail[1], y->tail[1]));
-    case OBJECT: return (x->lexeme == y->lexeme && x->obj == y->obj);        
-	default:
-		return 0;
-	}
-}
 AtomPtr fn_quote (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_def (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_set (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
@@ -284,7 +313,7 @@ AtomPtr fn_apply (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr eval (AtomPtr node, AtomPtr env) {
 tail_call:
     if (is_nil (node)) return make_node ();
-    if (node->type == SYMBOL) {
+    if (node->type == SYMBOL) { // && node->lexeme.size ()) {
         return assoc (node, env);
     }
     if (node->type != LIST) return node;
@@ -583,11 +612,8 @@ AtomPtr fn_format (AtomPtr node, AtomPtr env) {
 		break;	
 	}
 }
-AtomPtr fn_nl (AtomPtr node, AtomPtr env) {
-	return make_node ("\"\n");
-}
 AtomPtr fn_read (AtomPtr node, AtomPtr env) {
-	return read (std::cin);
+	return read_line (std::cin);
 }
 AtomPtr load (const std::string& name, AtomPtr env) {
 	std::ifstream in (name.c_str ());
@@ -599,9 +625,10 @@ AtomPtr load (const std::string& name, AtomPtr env) {
 	}
     AtomPtr res = make_node ();
 	while (!in.eof ()) {
-		res = eval (read (in), env);
+        res = read_line (in);
+		if (!is_nil (res)) eval (res, env);
 	}
-	return res;
+	return make_node ("#t");
 }
 AtomPtr fn_load (AtomPtr node, AtomPtr env) {
 	return load (type_check (node->tail.at (0), STRING)->lexeme, env);
@@ -735,12 +762,11 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("exp", &fn_exp, 1, env);
     add_builtin ("abs", &fn_abs, 1, env);
     add_builtin ("floor", &fn_floor, 1, env);
-    add_builtin ("print", &fn_format<0>, 1, env);
-    add_builtin ("nl", &fn_nl, 0, env);
-    add_builtin ("read", &fn_read, 0, env);
-    add_builtin ("load", &fn_load, 1, env);
+    add_builtin ("puts", &fn_format<0>, 1, env);
+    add_builtin ("gets", &fn_read, 0, env);
+    add_builtin ("source", &fn_load, 1, env);
     add_builtin ("save", &fn_format<2>, 2, env);
-    add_builtin ("str", &fn_format<1>, 1, env); 
+    add_builtin ("tostr", &fn_format<1>, 1, env); 
     add_builtin ("strlen", &fn_string<0>, 1, env);
     add_builtin ("strfind", &fn_string<1>, 2, env);
     add_builtin ("strrange", &fn_string<2>, 3, env);
@@ -758,7 +784,8 @@ void repl (AtomPtr env, std::istream& in, std::ostream& out) {
 	while (true){
 		out << ">> ";
 		try {
-			print (eval (read (*current), env), out);
+			print (eval (read_line (*current), env), out);
+            // print (read_line (*current), out);
 			out << std::endl;
 		} catch (std::exception& e) {
 			out << RED << "error: " << e.what () << RESET << std::endl;
