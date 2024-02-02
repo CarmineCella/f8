@@ -162,8 +162,8 @@ AtomPtr fn_udpsend (AtomPtr n, AtomPtr env) {
  // I/O  -----------------------------------------------------------------------
 AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
 	std::string name = type_check (node->tail.at(0), STRING)->lexeme;
-	std::string direction = type_check (node->tail.at(1), STRING)->lexeme;
-	std::string mode = type_check (node->tail.at(2), STRING)->lexeme;
+	std::string direction = type_check (node->tail.at(1), SYMBOL)->lexeme;
+	std::string mode = type_check (node->tail.at(2), SYMBOL)->lexeme;
 
 	bool input = false;
 	bool binary = false;

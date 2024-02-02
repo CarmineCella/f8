@@ -4,20 +4,46 @@
 #include "f8.h"
 #include <iostream>
 #include <stdexcept>
+#include <signal.h>
 
 #define VER 0.2
 #define COPYRIGHT 2024
 
 using namespace std;
 
+AtomPtr environment = make_env (); // global to support interrupt
+
+const std::string currentDateTime () {
+	time_t     now = time (0);
+	struct tm  tstruct;
+	char       buf[80];
+	tstruct = *localtime (&now);
+	strftime (buf, sizeof(buf), "%Y-%m-%d, %X", &tstruct);
+    return buf;
+}
+
+void sighandler (int sig) {
+    cout << endl << endl;
+    cout << "*** interrupted by the user ***" << endl << endl;
+	cout << "session restarted at: " << currentDateTime () << endl << endl;
+	environment = make_env ();
+	cout << ">> "; cout.flush ();
+}
+
 int main (int argc, char* argv[]) {
-	AtomPtr environment = make_env ();
+	signal(SIGABRT, &sighandler);
+	signal(SIGTERM, &sighandler);
+	signal(SIGINT, &sighandler);
+
 	try {
 		if (argc == 1) {
 			cout << BOLDWHITE << "[f8 \"fate\", ver. " << VER  << "]"
 				<< RESET << endl << endl;
 			cout << "(c) " << COPYRIGHT  << ", www.carminecella.com" << endl << endl;
-			repl (environment,  cin, cout);	
+			while (true) {
+				repl (environment,  cin, cout);	
+			}
+			
 		}
 		else {
 			for (unsigned int i = 1; i < argc; ++i) {

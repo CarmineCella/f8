@@ -13,10 +13,6 @@
 #include <fstream>
 #include <valarray>
 #include <dlfcn.h>
-#if defined (ENABLE_READLINE)
-	#include <readline/readline.h>
-	#include <readline/history.h>
-#endif
 
 #define BOLDWHITE   "\033[1m\033[37m"
 #define RED     	"\033[31m" 
@@ -274,6 +270,7 @@ AtomPtr assoc (AtomPtr node, AtomPtr env) {
         if (s->tail.at (0)->lexeme == node->lexeme) return s->tail.at (1);
     }
     if (!is_nil (env->tail.at (0))) return assoc (node, env->tail.at (0));
+    error ("unbound identifier", node);
     return make_node (); // not reached
 }
 AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env, bool recurse) {
@@ -301,8 +298,9 @@ void browse_env (AtomPtr env, AtomPtr output) {
     }
 }
 AtomPtr fn_quote (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
-AtomPtr fn_def (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_set (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+AtomPtr fn_reset (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+AtomPtr fn_proc (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_if (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 AtomPtr fn_while (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
 template <bool dynamic> AtomPtr fn_lambda (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
@@ -314,7 +312,7 @@ AtomPtr eval (AtomPtr node, AtomPtr env) {
 tail_call:
     if (is_nil (node)) return make_node ();
     if (node->type == SYMBOL) { // && node->lexeme.size ()) {
-        return assoc (node, env);
+        return assoc (node, env); 
     }
     if (node->type != LIST) return node;
     // composite type
@@ -323,25 +321,24 @@ tail_call:
         argnum_check (node, 2);
         return node->tail.at (1);
     }
-    if (car->action == &fn_def) {
-        argnum_check (node, 3);
-        if (node->tail.at (1)->type == SYMBOL) {
-            return extend (node->tail.at (1), eval (node->tail.at (2), env), env, false); // not recursive
-        } else if (node->tail.at (1)->type == LIST) {
-            argnum_check (node->tail.at (1), 1);
-            AtomPtr name = node->tail.at (1)->tail.at (0);
-            AtomPtr args = make_node ();
-            for (unsigned i = 1; i < node->tail.at (1)->tail.size (); ++i) {
-                args->tail.push_back (type_check (node->tail.at (1)->tail.at (i), SYMBOL));
-            }
-            AtomPtr body = node->tail.at (2);
-            return extend (name, make_node (std::deque<AtomPtr> ({args, body, env})), env, false);
-        }
-    }
     if (car->action == &fn_set) {
+        argnum_check (node, 3);
+        return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, false); // not recursive
+    }
+    if (car->action == &fn_reset) {
         argnum_check (node, 3);
         return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, true); // recursive
     }        
+    if (car->action == &fn_proc) {
+        argnum_check (type_check (node->tail.at (1), LIST), 1);
+        AtomPtr name = node->tail.at (1)->tail.at (0);
+        AtomPtr args = make_node ();
+        for (unsigned i = 1; i < node->tail.at (1)->tail.size (); ++i) {
+            args->tail.push_back (type_check (node->tail.at (1)->tail.at (i), SYMBOL));
+        }
+        AtomPtr body = node->tail.at (2);
+        return extend (name, make_node (std::deque<AtomPtr> ({args, body, env})), env, false);
+    }
     if (car->action == &fn_lambda<0> || car->action == &fn_lambda<1>) {
         argnum_check (node, 3);
         AtomPtr ss =  make_node (std::deque<AtomPtr> ({type_check (node->tail.at (1), LIST), 
@@ -479,7 +476,7 @@ std::string unbind (AtomPtr k, AtomPtr env) {
 	if (!is_nil(env->tail.at(0))) return unbind(k, env->tail.at(0));
 	return "#f";
 }
-AtomPtr fn_unbind (AtomPtr n, AtomPtr env) {
+AtomPtr fn_unset (AtomPtr n, AtomPtr env) {
 	return make_node(unbind(type_check (n->tail.at(0), SYMBOL), env));
 }
 AtomPtr fn_throw (AtomPtr node, AtomPtr env) {
@@ -641,30 +638,34 @@ void replace (std::string &s, std::string from, std::string to) {
         idx = next + to.size ();
     } 
 }
-template <int cmd>
 AtomPtr fn_string (AtomPtr node, AtomPtr env) {
+    std::string cmd = type_check (node->tail.at (0), SYMBOL)->lexeme;
 	AtomPtr l = make_node();
 	std::regex r;
-	if (cmd == 0) { // length
-		return make_node(type_check (node->tail.at(0), STRING)->lexeme.size ());
-	} else if (cmd == 1) { // find
-		unsigned long pos = type_check (node->tail.at(0), STRING)->lexeme.find (
+	if (cmd == "length") { // argnum checked by default
+		return make_node(type_check (node->tail.at(1), STRING)->lexeme.size ());
+	} else if (cmd == "find") {
+        argnum_check (node, 3);
+		unsigned long pos = type_check (node->tail.at(2), STRING)->lexeme.find (
 			type_check (node->tail.at(1), STRING)->lexeme);
-		if (pos == std::string::npos) return make_node (-1);
+		if (pos == std::string::npos) return make_node ("#f");
 		else return make_node (pos);		
-    } else if (cmd == 2) { // range
-		std::string tmp = type_check (node->tail.at(0), STRING)->lexeme.substr(
+    } else if (cmd == "range") {
+        argnum_check (node, 4);
+		std::string tmp = type_check (node->tail.at(3), STRING)->lexeme.substr(
 			type_check (node->tail.at(1), NUMBER)->val, 
 			type_check (node->tail.at(2), NUMBER)->val);
 		return make_node ((std::string) "\"" + tmp);
-	} else if (cmd == 3) { // replace
-		std::string tmp = type_check (node->tail.at(0), STRING)->lexeme;
+	} else if (cmd == "replace") {
+        argnum_check (node, 4);
+		std::string tmp = type_check (node->tail.at(3), STRING)->lexeme;
 		replace (tmp,
 			type_check (node->tail.at(1), STRING)->lexeme, 
 			type_check (node->tail.at(2), STRING)->lexeme);
 		return make_node((std::string) "\"" + tmp);
-	} else if (cmd == 4) { // regex
-		std::string str = type_check (node->tail.at(0), STRING)->lexeme;
+	} else if (cmd == "regex") {
+        argnum_check (node, 3);
+		std::string str = type_check (node->tail.at(2), STRING)->lexeme;
 		std::regex r (type_check (node->tail.at(1), STRING)->lexeme);
 	    std::smatch m; 
 	    std::regex_search(str, m, r);
@@ -726,8 +727,9 @@ AtomPtr fn_import (AtomPtr params, AtomPtr env) {
 }
 AtomPtr add_core (AtomPtr env) {
     add_builtin ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
-    add_builtin ("def", &fn_def, -1, env);
     add_builtin ("set", &fn_set, -1, env);
+    add_builtin ("!", &fn_reset, -1, env);
+    add_builtin ("proc", &fn_proc, -1, env);
     add_builtin ("if", &fn_if, -1, env);
     add_builtin ("while", &fn_while, -1, env);
     add_builtin ("\\", &fn_lambda<0>, -1, env);
@@ -737,7 +739,7 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("eval", &fn_eval, 1, env);
     add_builtin ("->", &fn_apply, 2, env);
     add_builtin ("info", &fn_info, 1, env);
-    add_builtin ("unbind", &fn_unbind, 1, env);
+    add_builtin ("unset", &fn_unset, 1, env);
     add_builtin ("throw", &fn_throw, 1, env);
     add_builtin ("list", &fn_list, 0, env);
     add_builtin ("ljoin", &fn_ljoin, 1, env);
@@ -767,11 +769,7 @@ AtomPtr add_core (AtomPtr env) {
     add_builtin ("source", &fn_load, 1, env);
     add_builtin ("save", &fn_format<2>, 2, env);
     add_builtin ("tostr", &fn_format<1>, 1, env); 
-    add_builtin ("strlen", &fn_string<0>, 1, env);
-    add_builtin ("strfind", &fn_string<1>, 2, env);
-    add_builtin ("strrange", &fn_string<2>, 3, env);
-    add_builtin ("strrepl", &fn_string<3>, 3, env);
-    add_builtin ("regex", &fn_string<4>, 2, env);
+    add_builtin ("string", &fn_string, 2, env);
     add_builtin ("exec", &fn_exec, 1, env);
     add_builtin ("exit", &fn_exit, 0, env);
     add_builtin ("import", &fn_import, 1, env);

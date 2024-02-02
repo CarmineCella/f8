@@ -226,7 +226,7 @@ AtomPtr fn_noise (AtomPtr n, AtomPtr env) {
 // I/O  -----------------------------------------------------------------------
  AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
 	std::string name = type_check (node->tail.at(0), AtomType::STRING)->lexeme;
-	std::string direction = type_check (node->tail.at(1), AtomType::STRING)->lexeme;
+	std::string direction = type_check (node->tail.at(1), AtomType::SYMBOL)->lexeme;
 	int sr = 44100; 
 	int ch = 1; 
 
