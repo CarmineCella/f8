@@ -11,7 +11,7 @@
 
 using namespace std;
 
-AtomPtr environment = make_env (); // global to support interrupt
+f8::AtomPtr environment = f8::make_env (); // global to support interrupt
 
 const std::string currentDateTime () {
 	time_t     now = time (0);
@@ -26,7 +26,7 @@ void sighandler (int sig) {
     cout << endl << endl;
     cout << "*** interrupted by the user ***" << endl << endl;
 	cout << "session restarted at: " << currentDateTime () << endl << endl;
-	environment = make_env ();
+	environment = f8::make_env ();
 	cout << ">> "; cout.flush ();
 }
 
@@ -50,8 +50,8 @@ int main (int argc, char* argv[]) {
 				load (argv[i], environment);
 			}
 		}
-	} catch (AtomPtr& e) {
-		cout << RED << "exception: "; print (e, cout) << RESET << std::endl;
+	} catch (f8::AtomPtr& e) {
+		cout << RED << "exception: "; f8::print (e, cout) << RESET << std::endl;
 	} catch (exception& e) {
 		cout << RED << "error: " << e.what () << RESET << std::endl;
 	} catch (...) {
