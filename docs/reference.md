@@ -1,7 +1,6 @@
  # The f8 (fate) reference manual<br>
  ## Overview
- This manual is a of the *f8* runtime system. It is intended to be a reference document for programmers. It does not describe how to run *f8* or how to interact with it.<
- This chapter summarizes the semantics of *f8*, and explains the syntactic and lexical conventions of the language. Subsequent chapters describe special forms, built-in operators and the standard library.<br>
+ This manual is a of the *f8* runtime system. It is intended to be a reference document for programmers. It does not describe how to run *f8* or how to interact with it.
  
  These are the significant semantic characteristics of the *f8* language:
  - Types are latent: *f8* associates types with values (or objects) rather than with variables.

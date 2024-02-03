@@ -1,6 +1,11 @@
 # f8 - standard library
 #
 
+# macros
+dynamic (let b) { 
+	\ () (eval $b)
+}
+
 # logical operators
 proc (not x) (if x false else true)
 proc (and x y)(if (if x true else false) (if y true else false) else false)

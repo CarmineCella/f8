@@ -26,13 +26,15 @@ void parse (istream& in, ostream& out) {
         if (t == "///~") {  
             string l;
             getline (in, l);
-            cout << "got " << l << endl;
             out << l << endl;
         }
     }
 }
 
 int main (int argc, char* argv[]) {
+    cout << "[makeref, ver. " << VERSION  << "]" << endl << endl;
+    cout << "(c) " << COPYRIGHT  << ", www.carminecella.com" << endl << endl;
+
 	try {
         if (argc < 2) {
             throw runtime_error ("syntax is 'makedoc out.md file1 file2 ...");
@@ -41,6 +43,7 @@ int main (int argc, char* argv[]) {
         ofstream out (argv[1]);
         if (!out.good ()) throw runtime_error ("cannot create output file");
 
+        cout << "documenting code..."; cout.flush ();
         for (unsigned int i = 2; i < argc; ++i) {
             ifstream in (argv[i]);
             if (!in.good ()) {
@@ -50,7 +53,7 @@ int main (int argc, char* argv[]) {
             }
         }
 
-        cout << "documentation written to " << argv[1] << endl;
+        cout << "saved to " << argv[1] << endl;
 	} catch (exception& e) {
 		cout << "error: " << e.what () << std::endl;
 	} catch (...) {

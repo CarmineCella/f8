@@ -306,13 +306,16 @@ namespace f8 {
     
     AtomPtr fn_quote (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_set (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+    AtomPtr fn_updef (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_reset (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_proc (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+    AtomPtr fn_dynamic (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_if (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_while (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     template <bool dynamic> AtomPtr fn_lambda (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_do (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_catch (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+    AtomPtr fn_break (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_eval (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_apply (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr eval (AtomPtr node, AtomPtr env) {
@@ -328,15 +331,20 @@ namespace f8 {
             argnum_check (node, 2);
             return node->tail.at (1);
         }
-        if (car->action == &fn_set) {
+        if (car->action == &fn_set || car->action == &fn_updef) {
             argnum_check (node, 3);
-            return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, false); // not recursive
+            AtomPtr cenv = env;
+            if (car->action == &fn_updef) {
+                cenv = env->tail.at (0);
+                if (is_nil (cenv)) error ("[updef] parent enviroment undefined", node);
+            }
+            return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), cenv, false); // not recursive
         }
         if (car->action == &fn_reset) {
             argnum_check (node, 3);
             return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), env, true); // recursive
         }        
-        if (car->action == &fn_proc) {
+        if (car->action == &fn_proc || car->action == &fn_dynamic) {
             argnum_check (type_check (node->tail.at (1), LIST), 1);
             AtomPtr name = node->tail.at (1)->tail.at (0);
             AtomPtr args = make_node ();
@@ -344,7 +352,7 @@ namespace f8 {
                 args->tail.push_back (type_check (node->tail.at (1)->tail.at (i), SYMBOL));
             }
             AtomPtr body = node->tail.at (2);
-            return extend (name, make_node (std::deque<AtomPtr> ({args, body, env})), env, false);
+            return extend (name, make_node (std::deque<AtomPtr> ({args, body, car->action == &fn_dynamic ? make_node () : env})), env, false);
         }
         if (car->action == &fn_lambda<0> || car->action == &fn_lambda<1>) {
             argnum_check (node, 3);
@@ -368,8 +376,12 @@ namespace f8 {
         if (car->action == &fn_while) {
             argnum_check (node, 2);
             AtomPtr res = make_node ();
-            while (eval (node->tail.at (1), env)->lexeme != "false") {
-                res = eval (node->tail.at (2), env);
+            try {
+                while (eval (node->tail.at (1), env)->lexeme != "false") {
+                    res = eval (node->tail.at (2), env);
+                }
+            } catch (Op& e) {
+                if (e == &fn_break) return res;
             }
             return res;
         }    
@@ -388,6 +400,7 @@ namespace f8 {
         if (car->action == &fn_do) {
             argnum_check (node, 2);
             AtomPtr res = make_node ();
+
             for (unsigned i = 1; i < node->tail.size () - 1; ++i) {
                 res = eval (node->tail.at (i), env);
             }
@@ -403,7 +416,10 @@ namespace f8 {
         }
         AtomPtr exec = eval (car, env);
         if (exec->type == OPERATOR) {
-            argnum_check (params, exec->minargs);        
+            argnum_check (params, exec->minargs);      
+            if (exec->action == &fn_break) {
+			   throw &fn_break;
+		    }  
             if (exec->action == &fn_eval) {
                 node = params->tail.at (0);
                 goto tail_call;
@@ -779,14 +795,17 @@ namespace f8 {
         env->tail.push_back (make_entry (make_node ("tab"), make_node ("\t")));        
         add_operator ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
         add_operator ("set", &fn_set, -1, env);
+        add_operator ("updef", &fn_updef, -1, env);
         add_operator ("!", &fn_reset, -1, env);
         add_operator ("proc", &fn_proc, -1, env);
+        add_operator ("dynamic", &fn_dynamic, -1, env);
         add_operator ("if", &fn_if, -1, env);
         add_operator ("while", &fn_while, -1, env);
         add_operator ("\\", &fn_lambda<0>, -1, env);
         add_operator ("@", &fn_lambda<1>, -1, env);
         add_operator ("do", &fn_do, -1, env);
         add_operator ("catch", &fn_catch, -1, env);
+        add_operator ("break", &fn_break, -1, env);
         add_operator ("eval", &fn_eval, 1, env);
         add_operator ("->", &fn_apply, 2, env);
         add_operator ("info", &fn_info, 1, env);
