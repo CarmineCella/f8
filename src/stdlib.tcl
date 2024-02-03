@@ -1,9 +1,6 @@
 # f8 - standard library
 #
 
-# macros
-macro (let b) (\ () (eval b))
-
 # logical operators
 proc (not x) (if x false else true)
 proc (and x y)(if (if x true else false) (if y true else false) else false)
@@ -91,16 +88,6 @@ proc (dup n x) {
 }
 
 # miscellaneous
-proc (case x) {
-	if (== & ()) {
-   		throw "case not found" x
-    	if (== x (first (first &)))	{
-			second (first &)
-		} else {
-			unpack case (ljoin (coll) x (ltail &))
-		}
-	}
-}
 proc (test x y)(if (eq (ljoin (list) (eval x)) y) (puts x  " passed" nl) else (throw "*** FAILED ***" x))
 
 # arithmetics
