@@ -1,13 +1,13 @@
 # F8 (fate)
 
-The *f8* scripting language is a hybrid dialect of Lisp, Scheme and TCL: 
+The *F8 (fate)* scripting language is a hybrid dialect of Lisp, Scheme and TCL: 
 
 ![Genealogy](docs/f8_anchestors.png)
 
 It has been designed to be small, easy to expand and easy to embed in host applications. 
-The core of the language is made of a single [C++ header](src/core.h) (~ 1000 loc in total) and a  [small library](src/stdlib.tcl) written using *Quile* itself.
+The core of the language is made of a single [C++ header](src/core.h) (~ 1000 loc in total) and a  [small library](src/stdlib.tcl) written using *F8* itself.
 
-*Quile* includes several neat features among which:
+*F8* includes several neat features, among which:
 
 * homoiconicity and introspection
 * tail recursion
