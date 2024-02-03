@@ -1,4 +1,4 @@
-# F8 (fate)
+# f8 (fate)
 
 
 ### Introduction
