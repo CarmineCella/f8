@@ -6,12 +6,10 @@
 #include <stdexcept>
 #include <csignal>
 
-#define VER 0.2
+#define VER 0.5
 #define COPYRIGHT 2024
 
 using namespace std;
-
-f8::AtomPtr environment = f8::make_env (); // global to support interrupt
 
 const std::string currentDateTime () {
 	time_t     now = time (0);
@@ -25,27 +23,26 @@ const std::string currentDateTime () {
 void sighandler (int sig) {
     cout << endl << endl;
     cout << "*** interrupted by the user ***" << endl << endl;
-	cout << "session restarted at: " << currentDateTime () << endl << endl;
-	environment = f8::make_env ();
-	cout << ">> "; cout.flush ();
+	cout << "session closed at: " << currentDateTime () << endl << endl;
+	exit (-1);
 }
 
 int main (int argc, char* argv[]) {
 	signal(SIGABRT, &sighandler);
 	signal(SIGTERM, &sighandler);
 	signal(SIGINT, &sighandler);
+	srand (time (NULL));
 
 	try {
 		if (argc == 1) {
 			cout << BOLDWHITE << "[f8 \"fate\", ver. " << VER  << "]"
 				<< RESET << endl << endl;
 			cout << "(c) " << COPYRIGHT  << ", www.carminecella.com" << endl << endl;
-			while (true) {
-				repl (environment,  cin, cout);	
-			}
-			
+			f8::AtomPtr environment = f8::make_env ();
+			repl (environment,  cin, cout);				
 		}
 		else {
+			f8::AtomPtr environment = f8::make_env ();
 			for (unsigned int i = 1; i < argc; ++i) {
 				load (argv[i], environment);
 			}

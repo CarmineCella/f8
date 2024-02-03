@@ -657,7 +657,7 @@ namespace f8 {
         std::ifstream in (name.c_str ());
         if (!in.good ()) {
             std::string longname = getenv("HOME");
-            longname += "/.fb/" + name;
+            longname += "/.f8/" + name;
             in.open (longname.c_str());
             if (!in.good ()) return make_node("false");
         }
