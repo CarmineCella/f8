@@ -30,11 +30,11 @@ For an overview on the language, please see [this example](examples/overview.tcl
 * [sound decomposition](examples/reconstruction.tcl)
 * [plotting](examples/plot1.tcl)
 
-It also comes with a system library that provides several functionalities, including [threading and sockets](examples/threads_sockets.tcl). Explore the [examples]/examples) folder for more information.
+It also comes with a system library that provides several functionalities, including [threading and sockets](examples/threads_sockets.tcl).
 
 ### Building
 
-To compile, from root folder type:
+To compile, from *root* folder type:
 
 `mkdir build`
 
