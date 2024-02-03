@@ -25,7 +25,9 @@ It can [bootstrap](examples/repl.tcl) itself. For an overview on the language, p
 
 * [fft/ifft](examples/cross_synth.tcl)
 * [convolution](examples/reverb.tcl)
-* [sound decomposition](examples/reconstruction.tcl)
+* sound decomposition
+* clustering and classification
+* basic neural networks
 * [plotting](examples/plot1.tcl)
 
 It also comes with a system library that provides several functionalities, including [threading and sockets](examples/threads_sockets.tcl).
