@@ -773,10 +773,14 @@ namespace f8 {
         return ct == 0 ? make_node("false") : make_node(ct); // number of operator imported
     }
     AtomPtr add_core (AtomPtr env) {
+        env->tail.push_back (make_entry (make_node ("true"), make_node ("true")));
+        env->tail.push_back (make_entry (make_node ("false"), make_node ("false")));
+        env->tail.push_back (make_entry (make_node ("nl"), make_node ("\n")));
+        env->tail.push_back (make_entry (make_node ("tab"), make_node ("\t")));        
         add_operator ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
         add_operator ("set", &fn_set, -1, env);
         add_operator ("!", &fn_reset, -1, env);
-        add_operator ("operator", &fn_proc, -1, env);
+        add_operator ("proc", &fn_proc, -1, env);
         add_operator ("if", &fn_if, -1, env);
         add_operator ("while", &fn_while, -1, env);
         add_operator ("\\", &fn_lambda<0>, -1, env);
