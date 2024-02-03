@@ -257,21 +257,21 @@ namespace f8 {
         return make_node ("true"); //read (*in);    
     }
     AtomPtr add_system (AtomPtr env) {
-        add_builtin ("ticks", &fn_ticks, 0, env);
-        add_builtin ("thread", &fn_thread, 1, env);
-        add_builtin ("attach", &fn_attach, 1, env);
-        add_builtin ("schedule", &fn_schedule, 3, env);
-        add_builtin ("dirlist", &fn_dirlist, 1, env);
-        add_builtin ("filestat", &fn_filestat, 1, env);
-        add_builtin ("getvar", &fn_getvar, 1, env);
-        add_builtin ("udpsend", &fn_udpsend, 3, env);
-        add_builtin ("udpdecv", &fn_udprecv, 2, env);
-        add_builtin ("openstream", &fn_openstream, 3, env);
-        add_builtin ("closestream", &fn_closestream, 1, env);
-        add_builtin ("isgood", &fn_isgood, 1, env);
-        add_builtin ("rewindstream", &fn_rwndstream, 1, env);
-        add_builtin ("writestream", &fn_writestream, 2, env);
-        add_builtin ("readstream", &fn_readstream, 1, env);
+        add_operator ("ticks", &fn_ticks, 0, env);
+        add_operator ("thread", &fn_thread, 1, env);
+        add_operator ("attach", &fn_attach, 1, env);
+        add_operator ("schedule", &fn_schedule, 3, env);
+        add_operator ("dirlist", &fn_dirlist, 1, env);
+        add_operator ("filestat", &fn_filestat, 1, env);
+        add_operator ("getvar", &fn_getvar, 1, env);
+        add_operator ("udpsend", &fn_udpsend, 3, env);
+        add_operator ("udpdecv", &fn_udprecv, 2, env);
+        add_operator ("openstream", &fn_openstream, 3, env);
+        add_operator ("closestream", &fn_closestream, 1, env);
+        add_operator ("isgood", &fn_isgood, 1, env);
+        add_operator ("rewindstream", &fn_rwndstream, 1, env);
+        add_operator ("writestream", &fn_writestream, 2, env);
+        add_operator ("readstream", &fn_readstream, 1, env);
         return env;
     }
 }

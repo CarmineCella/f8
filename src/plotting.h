@@ -186,13 +186,13 @@ namespace f8 {
 		} else return make_node("false");
 	}
 	AtomPtr add_plotting (AtomPtr env) {
-		add_builtin ("opensvg", fn_opensvg, 3, env);
-		add_builtin ("polyline", fn_polyline, 3, env);
-		add_builtin ("scatter", fn_scatter, 4, env);
-		add_builtin ("closesvg", fn_closesvg, 1, env);
-		add_builtin ("grid", fn_grid, 1, env);
-		add_builtin ("title", fn_title, 2, env);
-		add_builtin ("legend", fn_legend, 2, env);
+		add_operator ("opensvg", fn_opensvg, 3, env);
+		add_operator ("polyline", fn_polyline, 3, env);
+		add_operator ("scatter", fn_scatter, 4, env);
+		add_operator ("closesvg", fn_closesvg, 1, env);
+		add_operator ("grid", fn_grid, 1, env);
+		add_operator ("title", fn_title, 2, env);
+		add_operator ("legend", fn_legend, 2, env);
 		return env;
 	}
 }

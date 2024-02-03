@@ -329,21 +329,21 @@ namespace f8 {
 		return make_node();
 	}
 	AtomPtr add_signals (AtomPtr env) {
-		add_builtin ("bpf", fn_bpf, 3, env);
-		add_builtin ("mix", fn_mix, 2, env);	
-		add_builtin ("gen", fn_gen, 2, env);
-		add_builtin ("osc", fn_osc, 3, env);
-		add_builtin ("reson", fn_reson, 3, env);
-		add_builtin ("fft", fn_fft<1>, 1, env);
-		add_builtin ("ifft", fn_fft<-1>, 1, env);
-		add_builtin ("car2pol", fn_car2pol, 1, env);
-		add_builtin ("pol2car", fn_pol2car, 1, env);
-		add_builtin ("conv", fn_conv, 3, env);
-		add_builtin ("noise", fn_noise, 1, env);
-		add_builtin ("openwav", fn_openwav, 2, env);
-		add_builtin ("writewav", fn_writewav, 3, env);
-		add_builtin ("writewav", fn_writewav, 1, env);
-		add_builtin ("closewav", fn_closewav, 1, env);
+		add_operator ("bpf", fn_bpf, 3, env);
+		add_operator ("mix", fn_mix, 2, env);	
+		add_operator ("gen", fn_gen, 2, env);
+		add_operator ("osc", fn_osc, 3, env);
+		add_operator ("reson", fn_reson, 3, env);
+		add_operator ("fft", fn_fft<1>, 1, env);
+		add_operator ("ifft", fn_fft<-1>, 1, env);
+		add_operator ("car2pol", fn_car2pol, 1, env);
+		add_operator ("pol2car", fn_pol2car, 1, env);
+		add_operator ("conv", fn_conv, 3, env);
+		add_operator ("noise", fn_noise, 1, env);
+		add_operator ("openwav", fn_openwav, 2, env);
+		add_operator ("writewav", fn_writewav, 3, env);
+		add_operator ("writewav", fn_writewav, 1, env);
+		add_operator ("closewav", fn_closewav, 1, env);
 		return env;
 	}
 }

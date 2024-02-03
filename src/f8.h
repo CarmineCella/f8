@@ -7,6 +7,11 @@
 #include "system.h"
 #include "signals.h"
 #include "plotting.h"
+///~ # The f8 (fate) reference manual<br>
+///~ *ver. VERSION*
+
+///~ ## Introduction
+
 
 namespace f8 {
     AtomPtr make_env () {

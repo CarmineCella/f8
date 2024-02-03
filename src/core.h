@@ -18,6 +18,8 @@
 #define RED     	"\033[31m" 
 #define RESET   	"\033[0m"
 
+///~ ## Types
+///~ The valid types are: number, symbol, string, list, operator, lambda, object
 namespace f8 {
     // ast
     struct Atom;
@@ -25,10 +27,10 @@ namespace f8 {
     typedef AtomPtr (*Op) (AtomPtr, AtomPtr);
     #define make_node(type)(std::make_shared<Atom>(type))
     enum AtomType {
-        NUMBER, SYMBOL, STRING, LIST, PROCEDURE, LAMBDA, OBJECT
+        NUMBER, SYMBOL, STRING, LIST, OPERATOR, LAMBDA, OBJECT
     };
     const char* TYPE_NAMES[] = {
-        "number", "symbol", "string", "list", "proc", "lambda", "object"
+        "number", "symbol", "string", "list", "operator", "lambda", "object"
     };
     typedef double Real;
     bool is_string (const std::string& s);
@@ -48,7 +50,7 @@ namespace f8 {
                 lexeme = s;
             }        
         }
-        Atom (Op f) {type = PROCEDURE; action = f;}
+        Atom (Op f) {type = OPERATOR; action = f;}
         Atom (std::deque<AtomPtr> ll) {
             type = LAMBDA;
             tail.push_back (ll.at (0));
@@ -87,7 +89,7 @@ namespace f8 {
             }
             return 1;
         }
-        case PROCEDURE: return (x->action == y->action);
+        case OPERATOR: return (x->action == y->action);
         case LAMBDA: return (atom_eq (x->tail[0], y->tail[0]) 
             && atom_eq (x->tail[1], y->tail[1]));
         case OBJECT: return (x->lexeme == y->lexeme && x->obj == y->obj);        
@@ -103,8 +105,8 @@ namespace f8 {
         if (node->type == SYMBOL || node->type == STRING) {
             out << node->lexeme;
         }
-        if (node->type == PROCEDURE) {
-            out << "<operator @" << (std::hex) << node << ">";
+        if (node->type == OPERATOR) {
+            out << "<operator " << node->lexeme << " @" << (std::hex) << node << ">";
         }
         if (node->type == LAMBDA) {
             out << "(lambda ";
@@ -298,6 +300,10 @@ namespace f8 {
             output->tail.push_back (s->tail.at (0));
         }
     }
+    ///~ ## Built-in operators
+    ///~ `quote` *`expr`* <br>
+    ///~ The quote operator indicates literal data; it suppresses evaluation.
+    
     AtomPtr fn_quote (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_set (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_reset (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
@@ -396,7 +402,7 @@ namespace f8 {
             params->tail.push_back (eval (node->tail.at (i), env));
         }
         AtomPtr exec = eval (car, env);
-        if (exec->type == PROCEDURE) {
+        if (exec->type == OPERATOR) {
             argnum_check (params, exec->minargs);        
             if (exec->action == &fn_eval) {
                 node = params->tail.at (0);
@@ -733,7 +739,7 @@ namespace f8 {
             return out;\
         }
 
-    AtomPtr add_builtin (const std::string& name, Op action, int minargs, AtomPtr env) {
+    AtomPtr add_operator (const std::string& name, Op action, int minargs, AtomPtr env) {
         AtomPtr op = make_node (action);
         op->lexeme = name;
         op->minargs = minargs;
@@ -758,64 +764,64 @@ namespace f8 {
                 type_check (params->tail.at(1)->tail.at(2 * i), AtomType::SYMBOL)->lexeme.c_str ());
             
             if (f) {
-                add_builtin(params->tail.at(1)->tail.at(2 * i)->lexeme, 
+                add_operator(params->tail.at(1)->tail.at(2 * i)->lexeme, 
                     f, 
                     type_check (params->tail.at(1)->tail.at(2 * i + 1), NUMBER)->val, env); // silent error
                 ++ct;
             }
         }
-        return ct == 0 ? make_node("false") : make_node(ct); // number of proc imported
+        return ct == 0 ? make_node("false") : make_node(ct); // number of operator imported
     }
     AtomPtr add_core (AtomPtr env) {
-        add_builtin ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
-        add_builtin ("set", &fn_set, -1, env);
-        add_builtin ("!", &fn_reset, -1, env);
-        add_builtin ("proc", &fn_proc, -1, env);
-        add_builtin ("if", &fn_if, -1, env);
-        add_builtin ("while", &fn_while, -1, env);
-        add_builtin ("\\", &fn_lambda<0>, -1, env);
-        add_builtin ("@", &fn_lambda<1>, -1, env);
-        add_builtin ("do", &fn_do, -1, env);
-        add_builtin ("catch", &fn_catch, -1, env);
-        add_builtin ("eval", &fn_eval, 1, env);
-        add_builtin ("->", &fn_apply, 2, env);
-        add_builtin ("info", &fn_info, 1, env);
-        add_builtin ("unset", &fn_unset, 1, env);
-        add_builtin ("throw", &fn_throw, 1, env);
-        add_builtin ("list", &fn_list, 0, env);
-        add_builtin ("ljoin", &fn_ljoin, 1, env);
-        add_builtin ("lreplace", &fn_lreplace, 4, env);
-        add_builtin ("lrange", &fn_lrange, 3, env);
-        add_builtin ("lget", &fn_lget, 1, env);
-        add_builtin ("lhead", &fn_lhead, 1, env);
-        add_builtin ("ltail", &fn_ltail, 1, env);
-        add_builtin ("eq", &fn_eqp, 2, env);
-        add_builtin ("+", &fn_add, 1, env);
-        add_builtin ("*", &fn_mul, 1, env);
-        add_builtin ("-", &fn_sub, 1, env);
-        add_builtin ("/", &fn_div, 1, env);
-        add_builtin ("<", &fn_less, 1, env);
-        add_builtin ("<=", &fn_lesseq, 1, env);
-        add_builtin (">", &fn_greater, 1, env);
-        add_builtin (">=", &fn_greatereq, 1, env);
-        add_builtin ("sqrt", &fn_sqrt, 1, env);
-        add_builtin ("sin", &fn_sin, 1, env);
-        add_builtin ("cos", &fn_cos, 1, env);
-        add_builtin ("tan", &fn_tan, 1, env);
-        add_builtin ("log", &fn_log, 1, env);
-        add_builtin ("log10", &fn_log10, 1, env);
-        add_builtin ("exp", &fn_exp, 1, env);
-        add_builtin ("abs", &fn_abs, 1, env);
-        add_builtin ("floor", &fn_floor, 1, env);
-        add_builtin ("puts", &fn_format<0>, 1, env);
-        add_builtin ("gets", &fn_read, 0, env);
-        add_builtin ("source", &fn_load, 1, env);
-        add_builtin ("save", &fn_format<2>, 2, env);
-        add_builtin ("tostr", &fn_format<1>, 1, env); 
-        add_builtin ("string", &fn_string, 2, env);
-        add_builtin ("exec", &fn_exec, 1, env);
-        add_builtin ("exit", &fn_exit, 0, env);
-        add_builtin ("import", &fn_import, 1, env);
+        add_operator ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
+        add_operator ("set", &fn_set, -1, env);
+        add_operator ("!", &fn_reset, -1, env);
+        add_operator ("operator", &fn_proc, -1, env);
+        add_operator ("if", &fn_if, -1, env);
+        add_operator ("while", &fn_while, -1, env);
+        add_operator ("\\", &fn_lambda<0>, -1, env);
+        add_operator ("@", &fn_lambda<1>, -1, env);
+        add_operator ("do", &fn_do, -1, env);
+        add_operator ("catch", &fn_catch, -1, env);
+        add_operator ("eval", &fn_eval, 1, env);
+        add_operator ("->", &fn_apply, 2, env);
+        add_operator ("info", &fn_info, 1, env);
+        add_operator ("unset", &fn_unset, 1, env);
+        add_operator ("throw", &fn_throw, 1, env);
+        add_operator ("list", &fn_list, 0, env);
+        add_operator ("ljoin", &fn_ljoin, 1, env);
+        add_operator ("lreplace", &fn_lreplace, 4, env);
+        add_operator ("lrange", &fn_lrange, 3, env);
+        add_operator ("lget", &fn_lget, 1, env);
+        add_operator ("lhead", &fn_lhead, 1, env);
+        add_operator ("ltail", &fn_ltail, 1, env);
+        add_operator ("eq", &fn_eqp, 2, env);
+        add_operator ("+", &fn_add, 1, env);
+        add_operator ("*", &fn_mul, 1, env);
+        add_operator ("-", &fn_sub, 1, env);
+        add_operator ("/", &fn_div, 1, env);
+        add_operator ("<", &fn_less, 1, env);
+        add_operator ("<=", &fn_lesseq, 1, env);
+        add_operator (">", &fn_greater, 1, env);
+        add_operator (">=", &fn_greatereq, 1, env);
+        add_operator ("sqrt", &fn_sqrt, 1, env);
+        add_operator ("sin", &fn_sin, 1, env);
+        add_operator ("cos", &fn_cos, 1, env);
+        add_operator ("tan", &fn_tan, 1, env);
+        add_operator ("log", &fn_log, 1, env);
+        add_operator ("log10", &fn_log10, 1, env);
+        add_operator ("exp", &fn_exp, 1, env);
+        add_operator ("abs", &fn_abs, 1, env);
+        add_operator ("floor", &fn_floor, 1, env);
+        add_operator ("puts", &fn_format<0>, 1, env);
+        add_operator ("gets", &fn_read, 0, env);
+        add_operator ("source", &fn_load, 1, env);
+        add_operator ("save", &fn_format<2>, 2, env);
+        add_operator ("tostr", &fn_format<1>, 1, env); 
+        add_operator ("string", &fn_string, 2, env);
+        add_operator ("exec", &fn_exec, 1, env);
+        add_operator ("exit", &fn_exit, 0, env);
+        add_operator ("import", &fn_import, 1, env);
         return env;    
     }
 
