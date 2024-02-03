@@ -18,7 +18,7 @@ The core of the language is made of a single [C++ header](src/core.h) (~ 1000 lo
 * partial evaluation
 * lambda functions with closures
 
-For an overview on the language, please see [this example](examples/overview.tcl); for an example on how to integrate the language in your application, please check the [main file](src/f8.cpp).
+It can [bootstrap](examples/repl.tcl) itself. For an overview on the language, please see [this example](examples/overview.tcl); for an example on how to integrate the language in your application, please check the [main file](src/f8.cpp).
 
 
 ### Processing libraries
