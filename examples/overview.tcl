@@ -32,13 +32,6 @@ proc (alpha x) {
 puts (alpha 5) nl
 puts "does beta exist here? " (info 'exists 'beta) nl nl
 
-puts "** local scope **" nl nl
-let {
-	set k 100
-	puts "local variable k = " k nl
-}
-puts "does k exists here? " (info 'exists 'k) nl nl
-
 puts "** dynamic scope **" nl nl
 set b 5
 puts "define dynamic foo" nl 

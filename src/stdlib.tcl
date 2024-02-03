@@ -2,9 +2,7 @@
 #
 
 # macros
-dynamic (let b) { 
-	\ () (eval $b)
-}
+macro (let b) (\ () (eval b))
 
 # logical operators
 proc (not x) (if x false else true)

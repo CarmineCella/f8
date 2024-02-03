@@ -1,21 +1,20 @@
-;; Environment manipulations
+# Environment manipulation
 
-(begin
-	(define e0 (make-environment)) ; creates a new empty env
-	
-	(environment-define e0 'a 32) ; add 'a' to e0
-	(environment-define e0 'b 22) ; add 'b' to e0
-	(environment-define e0 '+ +) ; add '+' to e0
-	
-	(display (environment-lookup e0 'a)) (newline) ; should print the value of a
-	
-	(define foo '(+ a b))
-	
-	(display (eval foo e0)) (newline) ; should print the sum of a and b
-	
-	(unbind-variable e0 'b) ; remove 'a' from e0
-	
-	(display (eval foo e0)) (newline) ; should raise an error
-)
+source "stdlib.tcl"
 
-;; eof
+set e0 10 ; creates a new variable
+puts "e0 = " e0 nl
+puts "dees e0 exist? " (info 'exists 'e0) nl
+
+puts "removing e0" nl
+unset 'e0
+puts "does e0 exist? " (info 'exists 'e0) nl
+
+let {
+	puts "define e1 locally" nl
+	set e1 10
+	puts "does e1 exist? " (info 'exists 'e1) nl
+}
+puts "does e1 exist? " (info 'exists 'e1) nl
+
+puts "all variables: " (info 'vars) nl nl
