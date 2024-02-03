@@ -39,12 +39,12 @@ int main (int argc, char* argv[]) {
 				<< RESET << endl << endl;
 			cout << "(c) " << COPYRIGHT  << ", www.carminecella.com" << endl << endl;
 			f8::AtomPtr environment = f8::make_env ();
-			repl (environment,  cin, cout);				
+			f8::repl (environment,  cin, cout);				
 		}
 		else {
 			f8::AtomPtr environment = f8::make_env ();
 			for (unsigned int i = 1; i < argc; ++i) {
-				load (argv[i], environment);
+				f8::load (argv[i], environment);
 			}
 		}
 	} catch (f8::AtomPtr& e) {
