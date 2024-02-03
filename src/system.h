@@ -163,31 +163,24 @@ namespace f8 {
     AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
         std::string name = type_check (node->tail.at(0), STRING)->lexeme;
         std::string direction = type_check (node->tail.at(1), SYMBOL)->lexeme;
-        std::string mode = type_check (node->tail.at(2), SYMBOL)->lexeme;
 
         bool input = false;
-        bool binary = false;
         if (direction == "input") input = true;
         else if (direction == "output") input = false;
         else error ("[openstream] unsopported direction", node);
-        if (mode == "binary") binary = true;
-        else if (mode == "text") binary = false;
-        else error ("[openstream] unsopported mode", node);
         AtomPtr s =  make_node();
         AtomPtr ll =   make_node();
         ll->tail.push_back (make_node ((std::string) "\"" + name));
 
         if (input) {
             std::istream* f = nullptr;
-            if (binary) f = new std::ifstream (name, std::ios::binary);
-            else f = new std::ifstream (name);
+            f = new std::ifstream (name);
             if (!f->good ()) return make_node ("false");
             s = ( make_obj ("instream", f, ll));
         }
         else {
             std::ostream* f = nullptr;
-            if (binary) f = new std::ofstream (name, std::ios::binary);
-            else f = new std::ofstream (name);
+            f = new std::ofstream (name);
             if (!f->good ()) return make_node ("false");
             s = ( make_obj ("outstream", f, ll));        
         }
@@ -238,23 +231,25 @@ namespace f8 {
 
         return  make_node("false");
     }
-    AtomPtr fn_writestream (AtomPtr n, AtomPtr env) {
+    AtomPtr fn_writeline (AtomPtr n, AtomPtr env) {
         AtomPtr p = type_check (n->tail.at(0), OBJECT);
         if (p->obj == 0 || p->lexeme != "outstream") return  make_node("false");
         std::ostream* out = static_cast<std::ostream*> (p->obj);
         for (unsigned  i = 1; i < n->tail.size (); ++i)  {
-            print (n->tail.at (i), *out);  
+            *out << type_check (n->tail.at (i), STRING)->lexeme;
             out->flush();
         }
         return make_node ("true");    
     }
-    AtomPtr fn_readstream (AtomPtr n, AtomPtr env) {
+    AtomPtr fn_readline (AtomPtr n, AtomPtr env) {
         AtomPtr p = type_check (n->tail.at(0), OBJECT);
         if (p->obj == 0 || p->lexeme != "instream") return  make_node("false");
         std::istream* in = static_cast<std::istream*> (p->obj);
         std::string name = p->tail.at(0)->lexeme; // exists by default
         if (!in->good () || in->eof ()) return  make_node("false");
-        return make_node ("true"); //read (*in);    
+        std::string buff;
+        std::getline (*in, buff);
+        return make_node ((std::string) "\"" + buff);
     }
     AtomPtr add_system (AtomPtr env) {
         add_operator ("ticks", &fn_ticks, 0, env);
@@ -266,12 +261,12 @@ namespace f8 {
         add_operator ("getvar", &fn_getvar, 1, env);
         add_operator ("udpsend", &fn_udpsend, 3, env);
         add_operator ("udpdecv", &fn_udprecv, 2, env);
-        add_operator ("openstream", &fn_openstream, 3, env);
+        add_operator ("openstream", &fn_openstream, 2, env);
         add_operator ("closestream", &fn_closestream, 1, env);
         add_operator ("isgood", &fn_isgood, 1, env);
         add_operator ("rewindstream", &fn_rwndstream, 1, env);
-        add_operator ("writestream", &fn_writestream, 2, env);
-        add_operator ("readstream", &fn_readstream, 1, env);
+        add_operator ("writeline", &fn_writeline, 2, env);
+        add_operator ("readline", &fn_readline, 1, env);
         return env;
     }
 }

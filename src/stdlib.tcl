@@ -92,7 +92,7 @@ proc (test x y)(if (eq (ljoin (list) (eval x)) y) (puts x  " passed" nl) else (t
 
 # arithmetics
 proc (succ x) (+ x 1)
-proc  (pred x) (- x 1)
+proc (pred x) (- x 1)
 proc (quotient a b) (floor (/ a b))
 proc (remainder a b) (floor (- a (* b (quotient a b))))
 proc (mod a b) (floor (- a (* b (quotient a b))))
@@ -191,6 +191,16 @@ set E 2.7182818284
 # system
 proc (fexists fname) {
 	eq (first (filestat fname)) 1
+}
+proc (readall stream) {	
+	set line ""
+	proc (readallrunner stream line) {
+		! line (tostr line (readline stream))
+		if (not (isgood stream)) line else {
+			readallrunner stream line
+		}
+	}
+	readallrunner stream line
 }
 proc (udpmonitor addr port) {
 	set r (udprecv addr port)

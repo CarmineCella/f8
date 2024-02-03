@@ -231,17 +231,18 @@ namespace f8 {
 		int sr = 44100; 
 		int ch = 1; 
 
-		if (node->tail.size () == 4) {
-			sr = type_check (node->tail.at(2), AtomType::NUMBER)->val;
-			ch = type_check (node->tail.at(3), AtomType::NUMBER)->val;
-		}
-
 		bool input = false;
 
 		if (direction == "input") input = true;
 		else if (direction == "output") input = false;
 		else error ("unsopported direction for stream", node);
 		
+		if (input == false) {
+			if (node->tail.size () == 4) {
+				sr = type_check (node->tail.at(2), AtomType::NUMBER)->val;
+				ch = type_check (node->tail.at(3), AtomType::NUMBER)->val;
+			} else error ("[openwav] missing sr and ch for output wav", node);
+		}
 		AtomPtr s = make_node();
 		AtomPtr ll =  make_node();
 		ll->tail.push_back (make_node((std::string) "\"" + name));
@@ -258,7 +259,7 @@ namespace f8 {
 	}
 	AtomPtr fn_readwav (AtomPtr node, AtomPtr env) {
 		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
-		if (p->obj == 0 || p->lexeme != "inwav") return make_node();
+		if (p->obj == 0 || p->lexeme != "inwav") error ("[readwav] cannot read an output file", node);
 		WavInFile* in = static_cast<WavInFile*> (p->obj);
 
 		AtomPtr final = make_node();
@@ -287,9 +288,21 @@ namespace f8 {
 		}
 		return final;
 	}
+	AtomPtr fn_infowav (AtomPtr node, AtomPtr env) {
+		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+		if (p->obj == 0 || p->lexeme != "inwav") error ("[infowav] cannot get info for an output file", node);
+		WavInFile* in = static_cast<WavInFile*> (p->obj);
+
+		AtomPtr final = make_node();
+		final->tail.push_back (make_node (in->getSampleRate ()));
+		final->tail.push_back (make_node (in->getNumChannels ()));
+		final->tail.push_back (make_node (in->getNumSamples ()));
+		
+		return final;
+	}
 	AtomPtr fn_writewav (AtomPtr node, AtomPtr env) {
 		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
-		if (p->obj == 0 || p->lexeme != "outwav") return make_node();
+		if (p->obj == 0 || p->lexeme != "outwav") error ("[readwav] cannot write an input file", node);
 		WavOutFile* out = static_cast<WavOutFile*> (p->obj);
 		uint ch = type_check (node->tail.at(1), AtomType::NUMBER)->val;
 		
@@ -304,11 +317,11 @@ namespace f8 {
 		for (unsigned j = 0; j < sz; ++j) {
 			for (unsigned i = 2; i < node->tail.size (); ++i) {
 				AtomPtr channel = node->tail.at (i);
-				interleaved.push_back (type_check (node->tail.at (i)->tail.at (j),
+				interleaved.push_back (type_check (channel->tail.at (j),
 					AtomType::NUMBER)->val);
 			}
 		}
-
+		
 		out->write(&interleaved[0], ch * sz);
 		return make_node (sz * ch);
 	}
@@ -319,14 +332,14 @@ namespace f8 {
 			WavInFile* istr = static_cast<WavInFile*> (p->obj);
 			delete istr;
 			p->obj = 0;
-			return make_node(1);
+			return make_node("true");
 		} else if (p->lexeme == "outwav") {
 			WavOutFile* ostr = static_cast<WavOutFile*> (p->obj);
 			delete ostr;
 			p->obj = 0;
-			return make_node(1);
+			return make_node("true");
 		}
-		return make_node();
+		return make_node("false");
 	}
 	AtomPtr add_signals (AtomPtr env) {
 		add_operator ("bpf", fn_bpf, 3, env);
@@ -342,7 +355,8 @@ namespace f8 {
 		add_operator ("noise", fn_noise, 1, env);
 		add_operator ("openwav", fn_openwav, 2, env);
 		add_operator ("writewav", fn_writewav, 3, env);
-		add_operator ("writewav", fn_writewav, 1, env);
+		add_operator ("readwav", fn_readwav, 1, env);
+		add_operator ("infowav", fn_infowav, 1, env);
 		add_operator ("closewav", fn_closewav, 1, env);
 		return env;
 	}

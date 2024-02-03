@@ -1,34 +1,46 @@
-;; {wave io}
-;;
-;; (c) 2019 www.arch-programming.org
-;;
+# wave files io
+#
 
-(load "sound.scm")
-(load "maths.scm")
+source "stdlib.tcl"
 
-(def {sr} 44100)
-(def {ch} 2)
+set sr 44100
+set ch 2
+set freq 440
+set dur 0.1
+set samples (* dur sr)
 
-(def {freq} 440)
+set time (bpf 0 samples (/ samples sr))
 
-(def {time} (map (\{x}{/ x sr}) (linspace 0 1024 1)))
+set sig1 (-> sin (map (\(x)(* TWOPI freq x)) time))
+set sig2 (-> cos (map (\(x)(* TWOPI freq x)) time))
 
-(def {sig1} (.sin (map (\{x}{* 2 pi freq x}) time)))
-(def {sig2} (.cos (map (\{x}{* 2 pi (/ freq 2) x}) time)))
+puts "write wave data..."
+set a (openwav "test.wav" 'output sr ch)
+puts (writewav a ch sig1 sig2) " samples written" nl
+closewav a
 
-(prn "write wave data...")
-(def {a} (openwav16 "test.wav" "output" sr ch))
-(prn (writewav16 a ch sig1 sig2) " samples written" (nl))
-(closewav16 a)
+puts "read wave data..." 
+set a (openwav "test.wav" 'input)
+# by default reads all file
+set sigr (readwav a) 
+puts (* (len (first sigr)) (len sigr)) " samples read" nl
+closewav a
 
-(prn "read wave data...")
-(def {a} (openwav16 "test.wav" "input" sr ch)) 
-(def {sigr} (readwav16 a)) ; by default reads all file
-(closewav16 a)
+puts  "write again data..."
+set a (openwav "test2.wav" 'output sr ch)
+puts (writewav a ch (first sigr) (second sigr)) " samples written" nl
+closewav a
 
-(prn "write again read data...")
-(def {a} (openwav16 "test2.wav" "output" sr ch))
-(prn (writewav16 a ch (first sigr) (second sigr))op " samples written" (nl))
-(closewav16 a)
+puts "read sounds/archeos-bell.wav..." 
+set a (openwav "../sounds/archeos-bell.wav" 'input)
+set winfo (infowav a)
+set sigr (readwav a) 
+closewav a
+puts "sr: " (first winfo) ", ch: "(second winfo) nl
 
-;; eof
+set c (openwav "copy.wav" 'output (first winfo) (second winfo))
+puts (writewav c (second winfo) (first sigr)) " samples copied" nl
+closewav c
+
+
+# eof

@@ -100,13 +100,16 @@ namespace f8 {
     bool is_nil (AtomPtr node) {
         return node == nullptr || (node->type == LIST && node->tail.size () == 0);
     }
-    std::ostream& print (AtomPtr node, std::ostream& out) {
+    std::ostream& print (AtomPtr node, std::ostream& out, bool write = false) {
         if (node->type == NUMBER) out << std::fixed  << node->val;
         if (node->type == SYMBOL || node->type == STRING) {
+            if (node->type == STRING && write) out << "\"";
             out << node->lexeme;
+            if (node->type == STRING && write) out << "\"";
         }
         if (node->type == OPERATOR) {
-            out << "<operator " << node->lexeme << " @" << (std::hex) << node << ">";
+            if (write) out << node->lexeme;
+            else out << "<operator " << node->lexeme << " @" << (std::hex) << node << ">";
         }
         if (node->type == LAMBDA) {
             out << "(lambda ";
@@ -652,7 +655,7 @@ namespace f8 {
     AtomPtr fn_format (AtomPtr node, AtomPtr env) {
         std::stringstream tmp;
         for (unsigned i = mode == 2 ? 1 : 0; i < node->tail.size (); ++i) {
-            print (node->tail.at (i), tmp);
+            print (node->tail.at (i), tmp, mode == 2); // set write flag if necessary
         }
         switch (mode) {
             case 0: // print
