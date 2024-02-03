@@ -2,7 +2,7 @@
 
 The *f8* scripting language is a hybrid dialect of Lisp, Scheme and TCL: 
 
-![Genealogy](docs/quile_anchestors.png)
+![Genealogy](docs/f8_anchestors.png)
 
 It has been designed to be small, easy to expand and easy to embed in host applications. 
 The core of the language is made of a single [C++ header](src/core.h) (~ 1000 loc in total) and a  [small library](src/stdlib.tcl) written using *Quile* itself.
