@@ -1,13 +1,12 @@
-;; {ticks}
-;;
-;; (c) 2019 www.arch-programming.org
-;;
+# {ticks}
 
-(load "system.scm")
+source "stdlib.tcl"
 
-(def {tic} (ticks))
-(prn "current ticks " tic (nl))
-(def {toc} (ticks))
-(prn "current ticks " toc (nl))
-(prn "ticks elapsed " (- toc tic) (nl) (nl))
-(test {<> toc tic}{1}) ; they should be different
+set tic (ticks)
+puts "current ticks " tic nl
+set toc (ticks)
+puts "current ticks " toc nl
+puts "ticks elapsed " (- toc tic) nl nl
+
+# they should be different
+test '(<> toc tic)'(1) 

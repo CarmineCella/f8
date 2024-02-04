@@ -26,9 +26,9 @@ namespace f8 {
         return  make_node (clock ());
     }
     AtomPtr fn_thread (AtomPtr params, AtomPtr env) {
-        AtomPtr t = make_node ();
-        t->tail.push_back (params->tail.at(0));
-        std::thread* pt = new std::thread (&eval, t, env);
+        AtomPtr task = type_check (params->tail.at(0), LIST);
+        argnum_check (task, 1);
+        std::thread* pt = new std::thread (&eval, params, env);
         return make_obj ("thread", (void*) pt,  make_node());
     }
     AtomPtr fn_attach (AtomPtr params, AtomPtr env) {
@@ -59,10 +59,11 @@ namespace f8 {
         }
     };
     AtomPtr fn_schedule (AtomPtr params, AtomPtr env) {
-        AtomPtr f = params->tail.at(0);
+        AtomPtr task = type_check (params->tail.at(0), LIST);
+        argnum_check (task, 1);
         int msec = (int) params->tail.at(1)->val;
         bool async = (bool) params->tail.at (2)->val;
-        AtomPtr l = make_node (); l->tail.push_back (f);
+        AtomPtr l = make_node (); l->tail.push_back (task);
         Later sched (msec, async, &eval, l, env);
         return  make_node();
     }
@@ -260,7 +261,7 @@ namespace f8 {
         add_operator ("filestat", &fn_filestat, 1, env);
         add_operator ("getvar", &fn_getvar, 1, env);
         add_operator ("udpsend", &fn_udpsend, 3, env);
-        add_operator ("udpdecv", &fn_udprecv, 2, env);
+        add_operator ("udprecv", &fn_udprecv, 2, env);
         add_operator ("openstream", &fn_openstream, 2, env);
         add_operator ("closestream", &fn_closestream, 1, env);
         add_operator ("isgood", &fn_isgood, 1, env);
