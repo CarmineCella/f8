@@ -138,7 +138,7 @@ namespace f8 {
             print (ctx, err);
             err << "]";
         }
-        throw std::runtime_error (err.str ());
+        throw make_node (err.str ());
     }
     AtomPtr argnum_check (AtomPtr node, int sz) {
         if (node->tail.size () < sz && sz != -1) {
@@ -389,16 +389,12 @@ namespace f8 {
             return res;
         }    
         if (car->action == &fn_catch) {
-            argnum_check(node, 3);
+            argnum_check(node, 2);
             try {
-                return eval (node->tail.at (2), env);
-            } catch (AtomPtr& p) {
-                if (atom_eq(p, node->tail.at (1))) {
-                    node = node->tail.at (3);
-                    goto tail_call;
-                } else throw p;
+                return eval (node->tail.at (1), env);
+            } catch (AtomPtr p) {
+                return p;
             }
-            return node; 
         }        
         if (car->action == &fn_do) {
             argnum_check (node, 2);
@@ -863,15 +859,13 @@ namespace f8 {
             out << ">> ";
             try {
                 print (eval (read_line (*current), env), out);
-                // print (read_line (*current), out);
                 out << std::endl;
+            } catch (f8::AtomPtr& e) {
+                std::cout << RED << "error: "; f8::print (e, out) << RESET << std::endl;
             } catch (std::exception& e) {
-                out << RED << "error: " << e.what () << RESET << std::endl;
-            } catch (AtomPtr& e) {
-                out << RED << "error: uncaught expection " << RESET;
-                print (e, out); out << std::endl;
+                std::cout << RED << "exception: " << e.what () << RESET << std::endl;
             } catch (...) {
-                out << RED << "fatal error: execution stopped" << RESET << std::endl;
+                std::cout << RED << "fatal unknown error" << RESET << std::endl;
             }
         } 
     }

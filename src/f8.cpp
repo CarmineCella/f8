@@ -25,9 +25,9 @@ int main (int argc, char* argv[]) {
 			}
 		}
 	} catch (f8::AtomPtr& e) {
-		cout << RED << "exception: "; f8::print (e, cout) << RESET << std::endl;
+		cout << RED << "error: "; f8::print (e, cout) << RESET << std::endl;
 	} catch (exception& e) {
-		cout << RED << "error: " << e.what () << RESET << std::endl;
+		cout << RED << "exception: " << e.what () << RESET << std::endl;
 	} catch (...) {
 		cout << RED << "fatal unknown error" << RESET << std::endl;
 	}

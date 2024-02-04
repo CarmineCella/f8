@@ -1,13 +1,16 @@
-;; repl
+# repl
 
-(begin
   
-  (define repl
-	(lambda ()
-	  (display ">> ")
-	  (display (eval (read) (interaction-environment))) (newline)
-	  (repl)))
+proc (repl) {
+    while true {
+      puts {
+        catch {
+          puts ">> "
+          puts (eval (gets))
+        }
+      } nl
+    }
+}
 
-  (display "[minimal repl]") (newline) (newline)
-  (repl)
-  )
+puts "[minimal f8 repl]" nl nl
+repl
