@@ -1,11 +1,7 @@
-;; {plot}
-;;
-;; (c) 2019 www.arch-programming.org
-;;
+# {plot}
 
-(load "plotting.scm")
-(load "maths.scm")
+source "stdlib.tcl"
 
-(plot "test.svg" (linspace 0 20 1))
+plot "test2.svg" (bpf 0 20 1)
 
-;; eof
+# eof
