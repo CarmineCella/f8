@@ -3,12 +3,22 @@ source "stdlib.tcl"
 set scale 0.1
 set mix 0.8
 
-set sig [car [cdr [sndread "../sounds/anechoic1.wav"]]]
-set irL [car [cdr [sndread "../sounds/Concertgebouw-s.wav"]]]
-set irR [car [cdr [cdr [sndread "../sounds/Concertgebouw-s.wav"]]]]
+set sig_file (openwav "../sounds/anechoic1.wav" 'input)
+set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
 
-set outsigL [conv $irL $sig $scale $mix]
-set outsigR [conv $irR $sig $scale $mix]
+set sig (readwav sig_file)
+set ir (readwav ir_file)  
 
-sndwrite 44100 "reverb.wav" $outsigL $outsigR
+set sr (first (infowav sig_file))
+
+set outsigL (conv (first ir) (first sig) scale mix)
+set outsigR (conv (second ir) (first sig) scale mix)
+
+set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
+
+set out (openwav "reverb.wav" 'output sr 2)
+writewav out 2 outsigL outsigR
+closewav out
+
+
 
