@@ -12,6 +12,7 @@
 #include <chrono>
 #include <future>
 #include <iostream>
+#include <stdexcept>
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>

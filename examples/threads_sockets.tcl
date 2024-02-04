@@ -9,7 +9,7 @@ proc (listener) {
     exit
 }
 
-set t1 (thread '(listener))
+set t1 (thread '(listenereee))
 puts "main thread is still running here..." nl
 
 puts "starting a task that will send something to socket in 5 seconds..." nl
