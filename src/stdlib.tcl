@@ -62,6 +62,15 @@ proc (map f l) {
 	}
 	map-runner () f l
 }
+proc (map2 f l1 l2) {
+	proc (map2-runner acc f l1 l2) {
+		if (or (eq l1 ()) (eq l2 ())) acc else {
+			ljoin acc (f (first l1) (first l2))
+			map2-runner acc f (ltail l1) (ltail l2)
+		}
+	}
+	map2-runner () f l1 l2
+}
 proc (filter f l) {
 	proc (filter-runner acc f l) {
 		if (eq l ()) acc else {
@@ -181,7 +190,10 @@ proc (normal l) {
 	set m (max l)
 	map (\ (x)(/ x m)) l
 }
+proc (. f l1 l2) {
+	map2 (\ (x y) (f x y)) l1 l2
 
+}
 # constants
 set TWOPI 6.2831853072
 set SQRT2 1.4142135624

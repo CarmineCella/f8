@@ -428,8 +428,13 @@ namespace f8 {
                 goto tail_call;
             } 
             if (exec->action == &fn_apply) {
-                type_check (params->tail.at (1), LIST)->tail.push_front (params->tail.at(0));
-                node = params->tail.at(1);
+                AtomPtr cp = make_node ();
+                
+                cp->tail.push_back (params->tail.at(0));
+                for (unsigned i = 0; i < type_check (params->tail.at (1), LIST)->tail.size (); ++i) {
+                    cp->tail.push_back (params->tail.at (1)->tail.at (i));
+                }
+                node = cp;
                 goto tail_call;
             }         
             return exec->action (params, env);
