@@ -332,92 +332,15 @@ namespace f8 {
 			WavInFile* istr = static_cast<WavInFile*> (p->obj);
 			delete istr;
 			p->obj = 0;
-			return make_node("true");
+			return make_node(1);
 		} else if (p->lexeme == "outwav") {
 			WavOutFile* ostr = static_cast<WavOutFile*> (p->obj);
 			delete ostr;
 			p->obj = 0;
-			return make_node("true");
+			return make_node(1);
 		}
-		return make_node("false");
-	}
-	
-	void list2array (AtomPtr list, std::valarray<Real>& out) {
-		int sz = list->tail.size (); 
-		out.resize (sz ? sz : 1);
-		if (sz) {
-			for (unsigned i = 0; i < list->tail.size (); ++i) {
-				out[i] = type_check (list->tail.at (i), NUMBER)->val;
-			}
-		} else out[0]= type_check (list, NUMBER)->val;
-	}
-	AtomPtr array2list (const std::valarray<Real>& out) {
-		AtomPtr list = make_node ();
-		for (unsigned i = 0; i < out.size (); ++i) {
-			list->tail.push_back (make_node (out[i]));
-		}
-		return list->tail.size () == 1 ? list->tail.at (0) : list;
-	}
-	
-	#define MAKE_ARRAYBINOP(op,name) 					\
-		AtomPtr name (AtomPtr n, AtomPtr env) { 	\
-			std::valarray<Real> res; \
-			list2array (n->tail.at (0), res); \
-			for (unsigned i = 1; i < n->tail.size (); ++i) {  \
-				std::valarray<Real> a; \
-				list2array (n->tail.at (i), a); \
-				if (a.size () == 1) res = res op a[0]; \
-				else res = res op a; \
-			} \
-			return array2list (res); \
-		} \
-
-	MAKE_ARRAYBINOP (+, fn_aadd);
-	MAKE_ARRAYBINOP (-, fn_asub);
-	MAKE_ARRAYBINOP (*, fn_amul);
-	MAKE_ARRAYBINOP (/, fn_adiv);
-	MAKE_ARRAYBINOP (>, fn_agreater);
-	MAKE_ARRAYBINOP (>=, fn_agreatereq);
-	MAKE_ARRAYBINOP (<, fn_aless);
-	MAKE_ARRAYBINOP (<=, fn_alesseq);
-
-	#define MAKE_ARRAYMETHODS(op,name)									\
-		AtomPtr name (AtomPtr n, AtomPtr env) {						\
-			AtomPtr res = make_node (); \
-			for (unsigned i = 0; i < n->tail.size (); ++i) { \
-				std::valarray<Real> v; \
-				list2array (n->tail.at (i), v); \
-				res->tail.push_back (make_node (v.op ())); \
-			}\
-			return res->tail.size () == 1 ? res->tail.at (0) : res; \
-		}\
-
-	MAKE_ARRAYMETHODS (min, fn_amin);
-	MAKE_ARRAYMETHODS (max, fn_amax);
-	MAKE_ARRAYMETHODS (sum, fn_asum);
-	MAKE_ARRAYMETHODS (size, fn_asize);
-
-	#define MAKE_ARRAYSINGOP(op,name)									\
-		AtomPtr name (AtomPtr n, AtomPtr env) {						\
-			AtomPtr res = make_node (); \
-			for (unsigned i = 0; i < n->tail.size (); ++i) { \
-				std::valarray<Real> v; \
-				list2array (n->tail.at (i), v); \
-				v = op (v); \
-				res->tail.push_back (array2list (v)); \
-			}\
-			return res->tail.size () == 1 ? res->tail.at (0) : res; \
-		}\
-
-	MAKE_ARRAYSINGOP (std::abs, fn_aabs);
-	MAKE_ARRAYSINGOP (exp, fn_aexp);
-	MAKE_ARRAYSINGOP (log, fn_alog);
-	MAKE_ARRAYSINGOP (log10, fn_alog10);
-	MAKE_ARRAYSINGOP (sqrt, fn_asqrt);
-	MAKE_ARRAYSINGOP (sin, fn_asin);
-	MAKE_ARRAYSINGOP (cos, fn_acos);
-	MAKE_ARRAYSINGOP (tan, fn_atan);
-
+		return make_node(0);
+	}	
 	AtomPtr fn_slice (AtomPtr node, AtomPtr env) {
 		std::valarray<Real> res;
 		list2array (node->tail.at (0), res);
@@ -464,26 +387,6 @@ namespace f8 {
 		add_operator ("readwav", fn_readwav, 1, env);
 		add_operator ("infowav", fn_infowav, 1, env);
 		add_operator ("closewav", fn_closewav, 1, env);
-		add_operator ("a+", fn_aadd, 1, env);
-		add_operator ("a-", fn_asub, 1, env);
-		add_operator ("a*", fn_amul, 1, env);
-		add_operator ("a/", fn_adiv, 1, env);
-		add_operator ("a>", fn_agreater, 1, env);
-		add_operator ("a>=", fn_agreatereq, 1, env);
-		add_operator ("a<", fn_aless, 1, env);
-		add_operator ("a<=", fn_alesseq, 1, env);
-		add_operator ("aabs", fn_aabs, 1, env);
-		add_operator ("aexp", fn_aexp, 1, env);
-		add_operator ("alog", fn_alog, 1, env);
-		add_operator ("alog10", fn_log10, 1, env);
-		add_operator ("asqrt", fn_asqrt, 1, env);
-		add_operator ("asin", fn_asin, 1, env);
-		add_operator ("acos", fn_acos, 1, env);
-		add_operator ("atan", fn_tan, 1, env);
-		add_operator ("amin", fn_amin, 1, env);
-		add_operator ("amax", fn_amax, 1, env);
-		add_operator ("asum", fn_asum, 1, env);
-		add_operator ("asize", fn_asize, 1, env);
 		add_operator ("slice", fn_slice, 3, env);
 		add_operator ("assign", fn_assign, 4, env);
 		return env;

@@ -118,7 +118,7 @@ namespace f8 {
 
         int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (sock == -1) {
-            return  make_node ("false");
+            return  make_node (0);
         }
 
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at(0), STRING)->lexeme.c_str ());
@@ -126,12 +126,12 @@ namespace f8 {
         server.sin_port = htons((long)type_check (n->tail.at(1), NUMBER)->val);
     
     if(::bind(sock,(struct sockaddr *)&server , sizeof(server)) < 0) {
-            return make_node("false");
+            return make_node(0);
         }
         int c = sizeof(struct sockaddr_in);
         if (recvfrom(sock, client_message, MESSAGE_SIZE, 0, 
             (struct sockaddr *) &client, (socklen_t*) &c) < 0) {
-            return  make_node("false");   
+            return  make_node(0);   
         }
 
         ::close (sock);
@@ -144,7 +144,7 @@ namespace f8 {
 
         int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (sock == -1) {
-            return  make_node("false");
+            return  make_node(0);
         }
         
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at (0), STRING)->lexeme.c_str ());
@@ -156,10 +156,10 @@ namespace f8 {
 
         if (sendto(sock, nf.str ().c_str (), n->tail.at(2)->lexeme.size (), 0, 
             (struct sockaddr *)&server , sizeof(server)) < 0) {
-            return  make_node("false");
+            return  make_node(0);
         }
         ::close (sock);
-        return  make_node ("true");
+        return  make_node (1);
     }
     // I/O  -----------------------------------------------------------------------
     AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
@@ -177,13 +177,13 @@ namespace f8 {
         if (input) {
             std::istream* f = nullptr;
             f = new std::ifstream (name);
-            if (!f->good ()) return make_node ("false");
+            if (!f->good ()) return make_node (0);
             s = ( make_obj ("instream", f, ll));
         }
         else {
             std::ostream* f = nullptr;
             f = new std::ofstream (name);
-            if (!f->good ()) return make_node ("false");
+            if (!f->good ()) return make_node (0);
             s = ( make_obj ("outstream", f, ll));        
         }
         return s;
@@ -196,59 +196,59 @@ namespace f8 {
             istr->close ();
             delete istr;
             p->obj = 0;
-            return  make_node ("true");
+            return  make_node (1);
         } else if (p->lexeme == "outstream") {
             std::ofstream* ostr = static_cast<std::ofstream*> (p->obj);
             ostr->close ();
             delete ostr;
             p->obj = 0;
-            return  make_node("true");
+            return  make_node(1);
         }
-        return  make_node("false");
+        return  make_node(0);
     }
     AtomPtr fn_isgood (AtomPtr node, AtomPtr env) {
         AtomPtr p = type_check (node->tail.at(0), OBJECT);
-        if (p->obj == 0) return  make_node("false");
+        if (p->obj == 0) return  make_node(0);
         if (p->lexeme == "instream") {
-            return  make_node(static_cast<std::istream*> (p->obj)->good () ? "true" : "false");
+            return  make_node(static_cast<std::istream*> (p->obj)->good () ? 1 : 0);
         } else if (p->lexeme == "outstream") {
-            return  make_node(static_cast<std::ostream*> (p->obj)->good () ? "true" : "false");
+            return  make_node(static_cast<std::ostream*> (p->obj)->good () ? 1 : 0);
         }
         return  make_node();
     }
     AtomPtr fn_rwndstream (AtomPtr node, AtomPtr env) {
         AtomPtr p = type_check (node->tail.at(0), OBJECT);
-        if (p->obj == 0) return  make_node("false");
+        if (p->obj == 0) return  make_node(0);
         if (p->lexeme == "instream") {
             std::istream* istr = static_cast<std::istream*>(p->obj);
             istr->clear();
             istr->seekg (0);
-            return  make_node ("true");
+            return  make_node (1);
         } else if (p->lexeme == "outstream") {
             std::ostream* ostr = static_cast<std::ostream*>(p->obj);
             ostr->clear();
             ostr->seekp (0);
-            return  make_node("true");
+            return  make_node(1);
         }
 
-        return  make_node("false");
+        return  make_node(0);
     }
     AtomPtr fn_writeline (AtomPtr n, AtomPtr env) {
         AtomPtr p = type_check (n->tail.at(0), OBJECT);
-        if (p->obj == 0 || p->lexeme != "outstream") return  make_node("false");
+        if (p->obj == 0 || p->lexeme != "outstream") return  make_node(0);
         std::ostream* out = static_cast<std::ostream*> (p->obj);
         for (unsigned  i = 1; i < n->tail.size (); ++i)  {
             *out << type_check (n->tail.at (i), STRING)->lexeme;
             out->flush();
         }
-        return make_node ("true");    
+        return make_node (1);    
     }
     AtomPtr fn_readline (AtomPtr n, AtomPtr env) {
         AtomPtr p = type_check (n->tail.at(0), OBJECT);
-        if (p->obj == 0 || p->lexeme != "instream") return  make_node("false");
+        if (p->obj == 0 || p->lexeme != "instream") return  make_node(0);
         std::istream* in = static_cast<std::istream*> (p->obj);
         std::string name = p->tail.at(0)->lexeme; // exists by default
-        if (!in->good () || in->eof ()) return  make_node("false");
+        if (!in->good () || in->eof ()) return  make_node(0);
         std::string buff;
         std::getline (*in, buff);
         return make_node ((std::string) "\"" + buff);

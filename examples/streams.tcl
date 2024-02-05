@@ -4,7 +4,7 @@ source "stdlib.tcl"
 
 puts "current directory " (ltail (ltail (dirlist "."))) nl
 puts "stats of first file " (filestat (first (dirlist "."))) nl
-
+puts "home folder is " (getvar "HOME") nl
 puts "writing data to file..." nl
 set astream (openstream "test.txt" 'output 'text)
 if (not (isgood astream)) (throw "invalid output stream")

@@ -1,6 +1,10 @@
 # f8 - standard library
 #
 
+# true/false
+set true 1
+set false 0
+
 # logical operators
 proc (not x) (if x false else true)
 proc (and x y)(if (if x true else false) (if y true else false) else false)
@@ -8,46 +12,41 @@ proc (or x y) (if x x else (if y y else false))
 proc (<> n1 n2) (not (eq n1 n2))
 
 # lists
-proc (first l) (lget 0 l)
-proc (second l) (lget 0 (ltail l))
-proc (third l) (lget 0 (ltail (ltail l)))
-proc (len l) {
-	proc (len_runner i l) {
-		if (eq l ()) i	else (len_runner (+ i 1) (ltail l))
-	}
-	len_runner 0 l
-}
-proc (last l) (lget (- (len l) 1) l)
+proc (car l) (lindex 0 l)
+proc (head l) (lappend () (car l))
+proc (cdr l) (lrange l 1 (- (llength l) 1))
+proc (last l) (lindex (- (llength l) 1) l)
+proc (tail l) (lappnd () (last l))
 proc (take n l) {
-	proc (take_runner acc n l) {
+	proc (take-runner acc n l) {
 		if (<= n 0) acc else {
-			ljoin acc (first l)
-			take_runner acc (- n 1) (ltail l)
+			lappend acc (car l)
+			take-runner acc (- n 1) (cdr l)
 		}
 	}
-	take_runner () n l
+	take-runner () n l
 }
 proc (drop n l) {
-	if (<= n 0) l else (drop (- n 1) (ltail l))
+	if (<= n 0) l else (drop (- n 1) (cdr l))
 }
 proc (split n l) {
  	list (take n l) (drop n l)
 }
 proc (match e l) {
-	proc (match_runner acc n e l)  {
+	proc (match-runner acc n e l)  {
 		if (eq l ()) acc else {
-			if (eq (first l) e) (ljoin acc n)
-			match_runner acc (+ n 1) e (ltail l)
+			if (eq (car l) e) (lappend acc n)
+			match-runner acc (+ n 1) e (cdr l)
 		}
 	}
-	match_runner () 0 e l
+	match-runner () 0 e l
 }
 proc (elem x l) {
-		if (eq 0 (len (match x l))) false else true
+		if (eq 0 (llength (match x l))) false else true
 }
 proc (reverse l) {
 	proc (reverse-runner l acc) {
-		if (eq l ()) acc else (reverse-runner (ltail l) (ljoin (lhead l) acc))
+		if (eq l ()) acc else (reverse-runner (cdr l) (lappend (head l) acc))
 	}
 	reverse-runner l ()
 }
@@ -56,8 +55,8 @@ proc (reverse l) {
 proc (map f l) {
 	proc (map-runner acc f l) {
 		if (eq l ()) acc else {
-			ljoin acc (f (first l))
-			map-runner acc f (ltail l)
+			lappend acc (f (car l))
+			map-runner acc f (cdr l)
 		}
 	}
 	map-runner () f l
@@ -65,8 +64,8 @@ proc (map f l) {
 proc (map2 f l1 l2) {
 	proc (map2-runner acc f l1 l2) {
 		if (or (eq l1 ()) (eq l2 ())) acc else {
-			ljoin acc (f (first l1) (first l2))
-			map2-runner acc f (ltail l1) (ltail l2)
+			lappend acc (f (car l1) (car l2))
+			map2-runner acc f (cdr l1) (cdr l2)
 		}
 	}
 	map2-runner () f l1 l2
@@ -74,41 +73,41 @@ proc (map2 f l1 l2) {
 proc (filter f l) {
 	proc (filter-runner acc f l) {
 		if (eq l ()) acc else {
-			ljoin acc (if (f (first l)) (lhead l))
-			filter-runner acc f (ltail l)
+			lappend acc (if (f (car l)) (head l))
+			filter-runner acc f (cdr l)
 		}
 	}
 	filter-runner () f l
 }
-proc (unpack f l) (eval (ljoin () f l))
+proc (unpack f l) (eval (lappend () f l))
 proc (foldl f z l) {
- 	if (eq () l) z else (foldl f (f z (first l)) (ltail l))
+ 	if (eq () l) z else (foldl f (f z (car l)) (cdr l))
 }
-proc  (flip f a b) (f b a)
+proc (flip f a b) (f b a)
 proc (comp f g x) (f (g x))
 proc (dup n x) {
-	proc (dup_runner acc n x) {
+	proc (dup-runner acc n x) {
 		if (<= n 0) acc else {
-			ljoin acc x
-			dup_runner acc (- n 1) x
+			lappend acc x
+			dup-runner acc (- n 1) x
 		}
 	}
-	dup_runner () n x
+	dup-runner () n x
 }
 
 # miscellaneous
-proc (test x y)(if (eq (ljoin (list) (eval x)) y) (puts x  " passed" nl) else (throw "*** FAILED ***" x))
+proc (test x y)(if (eq (lappend (list) (eval x)) y) (puts x  " passed" nl) else (throw "*** FAILED ***" x))
 
 # arithmetics
 proc (succ x) (+ x 1)
 proc (pred x) (- x 1)
-proc (quotient a b) (floor (/ a b))
-proc (remainder a b) (floor (- a (* b (quotient a b))))
-proc (mod a b) (floor (- a (* b (quotient a b))))
+# proc (quotient a b) (floor (/ a b))
+# proc (remainder a b) (floor (- a (* b (quotient a b))))
+# proc (mod a b) (floor (- a (* b (quotient a b))))
 proc (twice x) (+ x x)
 proc (square x) (* x x)
 proc (mul-neg) (comp - (unpack *))
-proc (round x) (floor (+ x 0.5))
+# proc (round x) (floor (+ x 0.5))
 proc (fac x) {
 	proc (fact-iter a product) {
 		if (eq a 0) product else (fact-iter (- a 1) (* product a))
@@ -132,63 +131,58 @@ proc (birandn n m)(map (\ (x)(* x n)) (noise m))
 proc (randn n m)(map (\ (x) (/ (+ n x) 2)) (birandn n m))
 
 # list-based operators
-#(def (zeros)(flip dup 0))
-#(def (ones)(flip dup 1))
-proc (zeros n)(dup n 0)
-proc (ones n)(dup n 1)
+proc (zeros n)(bpf 0 n 0)
+proc (ones n)(bpf 1 n 1)
 proc (diff l) {
-	proc(diff_runner acc l) {
-		if (eq (ltail l) ()) acc else {
-			ljoin acc (- (first (ltail l)) (first l))
-			diff_runner acc (ltail l)
+	proc(diff-runner acc l) {
+		if (eq (cdr l) ()) acc else {
+			lappend acc (- (car (cdr l)) (car l))
+			diff-runner acc (cdr l)
 		}
 	}
-	diff_runner () l
+	diff-runner () l
 }
 proc (sign l) {
-	proc (sign_runner acc l) {
+	proc (sign-runner acc l) {
 		if (eq l ()) acc else {
-			if (>= (first l) 0) (ljoin acc 1) else (ljoin acc -1)
-			sign_runner acc (ltail l)
+			if (>= (car l) 0) (lappend acc 1) else (lappend acc -1)
+			sign-runner acc (cdr l)
 		}
 	}
-	sign_runner () l
+	sign-runner () l
 }
-proc (sum l)(foldl + 0 l)
-proc (prod l)(foldl * 1 l)
-proc (mean l)(/ (foldl + 0 l) (len l))
+proc (mean l) {
+	/ (sum l) (size l)
+}
 proc (stddev l) {
 	set mu (mean l)
-	set normal (/ 1. (- (len l) 1))
-	sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal)
+	set normal (/ 1. (- (llength l) 1))
+	# sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal)
+	sqrt (* (sum (square (- l mu))) normal)
 }
 proc (dot a b) {
-	if (or (eq a ()) (eq b ())) 0 else {
-		+ (* (first a) (first b)) (dot (ltail a) (ltail b))
-	}
+	-> + (* a b)
 }
 proc (ortho a b)(eq (dot a b) 0)
 proc (standard l) {
 	set mu (mean l)
 	set s (stddev l)
-	map (\ (x)(/ x s)) (map (\ (x)(-  x mu)) l)
+	# map (\ (x)(/ x s)) (map (\ (x)(-  x mu)) l)
+	/ (-  l mu) s
 }
 proc (compare op l) {	
-	proc (cmprunner n l) {
+	proc (cmp-runner n l) {
 		if (eq l ()) n else {
-			if (op (first l) n) {
-				! n (first l)
-				cmprunner n (ltail l)
-			} else (cmprunner n (ltail l))
+			if (op (car l) n) {
+				! n (car l)
+				cmp-runner n (cdr l)
+			} else (cmp-runner n (cdr l))
 		}
 	}
-	cmprunner (first l) l
+	cmp-runner (car l) l
 }
-proc (min l) ((compare <) l)
-proc (max l) ((compare >) l)
 proc (normal l) {
-	set m (max l)
-	map (\ (x)(/ x m)) l
+	/ l (max l)
 }
 proc (. f l1 l2) {
 	map2 (\ (x y) (f x y)) l1 l2
@@ -202,21 +196,21 @@ set E 2.7182818284
 
 # system
 proc (fexists fname) {
-	eq (first (filestat fname)) 1
+	eq (car (filestat fname)) 1
 }
-proc (readall stream) {	
+proc (readlines stream) {	
 	set line ""
-	proc (readallrunner stream line) {
+	proc (readlines-runner stream line) {
 		! line (tostr line (readline stream))
 		if (not (isgood stream)) line else {
-			readallrunner stream line
+			readlines-runner stream line
 		}
 	}
-	readallrunner stream line
+	readlines-runner stream line
 }
 proc (udpmonitor addr port) {
 	set r (udprecv addr port)
-	if (eq r "disconnect") 0 else {
+	if (eq r "disconnect") 1 else {
 		puts r nl
 		udpmonitor addr port
 	}
