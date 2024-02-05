@@ -9,7 +9,6 @@ using namespace std;
 
 int main (int argc, char* argv[]) {
 	srand (time (NULL));
-
 	try {
 		f8::AtomPtr environment = f8::make_env ();
 		if (argc == 1) {
