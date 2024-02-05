@@ -1,15 +1,25 @@
 // TODO:
 
-// load db
+// ver. 0.6
 // features + pitch + onsets
-// rt playback
-// clustering
-// maple
-// orchidea
-// blockconv / pvoc
-// ambienc
-// ambidec
-// musicxml output
+// pitch2note
+// clustering/gmm
 // examples
 // tests
 // improve error messages (ctx and/or linenum..)
+// blockconv / pvoc
+// more examples: math, strings, osc-like udpsend
+
+// ver. 0.7
+// load db
+// maple/slip (?)
+// orchidea
+// ambienc
+// ambidec
+
+// ver. 0.8
+// grain-orch
+// musicxml output
+// rt playback
+// nn
+
