@@ -8,7 +8,7 @@
 // tests
 // improve error messages (ctx and/or linenum..)
 // blockconv / pvoc
-// more examples: math, strings, osc-like udpsend
+// more examples: math, strings, osc-like udpsend, descriptors, knn, pitch to osc
 
 // ver. 0.7
 // load db

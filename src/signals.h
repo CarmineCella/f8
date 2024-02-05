@@ -347,12 +347,19 @@ namespace f8 {
 		int i = (int) type_check  (node->tail.at (1), NUMBER)->val;
 		int len = (int) type_check  (node->tail.at (2), NUMBER)->val;
 		int stride = 1;
+
 		if (node->tail.size () == 4) stride = (int) type_check  (node->tail.at (3), NUMBER)->val;
-		
-		if (i < 0 || len < 1 || stride < 1 || i + len  > res.size ()) {
+		if (i < 0 || len < 1 || stride < 1) {
 			error ("[slice] invalid indexing", node);
 		}
-		std::valarray<Real> s = res[std::slice (i, len, stride)];
+		int j = i; 
+		int ct = 0;
+		while (j< res.size ()) {
+			if (ct > len) break;
+			j += stride;
+			++ct;
+		}
+		std::valarray<Real> s = res[std::slice (i, ct, stride)];
 		return array2list (s);
 	}
 	AtomPtr fn_assign (AtomPtr node, AtomPtr env) {
