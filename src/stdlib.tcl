@@ -101,13 +101,13 @@ proc (test x y)(if (eq (lappend (list) (eval x)) y) (puts x  " passed" nl) else 
 # arithmetics
 proc (succ x) (+ x 1)
 proc (pred x) (- x 1)
-# proc (quotient a b) (floor (/ a b))
-# proc (remainder a b) (floor (- a (* b (quotient a b))))
-# proc (mod a b) (floor (- a (* b (quotient a b))))
+proc (quotient a b) (floor (/ a b))
+proc (remainder a b) (floor (- a (* b (quotient a b))))
+proc (mod a b) (floor (- a (* b (quotient a b))))
 proc (twice x) (+ x x)
 proc (square x) (* x x)
-proc (mul-neg) (comp - (unpack *))
-# proc (round x) (floor (+ x 0.5))
+proc (mul-neg) (comp neg (unpack *))
+proc (round x) (floor (+ x 0.5))
 proc (fac x) {
 	proc (fact-iter a product) {
 		if (eq a 0) product else (fact-iter (- a 1) (* product a))

@@ -665,6 +665,26 @@ namespace f8 {
 
     // MAKE_ARRAYSINGOP (floor, fn_floor);
 
+    AtomPtr fn_neg (AtomPtr n, AtomPtr env) {						
+        AtomPtr res = make_node (); 
+        for (unsigned i = 0; i < n->tail.size (); ++i) { 
+            std::valarray<Real> v; 
+            list2array (n->tail.at (i), v); 
+            v = -(v); 
+            res->tail.push_back (array2list (v)); 
+        }\
+        return res->tail.size () == 1 ? res->tail.at (0) : res; 
+    }
+    AtomPtr fn_floor (AtomPtr n, AtomPtr env) {						
+        AtomPtr res = make_node (); 
+        for (unsigned i = 0; i < n->tail.size (); ++i) { 
+            std::valarray<Real> v; 
+            list2array (n->tail.at (i), v); 
+            for (unsigned j = 0; j < v.size (); ++j) v[j] = floor (v[j]); 
+            res->tail.push_back (array2list (v)); 
+        }\
+        return res->tail.size () == 1 ? res->tail.at (0) : res; 
+    }
     template <int mode>
     AtomPtr fn_format (AtomPtr node, AtomPtr env) {
         std::stringstream tmp;
@@ -853,7 +873,8 @@ namespace f8 {
         add_operator ("max", &fn_max, 1, env);
         add_operator ("sum", &fn_sum, 1, env);
         add_operator ("size", &fn_size, 1, env);
-        // add_operator ("floor", &fn_floor, 1, env);
+        add_operator ("neg", &fn_neg, 1, env);
+        add_operator ("floor", &fn_floor, 1, env);
         add_operator ("puts", &fn_format<0>, 1, env);
         add_operator ("gets", &fn_read, 0, env);
         add_operator ("source", &fn_load, 1, env);
