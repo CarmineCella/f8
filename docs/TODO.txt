@@ -13,12 +13,12 @@
 // ver. 0.7
 // load db
 // maple/slip (?)
-// orchidea
+// grain-orch
 // ambienc
 // ambidec
 
 // ver. 0.8
-// grain-orch
+// orchidea
 // musicxml output
 // rt playback
 // nn

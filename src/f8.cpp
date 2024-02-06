@@ -4,19 +4,10 @@
 #include "f8.h"
 #include <iostream>
 #include <stdexcept>
-#include <valarray>
 
 using namespace std;
 
 int main (int argc, char* argv[]) {
-	std::valarray<double> e ({1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-	std::valarray<double> s1 = e[std::slice(0, 20, 2)];
-	std::valarray<double> s2 = e[std::slice(1, 20, 2)];
-	
-	for (double &x: s1) cout << x << " ";
-	cout << endl;
-	for (double &x: s2) cout << x << " ";
-	cout << endl;
 	srand (time (NULL));
 	try {
 		f8::AtomPtr environment = f8::make_env ();

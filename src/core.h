@@ -128,6 +128,7 @@ namespace f8 {
         if (node->type == OBJECT) {
             out << "<object: " << node->lexeme << " @" << &node->obj << ">";    
         }
+        out.flush ();
         return out;
     }
     void error (const std::string& msg, AtomPtr ctx) {

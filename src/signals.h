@@ -105,10 +105,13 @@ namespace f8 {
 	}
 	AtomPtr fn_gen (AtomPtr node, AtomPtr env) {
 		int len = (int) type_check (node->tail.at (0), NUMBER)->val;
-		std::valarray<Real> coeffs = to_array (type_check (node->tail.at (1), LIST));
+		std::valarray<Real> coeffs (node->tail.size () - 1);
+		for (unsigned i = 1; i < node->tail.size (); ++i) {
+			coeffs[i] = ((type_check (node->tail.at (1), NUMBER)->val));
+		}
 		std::valarray<Real> table (len + 1); 
 		gen10 (coeffs, table);
-		return make_node (table);
+		return array2list (table);
 	}
 	AtomPtr fn_osc (AtomPtr node, AtomPtr env) {
 		Real sr = type_check (node->tail.at (0), NUMBER)->val;
@@ -354,8 +357,8 @@ namespace f8 {
 		}
 		int j = i; 
 		int ct = 0;
-		while (j< res.size ()) {
-			if (ct > len) break;
+		while (j < res.size ()) {
+			if (ct >= len) break;
 			j += stride;
 			++ct;
 		}
