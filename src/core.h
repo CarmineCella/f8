@@ -71,6 +71,7 @@ namespace f8 {
         int linenum;
         std::string module;
     };
+    AtomPtr g_ctx = make_node (); // context for error messages
 
     // helpers
     AtomPtr make_obj (const std::string& otype, void* ptr, AtomPtr cb) {
@@ -137,12 +138,17 @@ namespace f8 {
     }
     void error (const std::string& msg, AtomPtr ctx) {
         std::stringstream err;
-        if (ctx->module != "") err << "(" << ctx->module << ", " << ctx->linenum << ") ";
+        if (ctx->module != "") err << ctx->module << ", line " << ctx->linenum << ", ";
+        else if (g_ctx->module != "") err << g_ctx->module << ", line " << g_ctx->linenum << ", ";
         err << msg << " "; 
         if (!is_nil (ctx)) {
             err << "[";
             print (ctx, err);
             err << "]";
+        }
+        if (!is_nil (g_ctx)) {
+            err << " in ";
+            print (g_ctx, err) << std::endl;
         }
         throw make_node (err.str ());
     }
@@ -157,7 +163,8 @@ namespace f8 {
     AtomPtr type_check (AtomPtr node, AtomType type) {
         if (node->type != type) {
             std::stringstream msg;
-            msg << "invalid type (expected " << TYPE_NAMES[type] << ")";        
+            msg << "invalid type (expected " << TYPE_NAMES[type] << ", found "
+                << TYPE_NAMES[node->type] << ")";        
             error (msg.str (), node);
         }
         return node;
@@ -733,6 +740,7 @@ namespace f8 {
         int linenum = 1;
         while (!in.eof ()) {
             res = read_line (in, linenum, name);
+            g_ctx = res;
             if (!is_nil (res)) eval (res, env);
         }
         return make_node (1);
