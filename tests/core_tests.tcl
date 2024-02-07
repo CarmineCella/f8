@@ -45,7 +45,7 @@
 (test {typeof {a b c}} {coll})
 (test {typeof {1 2}} {coll})
 (test {typeof {}} {coll})
-(test {typeof 3} {number})
+(test {typeof 3} {numeric})
 (test {typeof *} {operator})
 (test {typeof (\{x}{+ x x})} {lambda})
 (test {typeof "hallo"} {string})
