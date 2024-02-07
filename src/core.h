@@ -71,9 +71,6 @@ namespace f8 {
         int linenum;
         std::string module;
     };
-    AtomPtr g_ctx = make_node (); // context for error messages
-
-    // helpers
     AtomPtr make_obj (const std::string& otype, void* ptr, AtomPtr cb) {
         AtomPtr o = make_node (ptr);
         o->lexeme = otype;
@@ -103,6 +100,8 @@ namespace f8 {
     bool is_nil (AtomPtr node) {
         return node == nullptr || (node->type == LIST && node->tail.size () == 0);
     }
+
+    // helpers
     std::ostream& print (AtomPtr node, std::ostream& out, bool write = false) {
         if (node->type == NUMBER) out << std::fixed  << node->val;
         if (node->type == SYMBOL || node->type == STRING) {
@@ -135,28 +134,32 @@ namespace f8 {
         }
         out.flush ();
         return out;
-    }
-    void error (const std::string& msg, AtomPtr ctx) {
-        std::stringstream err;
-        if (ctx->module != "") err << ctx->module << ", line " << ctx->linenum << ", ";
-        else if (g_ctx->module != "") err << g_ctx->module << ", line " << g_ctx->linenum << ", ";
-        err << msg << " "; 
-        if (!is_nil (ctx)) {
-            err << "[";
-            print (ctx, err);
-            err << "]";
+    } 
+    struct Context {
+        static void error (const std::string& msg, AtomPtr ctx) {
+            std::stringstream err;
+            if (ctx->module != "") err << ctx->module << ", line " << ctx->linenum << ", ";
+            else if (call_frame->module != "") err << call_frame->module << ", line " << call_frame->linenum << ", ";
+            err << msg << " "; 
+            if (!is_nil (ctx)) {
+                err << "[";
+                print (ctx, err);
+                err << "]";
+            }
+            if (!is_nil (call_frame)) {
+                err << " in ";
+                print (call_frame, err) << std::endl;
+            }
+            throw make_node (err.str ());
         }
-        if (!is_nil (g_ctx)) {
-            err << " in ";
-            print (g_ctx, err) << std::endl;
-        }
-        throw make_node (err.str ());
-    }
+        static AtomPtr call_frame;
+    };
+    AtomPtr Context::call_frame = make_node (); // context for error messages
     AtomPtr argnum_check (AtomPtr node, int sz) {
         if (node->tail.size () < sz && sz != -1) {
             std::stringstream msg;
             msg << "insufficient arguments (expected " << sz << ", found " << node->tail.size () << ")";    
-            error (msg.str (), node);
+            Context::error (msg.str (), node);
         }
         return node;
     }
@@ -165,7 +168,7 @@ namespace f8 {
             std::stringstream msg;
             msg << "invalid type (expected " << TYPE_NAMES[type] << ", found "
                 << TYPE_NAMES[node->type] << ")";        
-            error (msg.str (), node);
+            Context::error (msg.str (), node);
         }
         return node;
     }
@@ -291,7 +294,7 @@ namespace f8 {
             if (s->tail.at (0)->lexeme == node->lexeme) return s->tail.at (1);
         }
         if (!is_nil (env->tail.at (0))) return assoc (node, env->tail.at (0));
-        error ("unbound identifier", node);
+        Context::error ("unbound identifier", node);
         return make_node (); // not reached
     }
     AtomPtr extend (AtomPtr sym, AtomPtr v, AtomPtr env, bool recurse) {
@@ -304,7 +307,7 @@ namespace f8 {
         }
         if (recurse) { // set!
             if (!is_nil (env->tail.at (0))) return extend (sym, v, env->tail.at (0), recurse);
-            error ("unbound identifier", sym);
+            Context::error ("unbound identifier", sym);
         } else { // def
             env->tail.push_back (make_entry (sym, v));
             return v;
@@ -318,10 +321,6 @@ namespace f8 {
             output->tail.push_back (s->tail.at (0));
         }
     }
-    ///~ ## Built-in operators
-    ///~ `quote` *`expr`* <br>
-    ///~ The quote operator indicates literal data; it suppresses evaluation.
-    
     AtomPtr fn_quote (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_set (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_updef (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
@@ -354,7 +353,7 @@ namespace f8 {
             AtomPtr cenv = env;
             if (car->action == &fn_updef) {
                 cenv = env->tail.at (0);
-                if (is_nil (cenv)) error ("[updef] parent enviroment undefined", node);
+                if (is_nil (cenv)) Context::error ("[updef] parent enviroment undefined", node);
             }
             return extend (type_check (node->tail.at (1), SYMBOL), eval (node->tail.at (2), env), cenv, false); // not recursive
         }
@@ -386,7 +385,7 @@ namespace f8 {
                     argnum_check (node, 5);
                     if (type_check (node->tail.at (3), SYMBOL)->lexeme == "else") {
                         node = node->tail.at (4);
-                    } else error ("invalid if/else syntax in ", node);
+                    } else Context::error ("invalid if/else syntax in ", node);
                 } else return make_node ();
             }
             goto tail_call;
@@ -471,7 +470,7 @@ namespace f8 {
             node = body;
             goto tail_call;
         }
-        error ("function expected", node);
+        Context::error ("function expected", node);
         return make_node (); // not reached
     }
 
@@ -508,7 +507,7 @@ namespace f8 {
                 l->tail.push_back(make_node(TYPE_NAMES[b->tail.at (i)->type]));
             }
         } else {
-            error ("[info] invalid request", b->tail.at (0));
+            Context::error ("[info] invalid request", b->tail.at (0));
         }
         return l;
     }
@@ -536,7 +535,7 @@ namespace f8 {
         int p  = (int) type_check (node->tail.at (0), NUMBER)->val;
         AtomPtr o = type_check (node->tail.at (1), LIST);
         if (!o->tail.size ()) return make_node  ();
-        if (p < 0 || p >= o->tail.size ()) error ("[lget] invalid index", node);
+        if (p < 0 || p >= o->tail.size ()) Context::error ("[lget] invalid index", node);
         return o->tail.at (p);
     }
     AtomPtr fn_llength (AtomPtr node, AtomPtr env) {
@@ -740,7 +739,7 @@ namespace f8 {
         int linenum = 1;
         while (!in.eof ()) {
             res = read_line (in, linenum, name);
-            g_ctx = res;
+            Context::call_frame = res;
             if (!is_nil (res)) eval (res, env);
         }
         return make_node (1);
@@ -827,7 +826,7 @@ namespace f8 {
     #endif
         void* handle = dlopen (name.c_str (), RTLD_NOW);
         if (!handle) {
-            error ((std::string) "[import] " + dlerror (), params);
+            Context::error ((std::string) "[import] " + dlerror (), params);
         }
         unsigned ct = 0;
         for (unsigned i = 0; i < params->tail.at(1)->tail.size() / 2; ++i) {
@@ -843,9 +842,12 @@ namespace f8 {
         }
         return make_node(ct); // number of operator imported
     }
+    ///~ ## Built-in operators
     AtomPtr add_core (AtomPtr env) {
         env->tail.push_back (make_entry (make_node ("nl"), make_node ("\n")));
-        env->tail.push_back (make_entry (make_node ("tab"), make_node ("\t")));        
+        env->tail.push_back (make_entry (make_node ("tab"), make_node ("\t"))); 
+        ///~ `quote` *`expr`* <br>
+        ///~ The quote operator indicates literal data; it suppresses evaluation.          
         add_operator ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
         add_operator ("set", &fn_set, -1, env);
         add_operator ("updef", &fn_updef, -1, env);

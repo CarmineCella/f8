@@ -169,7 +169,7 @@ namespace f8 {
         bool input = false;
         if (direction == "input") input = true;
         else if (direction == "output") input = false;
-        else error ("[openstream] unsopported direction", node);
+        else Context::error ("[openstream] unsopported direction", node);
         AtomPtr s =  make_node();
         AtomPtr ll =   make_node();
         ll->tail.push_back (make_node ((std::string) "\"" + name));

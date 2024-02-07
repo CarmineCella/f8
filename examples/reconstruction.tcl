@@ -48,7 +48,6 @@ proc (oscbank sr amps freqs tab) {
 	if elems {
 		set outbuff (bpf 0 (size (car freqs)) 0)
 		set i 0
-        puts (info 'typeof (car freqs)) nl
 		while (< i elems) {
             set sines (osc sr (car freqs) tab)
 			! outbuff (+ outbuff (* (car amps)))

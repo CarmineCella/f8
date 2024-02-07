@@ -1,7 +1,6 @@
 // TODO:
 
 // ver. 0.6
-// improve error messages (ctx and/or linenum..)
 // examples
 // tests
 // features + pitch + onsets

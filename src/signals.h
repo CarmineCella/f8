@@ -73,7 +73,7 @@ namespace f8 {
 		int len  = (int) type_check (node->tail.at (1), NUMBER)->val;
 		Real end = type_check (node->tail.at (2), NUMBER)->val;
 		node->tail.pop_front (); node->tail.pop_front (); node->tail.pop_front ();
-		if (node->tail.size () % 2 != 0) error ("[bpf] invalid number of arguments", node);
+		if (node->tail.size () % 2 != 0) Context::error ("[bpf] invalid number of arguments", node);
 		BPF<Real> bpf (len);
 		bpf.add_segment (init, len, end);
 		Real curr = end;
@@ -89,7 +89,7 @@ namespace f8 {
 	}
 	AtomPtr fn_mix (AtomPtr node, AtomPtr env) {
 		std::vector<Real> out;
-		if (node->tail.size () % 2 != 0) error ("[mix] invalid number of arguments", node);
+		if (node->tail.size () % 2 != 0) Context::error ("[mix] invalid number of arguments", node);
 		for (unsigned i = 0; i < node->tail.size () / 2; ++i) {
 			int p = (int) type_check (node->tail.at (i * 2), NUMBER)->val;
 			AtomPtr l = type_check (node->tail.at (i * 2 + 1), LIST);
@@ -192,7 +192,7 @@ namespace f8 {
 		if (n->tail.size () == 4) mix = type_check(n->tail.at (3), NUMBER)->val;
 		long irsamps = ir.size ();
 		long sigsamps = sig.size ();
-		if (irsamps <= 0 || sigsamps <= 0) error ("[conv] invalid lengths", n);
+		if (irsamps <= 0 || sigsamps <= 0) Context::error ("[conv] invalid lengths", n);
 		int max = irsamps > sigsamps ? irsamps : sigsamps;
 		int N = next_pow2(max) << 1;
 		std::valarray<Real> fbuffir(2 * N);
@@ -238,13 +238,13 @@ namespace f8 {
 
 		if (direction == "input") input = true;
 		else if (direction == "output") input = false;
-		else error ("unsopported direction for stream", node);
+		else Context::error ("unsopported direction for stream", node);
 		
 		if (input == false) {
 			if (node->tail.size () == 4) {
 				sr = type_check (node->tail.at(2), AtomType::NUMBER)->val;
 				ch = type_check (node->tail.at(3), AtomType::NUMBER)->val;
-			} else error ("[openwav] missing sr and ch for output wav", node);
+			} else Context::error ("[openwav] missing sr and ch for output wav", node);
 		}
 		AtomPtr s = make_node();
 		AtomPtr ll =  make_node();
@@ -262,7 +262,7 @@ namespace f8 {
 	}
 	AtomPtr fn_readwav (AtomPtr node, AtomPtr env) {
 		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
-		if (p->obj == 0 || p->lexeme != "inwav") error ("[readwav] cannot read an output file", node);
+		if (p->obj == 0 || p->lexeme != "inwav") Context::error ("[readwav] cannot read an output file", node);
 		WavInFile* in = static_cast<WavInFile*> (p->obj);
 
 		AtomPtr final = make_node();
@@ -293,7 +293,7 @@ namespace f8 {
 	}
 	AtomPtr fn_infowav (AtomPtr node, AtomPtr env) {
 		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
-		if (p->obj == 0 || p->lexeme != "inwav") error ("[infowav] cannot get info for an output file", node);
+		if (p->obj == 0 || p->lexeme != "inwav") Context::error ("[infowav] cannot get info for an output file", node);
 		WavInFile* in = static_cast<WavInFile*> (p->obj);
 
 		AtomPtr final = make_node();
@@ -305,7 +305,7 @@ namespace f8 {
 	}
 	AtomPtr fn_writewav (AtomPtr node, AtomPtr env) {
 		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
-		if (p->obj == 0 || p->lexeme != "outwav") error ("[readwav] cannot write an input file", node);
+		if (p->obj == 0 || p->lexeme != "outwav") Context::error ("[readwav] cannot write an input file", node);
 		WavOutFile* out = static_cast<WavOutFile*> (p->obj);
 		uint ch = type_check (node->tail.at(1), AtomType::NUMBER)->val;
 		
@@ -353,7 +353,7 @@ namespace f8 {
 
 		if (node->tail.size () == 4) stride = (int) type_check  (node->tail.at (3), NUMBER)->val;
 		if (i < 0 || len < 1 || stride < 1) {
-			error ("[slice] invalid indexing", node);
+			Context::error ("[slice] invalid indexing", node);
 		}
 		int j = i; 
 		int ct = 0;
@@ -375,7 +375,7 @@ namespace f8 {
 		int stride = 1;
 		if (node->tail.size () == 5) stride = (int) type_check  (node->tail.at (4), NUMBER)->val;
 		if (i < 0 || len < 1 || stride < 1 || i + len  > v1.size () || (int) (len / stride) > v2.size ()) {
-			error ("[assign] invalid indexing", node);
+			Context::error ("[assign] invalid indexing", node);
 		}
 		v1[std::slice(i, len, stride)] = v2;
 		return array2list (v1);
