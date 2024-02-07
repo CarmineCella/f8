@@ -9,10 +9,10 @@ set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
 set sig (readwav sig_file)
 set ir (readwav ir_file)  
 
-set sr (first (infowav sig_file))
+set sr (car (infowav sig_file))
 
-set outsigL (conv (first ir) (first sig) scale mix)
-set outsigR (conv (second ir) (first sig) scale mix)
+set outsigL (conv (car ir) (car sig) scale mix)
+set outsigR (conv (second ir) (car sig) scale mix)
 
 set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
 

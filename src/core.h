@@ -68,6 +68,8 @@ namespace f8 {
         std::deque<AtomPtr> tail;
         int minargs;
         void* obj;
+        int linenum;
+        std::string module;
     };
 
     // helpers
@@ -135,6 +137,7 @@ namespace f8 {
     }
     void error (const std::string& msg, AtomPtr ctx) {
         std::stringstream err;
+        if (ctx->module != "") err << "(" << ctx->module << ", " << ctx->linenum << ") ";
         err << msg << " "; 
         if (!is_nil (ctx)) {
             err << "[";
@@ -161,7 +164,7 @@ namespace f8 {
     }
 
     // parsing
-    std::string next (std::istream& input) {
+    std::string next (std::istream& input, int& linenum) {
         std::stringstream accum;
         while (!input.eof ()) {
             char c = input.get ();
@@ -171,12 +174,14 @@ namespace f8 {
                         input.unget();
                         return accum.str ();
                     } else {
+                        if (c == '\n') ++linenum;                        
                         accum << c;
                         return accum.str ();
                     }
                 break;
                 case '#':
                     while (c != '\n' && !input.eof ())  { c = input.get (); }
+                    ++linenum;
                 break;		            
                 case ' ': case '\t': case '\r':  case '\0':
                     if (accum.str ().size ()) return accum.str ();
@@ -191,6 +196,7 @@ namespace f8 {
                         while (!input.eof ()) {
                             input.get (c);
                             if (c == '\"') break;
+                            if (c == '\n') ++linenum;
                             accum << c;
                         }
                         return accum.str ();
@@ -208,25 +214,23 @@ namespace f8 {
     bool is_string (const std::string& s) {
         return s.find ("\"") != std::string::npos;
     }
-    AtomPtr read_line (std::istream& in);
-    AtomPtr read (std::istream& in) {
-        std::string token = next (in);
+    AtomPtr read_line (std::istream& in, int& linenum, const std::string& module);
+    AtomPtr read (std::istream& in, int& linenum, const std::string& module) {
+        std::string token = next (in, linenum);
+        AtomPtr l = make_node();
         if (token == "(") {
-            AtomPtr l = make_node();
             AtomPtr a = make_node ();
             while (!in.eof ()) {
-                a = read (in);
+                a = read (in, linenum, module);
                 if (a->lexeme == "\n" && a->type != STRING) continue;
                 if (a->lexeme == ")" && a->type != STRING) break;
                 l->tail.push_back (a);
             }
-            return l;
         } else if (token == "{") {
-            AtomPtr l = make_node();
             l->tail.push_back (make_node ("do"));
             AtomPtr a = make_node ();
             while (!in.eof ()) {
-                a = read_line (in);
+                a = read_line (in, linenum, module);
                 if (a->tail.size () && atom_eq (a->tail.at (a->tail.size () - 1),
                     make_node ("}"))) {
                     a->tail.pop_back ();
@@ -235,23 +239,22 @@ namespace f8 {
                 }
                 if (!is_nil (a)) l->tail.push_back (a);
             }
-            return l;  
         } else if (is_number (token)) {
-            return make_node (atof (token.c_str ()));
+            l = make_node (atof (token.c_str ()));
         } else if (token == "'") {
-            AtomPtr list = make_node ();
-            list->tail.push_back (make_node("quote"));
-            list->tail.push_back (read (in));
-            return list;			
+            l->tail.push_back (make_node("quote"));
+            l->tail.push_back (read (in, linenum, module));	
         }  else {
-            if (token.size ()) return make_node (token);
-            else return make_node ();
+            if (token.size ()) l = make_node (token);
         }
+        l->linenum = linenum;
+        l->module = module;
+        return l;
     }
-    AtomPtr read_line (std::istream& in) {
+    AtomPtr read_line (std::istream& in, int& linenum, const std::string& module) {
         AtomPtr l = make_node ();
         while (!in.eof ()) {
-            AtomPtr a = read (in);
+            AtomPtr a = read (in, linenum, module);
             if (in.eof ()) break;
             if (atom_eq (a, make_node ("}"))) {
                 l->tail.push_back (a);
@@ -263,6 +266,8 @@ namespace f8 {
             }
             l->tail.push_back (a);
         }
+        l->linenum = linenum;
+        l->module = module;
         return l;
     }
 
@@ -713,7 +718,8 @@ namespace f8 {
         }
     }
     AtomPtr fn_read (AtomPtr node, AtomPtr env) {
-        return read_line (std::cin);
+        int linenum = 1;
+        return read_line (std::cin, linenum, "");
     }
     AtomPtr load (const std::string& name, AtomPtr env) {
         std::ifstream in (name.c_str ());
@@ -724,8 +730,9 @@ namespace f8 {
             if (!in.good ()) return make_node(0);
         }
         AtomPtr res = make_node ();
+        int linenum = 1;
         while (!in.eof ()) {
-            res = read_line (in);
+            res = read_line (in, linenum, name);
             if (!is_nil (res)) eval (res, env);
         }
         return make_node (1);
@@ -893,10 +900,11 @@ namespace f8 {
     // interface
     void repl (AtomPtr env, std::istream& in, std::ostream& out) {
         std::istream* current = &in;	
+        int linenum = 1;
         while (true){
             out << ">> ";
             try {
-                print (eval (read_line (*current), env), out);
+                print (eval (read_line (*current, linenum, ""), env), out);
                 out << std::endl;
             } catch (f8::AtomPtr& e) {
                 std::cout << RED << "error: "; f8::print (e, out) << RESET << std::endl;
