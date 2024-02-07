@@ -1,12 +1,12 @@
 // TODO:
 
 // ver. 0.6
+// improve error messages (ctx and/or linenum..)
+// examples
+// tests
 // features + pitch + onsets
 // pitch2note
 // clustering/gmm
-// examples
-// tests
-// improve error messages (ctx and/or linenum..)
 // blockconv / pvoc
 // more examples: math, strings, osc-like udpsend, descriptors, knn, pitch to osc
 
@@ -23,3 +23,6 @@
 // rt playback
 // nn
 
+// ISSUES:
+
+// speed problem: go to ARRAY type?

@@ -13,6 +13,7 @@ proc (<> n1 n2) (not (eq n1 n2))
 
 # lists
 proc (car l) (lindex 0 l)
+proc (second l) (lindex 1 l)
 proc (head l) (lappend () (car l))
 proc (cdr l) (lrange l 1 (- (llength l) 1))
 proc (last l) (lindex (- (llength l) 1) l)

@@ -122,7 +122,9 @@ namespace f8 {
             for (unsigned i = 0; i < node->tail.size (); ++i) {
                 print (node->tail.at (i), out);
                 if (i != node->tail.size () - 1) out << " ";
+                if (i > 100) break;
             }
+            if (node->tail.size () > 100) out << "...";
             out << ")";
         }
         if (node->type == OBJECT) {
