@@ -9,7 +9,6 @@
 #include "plotting.h"
 
 ///~ # The f8 (fate) reference manual<br>
-
 ///~ ## Overview
 ///~ This manual is a of the *f8* runtime system. It is intended to be a reference document for programmers. It does not describe how to run *f8* or how to interact with it.
 ///~ 
@@ -36,7 +35,6 @@
 ///~
 ///~ ### True and false
 ///~ In *f8*, the boolean values true and false are denoted by `true` and `false`. However, any value can be treated as a boolean for the purpose of a conditional test. In conditional tests, all values count as true except for `false`, which counts as false.
-
 namespace f8 {
     AtomPtr make_env () {
         AtomPtr env = make_node ();

@@ -123,7 +123,7 @@ namespace f8 {
 
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at(0), STRING)->lexeme.c_str ());
         server.sin_family = AF_INET;
-        server.sin_port = htons((long)type_check (n->tail.at(1), NUMBER)->val);
+        server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val);
     
     if(::bind(sock,(struct sockaddr *)&server , sizeof(server)) < 0) {
             return make_node(0);
@@ -149,7 +149,7 @@ namespace f8 {
         
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at (0), STRING)->lexeme.c_str ());
         server.sin_family = AF_INET;
-        server.sin_port = htons((long)type_check (n->tail.at(1), NUMBER)->val);
+        server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val);
 
         std::stringstream nf;
         print (n->tail.at(2), nf);

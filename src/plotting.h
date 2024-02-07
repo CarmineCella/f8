@@ -9,8 +9,8 @@
 namespace f8 {
 	AtomPtr fn_opensvg (AtomPtr node, AtomPtr env) {
 		std::string name = type_check (node->tail.at (0), STRING)->lexeme;
-		int width = (int) type_check (node->tail.at (1), NUMBER)->val;
-		int height = (int) type_check (node->tail.at (2), NUMBER)->val;
+		int width = (int) type_check (node->tail.at (1), NUMERIC)->val;
+		int height = (int) type_check (node->tail.at (2), NUMERIC)->val;
 
 		if (width < 200 || height < 200) return make_node ();
 		AtomPtr ll =  make_node ();

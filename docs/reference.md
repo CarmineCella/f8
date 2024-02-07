@@ -26,7 +26,7 @@
  ### True and false
  In *f8*, the boolean values true and false are denoted by `true` and `false`. However, any value can be treated as a boolean for the purpose of a conditional test. In conditional tests, all values count as true except for `false`, which counts as false.
  ## Types
- The valid types are: number, symbol, string, list, operator, lambda, object
+ The valid types are: numeric, symbol, string, list, operator, lambda, object
  ## Built-in operators
  `quote` *`expr`* <br>
  The quote operator indicates literal data; it suppresses evaluation.

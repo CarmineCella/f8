@@ -1,6 +1,7 @@
 // TODO:
 
 // ver. 0.6
+// implement NUMERIC type
 // examples
 // tests
 // features + pitch + onsets
@@ -13,15 +14,14 @@
 // load db
 // maple/slip (?)
 // grain-orch
-// ambienc
-// ambidec
 
 // ver. 0.8
 // orchidea
 // musicxml output
 // rt playback
 // nn
+// ambienc
+// ambidec
 
 // ISSUES:
 
-// speed problem: go to ARRAY type?

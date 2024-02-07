@@ -64,22 +64,22 @@ namespace f8 {
 	std::valarray<Real> to_array (AtomPtr list) {
 		int sz = list->tail.size ();
 		std::valarray<Real> out (sz);
-		for (unsigned i = 0; i < sz; ++i) out[i] = type_check (list->tail.at (i), NUMBER)->val;
+		for (unsigned i = 0; i < sz; ++i) out[i] = type_check (list->tail.at (i), NUMERIC)->val;
 		return out;
 	}
 	// numeric --------------------------------------------------------------------------------------
 	AtomPtr fn_bpf (AtomPtr node, AtomPtr env) {
-		Real init = type_check (node->tail.at (0), NUMBER)->val;
-		int len  = (int) type_check (node->tail.at (1), NUMBER)->val;
-		Real end = type_check (node->tail.at (2), NUMBER)->val;
+		Real init = type_check (node->tail.at (0), NUMERIC)->val;
+		int len  = (int) type_check (node->tail.at (1), NUMERIC)->val;
+		Real end = type_check (node->tail.at (2), NUMERIC)->val;
 		node->tail.pop_front (); node->tail.pop_front (); node->tail.pop_front ();
-		if (node->tail.size () % 2 != 0) Context::error ("[bpf] invalid number of arguments", node);
+		if (node->tail.size () % 2 != 0) Context::error ("[bpf] invalid numeric of arguments", node);
 		BPF<Real> bpf (len);
 		bpf.add_segment (init, len, end);
 		Real curr = end;
 		for (unsigned i = 0; i < node->tail.size () / 2; ++i) {
-			int len  = (int) type_check (node->tail.at (i * 2), NUMBER)->val;
-			Real end = type_check (node->tail.at (i * 2 + 1), NUMBER)->val;
+			int len  = (int) type_check (node->tail.at (i * 2), NUMERIC)->val;
+			Real end = type_check (node->tail.at (i * 2 + 1), NUMERIC)->val;
 			bpf.add_segment (curr, len, end);
 			curr = end;
 		}
@@ -89,32 +89,32 @@ namespace f8 {
 	}
 	AtomPtr fn_mix (AtomPtr node, AtomPtr env) {
 		std::vector<Real> out;
-		if (node->tail.size () % 2 != 0) Context::error ("[mix] invalid number of arguments", node);
+		if (node->tail.size () % 2 != 0) Context::error ("[mix] invalid numeric of arguments", node);
 		for (unsigned i = 0; i < node->tail.size () / 2; ++i) {
-			int p = (int) type_check (node->tail.at (i * 2), NUMBER)->val;
+			int p = (int) type_check (node->tail.at (i * 2), NUMERIC)->val;
 			AtomPtr l = type_check (node->tail.at (i * 2 + 1), LIST);
 			int len = (int) (p + l->tail.size ());
 			if (len > out.size ()) out.resize (len, 0);
 			// out[std::slice(p, len, 1)] += l->array;
 			for (unsigned t = 0; t < l->tail.size (); ++t) {
-				out[t + p] += type_check (l->tail[t], NUMBER)->val;
+				out[t + p] += type_check (l->tail[t], NUMERIC)->val;
 			}
 		}
 		std::valarray<Real> v (out.data(), out.size());
 		return make_node (v);
 	}
 	AtomPtr fn_gen (AtomPtr node, AtomPtr env) {
-		int len = (int) type_check (node->tail.at (0), NUMBER)->val;
+		int len = (int) type_check (node->tail.at (0), NUMERIC)->val;
 		std::valarray<Real> coeffs (node->tail.size () - 1);
 		for (unsigned i = 1; i < node->tail.size (); ++i) {
-			coeffs[i] = ((type_check (node->tail.at (1), NUMBER)->val));
+			coeffs[i] = ((type_check (node->tail.at (1), NUMERIC)->val));
 		}
 		std::valarray<Real> table (len + 1); 
 		gen10 (coeffs, table);
 		return array2list (table);
 	}
 	AtomPtr fn_osc (AtomPtr node, AtomPtr env) {
-		Real sr = type_check (node->tail.at (0), NUMBER)->val;
+		Real sr = type_check (node->tail.at (0), NUMERIC)->val;
 		std::valarray<Real> freqs = to_array (type_check (node->tail.at (1), LIST));
 		std::valarray<Real> table = to_array (type_check (node->tail.at (2), LIST));
 		std::valarray<Real> out (freqs.size ());
@@ -133,9 +133,9 @@ namespace f8 {
 	}
 	AtomPtr fn_reson (AtomPtr node, AtomPtr env) {
 		std::valarray<Real> array = to_array (type_check (node->tail.at (0), LIST));
-		Real sr = type_check (node->tail.at (1), NUMBER)->val;
-		Real freq = type_check (node->tail.at (2), NUMBER)->val;
-		Real tau = type_check (node->tail.at (3), NUMBER)->val;
+		Real sr = type_check (node->tail.at (1), NUMERIC)->val;
+		Real freq = type_check (node->tail.at (2), NUMERIC)->val;
+		Real tau = type_check (node->tail.at (3), NUMERIC)->val;
 		
 		Real om = 2 * M_PI * (freq / sr);
 		Real B = 1. / tau;
@@ -187,9 +187,9 @@ namespace f8 {
 	AtomPtr fn_conv (AtomPtr n, AtomPtr env) {
 		std::valarray<Real> ir = to_array (type_check (n->tail.at (0), LIST));
 		std::valarray<Real> sig = to_array (type_check (n->tail.at (1), LIST));
-		Real scale = type_check(n->tail.at (2), NUMBER)->val;
+		Real scale = type_check(n->tail.at (2), NUMERIC)->val;
 		Real mix = 0;
-		if (n->tail.size () == 4) mix = type_check(n->tail.at (3), NUMBER)->val;
+		if (n->tail.size () == 4) mix = type_check(n->tail.at (3), NUMERIC)->val;
 		long irsamps = ir.size ();
 		long sigsamps = sig.size ();
 		if (irsamps <= 0 || sigsamps <= 0) Context::error ("[conv] invalid lengths", n);
@@ -222,15 +222,15 @@ namespace f8 {
 		return make_node (out);
 	}
 	AtomPtr fn_noise (AtomPtr n, AtomPtr env) {
-		int len = (int) type_check (n->tail.at (0), NUMBER)->val;
+		int len = (int) type_check (n->tail.at (0), NUMERIC)->val;
 		std::valarray<Real> out (len);
 		for (unsigned i = 0; i < len; ++i) out[i] = ((Real) rand () / RAND_MAX) * 2. - 1;
 		return make_node (out);
 	}
 	// I/O  -----------------------------------------------------------------------
 	AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
-		std::string name = type_check (node->tail.at(0), AtomType::STRING)->lexeme;
-		std::string direction = type_check (node->tail.at(1), AtomType::SYMBOL)->lexeme;
+		std::string name = type_check (node->tail.at(0), STRING)->lexeme;
+		std::string direction = type_check (node->tail.at(1), SYMBOL)->lexeme;
 		int sr = 44100; 
 		int ch = 1; 
 
@@ -242,8 +242,8 @@ namespace f8 {
 		
 		if (input == false) {
 			if (node->tail.size () == 4) {
-				sr = type_check (node->tail.at(2), AtomType::NUMBER)->val;
-				ch = type_check (node->tail.at(3), AtomType::NUMBER)->val;
+				sr = type_check (node->tail.at(2), NUMERIC)->val;
+				ch = type_check (node->tail.at(3), NUMERIC)->val;
 			} else Context::error ("[openwav] missing sr and ch for output wav", node);
 		}
 		AtomPtr s = make_node();
@@ -261,7 +261,7 @@ namespace f8 {
 		return s;
 	}
 	AtomPtr fn_readwav (AtomPtr node, AtomPtr env) {
-		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+		AtomPtr p = type_check (node->tail.at(0), OBJECT);
 		if (p->obj == 0 || p->lexeme != "inwav") Context::error ("[readwav] cannot read an output file", node);
 		WavInFile* in = static_cast<WavInFile*> (p->obj);
 
@@ -269,7 +269,7 @@ namespace f8 {
 		long sz = in->getNumSamples ();
 		long ch = in->getNumChannels ();
 
-		if (node->tail.size () == 2) sz = type_check (node->tail.at(1), AtomType::NUMBER)->val;
+		if (node->tail.size () == 2) sz = type_check (node->tail.at(1), NUMERIC)->val;
 
 		std::vector<Real> data (sz * ch);
 		in->read (&data[0], sz * ch);
@@ -292,7 +292,7 @@ namespace f8 {
 		return final;
 	}
 	AtomPtr fn_infowav (AtomPtr node, AtomPtr env) {
-		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+		AtomPtr p = type_check (node->tail.at(0), OBJECT);
 		if (p->obj == 0 || p->lexeme != "inwav") Context::error ("[infowav] cannot get info for an output file", node);
 		WavInFile* in = static_cast<WavInFile*> (p->obj);
 
@@ -304,10 +304,10 @@ namespace f8 {
 		return final;
 	}
 	AtomPtr fn_writewav (AtomPtr node, AtomPtr env) {
-		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+		AtomPtr p = type_check (node->tail.at(0), OBJECT);
 		if (p->obj == 0 || p->lexeme != "outwav") Context::error ("[readwav] cannot write an input file", node);
 		WavOutFile* out = static_cast<WavOutFile*> (p->obj);
-		uint ch = type_check (node->tail.at(1), AtomType::NUMBER)->val;
+		uint ch = type_check (node->tail.at(1), NUMERIC)->val;
 		
 		int sz = 0;
 		for (unsigned i = 2; i < node->tail.size (); ++i) {
@@ -321,7 +321,7 @@ namespace f8 {
 			for (unsigned i = 2; i < node->tail.size (); ++i) {
 				AtomPtr channel = node->tail.at (i);
 				interleaved.push_back (type_check (channel->tail.at (j),
-					AtomType::NUMBER)->val);
+					NUMERIC)->val);
 			}
 		}
 		
@@ -329,7 +329,7 @@ namespace f8 {
 		return make_node (sz * ch);
 	}
 	AtomPtr fn_closewav (AtomPtr node, AtomPtr env) {
-		AtomPtr p = type_check (node->tail.at(0), AtomType::OBJECT);
+		AtomPtr p = type_check (node->tail.at(0), OBJECT);
 		if (p->obj == 0) return make_node();
 		if (p->lexeme == "inwav") {
 			WavInFile* istr = static_cast<WavInFile*> (p->obj);
@@ -347,11 +347,11 @@ namespace f8 {
 	AtomPtr fn_slice (AtomPtr node, AtomPtr env) {
 		std::valarray<Real> res;
 		list2array (node->tail.at (0), res);
-		int i = (int) type_check  (node->tail.at (1), NUMBER)->val;
-		int len = (int) type_check  (node->tail.at (2), NUMBER)->val;
+		int i = (int) type_check  (node->tail.at (1), NUMERIC)->val;
+		int len = (int) type_check  (node->tail.at (2), NUMERIC)->val;
 		int stride = 1;
 
-		if (node->tail.size () == 4) stride = (int) type_check  (node->tail.at (3), NUMBER)->val;
+		if (node->tail.size () == 4) stride = (int) type_check  (node->tail.at (3), NUMERIC)->val;
 		if (i < 0 || len < 1 || stride < 1) {
 			Context::error ("[slice] invalid indexing", node);
 		}
@@ -370,10 +370,10 @@ namespace f8 {
 		list2array (node->tail.at (0), v1);
 		std::valarray<Real> v2;
 		list2array (node->tail.at (1), v2);
-		int i = (int) type_check  (node->tail.at (2), NUMBER)->val;
-		int len = (int) type_check  (node->tail.at (3), NUMBER)->val;
+		int i = (int) type_check  (node->tail.at (2), NUMERIC)->val;
+		int len = (int) type_check  (node->tail.at (3), NUMERIC)->val;
 		int stride = 1;
-		if (node->tail.size () == 5) stride = (int) type_check  (node->tail.at (4), NUMBER)->val;
+		if (node->tail.size () == 5) stride = (int) type_check  (node->tail.at (4), NUMERIC)->val;
 		if (i < 0 || len < 1 || stride < 1 || i + len  > v1.size () || (int) (len / stride) > v2.size ()) {
 			Context::error ("[assign] invalid indexing", node);
 		}
