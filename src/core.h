@@ -40,7 +40,7 @@ namespace f8 {
             type = LIST;
             for (unsigned i = 0; i < values.size (); ++i) tail.push_back (make_node (values[i]));
         }
-        Atom (Real v) {type = NUMERIC; val = v;}
+        Atom (Real v) {type = NUMERIC; val.resize (1); val[0] = v;}
         Atom (const std::string& s) {
             if (is_string (s)) {
                 type = STRING; 
@@ -62,7 +62,7 @@ namespace f8 {
             obj = o;
         }    
         AtomType type;
-        Real val;
+        std::valarray<Real> val;
         std::string lexeme;
         Op action;
         std::deque<AtomPtr> tail;
@@ -80,7 +80,7 @@ namespace f8 {
     bool atom_eq (AtomPtr x, AtomPtr y) {
         if (x->type != y->type) { return 0; }
         switch (x->type) {
-        case NUMERIC: return (x->val == y->val);
+        case NUMERIC: return (x->val[0] == y->val[0]);
         case SYMBOL: case STRING: return (x->lexeme == y->lexeme);
         case LIST: {
             if (x->tail.size () != y->tail.size ()) { return 0; }
@@ -103,7 +103,7 @@ namespace f8 {
 
     // helpers
     std::ostream& print (AtomPtr node, std::ostream& out, bool write = false) {
-        if (node->type == NUMERIC) out << std::fixed  << node->val;
+        if (node->type == NUMERIC) out << std::fixed  << node->val[0];
         if (node->type == SYMBOL || node->type == STRING) {
             if (node->type == STRING && write) out << "\"";
             out << node->lexeme;
@@ -206,7 +206,15 @@ namespace f8 {
                         while (!input.eof ()) {
                             input.get (c);
                             if (c == '\"') break;
-                            if (c == '\n') ++linenum;
+                            if (c == '\\') {
+                                c = input.get ();
+                                switch (c) {
+                                    case 'n': accum <<'\n'; ++linenum; break;
+                                    case 'r': accum <<'\r'; break;
+                                    case 't': accum <<'\t'; break;
+                                    case '\"': accum << "\""; c = 0; break;
+                                }
+                            }                            
                             accum << c;
                         }
                         return accum.str ();
@@ -379,7 +387,7 @@ namespace f8 {
         }
         if (car->action == &fn_if) {
             argnum_check (node, 3);
-            if (eval (node->tail.at (1), env)->val != 0) node = node->tail.at (2);
+            if (eval (node->tail.at (1), env)->val[0] != 0) node = node->tail.at (2);
             else {
                 if (node->tail.size () > 3) {
                     argnum_check (node, 5);
@@ -394,7 +402,7 @@ namespace f8 {
             argnum_check (node, 2);
             AtomPtr res = make_node ();
             try {
-                while (eval (node->tail.at (1), env)->val != 0) {
+                while (eval (node->tail.at (1), env)->val[0] != 0) {
                     res = eval (node->tail.at (2), env);
                 }
             } catch (Op& e) {
@@ -532,7 +540,7 @@ namespace f8 {
         return node;
     }
     AtomPtr fn_lindex (AtomPtr node, AtomPtr env) {
-        int p  = (int) type_check (node->tail.at (0), NUMERIC)->val;
+        int p  = (int) type_check (node->tail.at (0), NUMERIC)->val[0];
         AtomPtr o = type_check (node->tail.at (1), LIST);
         if (!o->tail.size ()) return make_node  ();
         if (p < 0 || p >= o->tail.size ()) Context::error ("[lget] invalid index", node);
@@ -558,12 +566,12 @@ namespace f8 {
     }
     AtomPtr fn_lrange (AtomPtr params, AtomPtr env) {
         AtomPtr l = type_check (params->tail.at (0), LIST);
-        int i = (int) (type_check(params->tail.at (1), NUMERIC)->val);
-        int len = (int) (type_check(params->tail.at (2), NUMERIC)->val);
+        int i = (int) (type_check(params->tail.at (1), NUMERIC)->val[0]);
+        int len = (int) (type_check(params->tail.at (2), NUMERIC)->val[0]);
         int end = i + len;
         int stride = 1;
         if (params->tail.size () == 4) {
-            stride  = (int) (type_check(params->tail.at (3), NUMERIC)->val);
+            stride  = (int) (type_check(params->tail.at (3), NUMERIC)->val[0]);
         }
         if (i < 0) i = 0;
         if (len < i) len = i;
@@ -575,11 +583,11 @@ namespace f8 {
     AtomPtr fn_lreplace (AtomPtr params, AtomPtr env) {
         AtomPtr l = type_check (params->tail.at (0), LIST);
         AtomPtr r = type_check (params->tail.at (1), LIST);
-        int i = (int) (type_check(params->tail.at (2), NUMERIC)->val);
-        int len = (int) (type_check(params->tail.at (3), NUMERIC)->val);
+        int i = (int) (type_check(params->tail.at (2), NUMERIC)->val[0]);
+        int len = (int) (type_check(params->tail.at (3), NUMERIC)->val[0]);
         int stride = 1;
         if (params->tail.size () == 5) {
-            stride  = (int) (type_check(params->tail.at (4), NUMERIC)->val);
+            stride  = (int) (type_check(params->tail.at (4), NUMERIC)->val[0]);
         }
         if (i < 0 || len < 0 || stride < 1 || i + len  > l->tail.size () || (int) (len / stride) > r->tail.size ()) {
             return make_node();
@@ -601,9 +609,9 @@ namespace f8 {
 		out.resize (sz ? sz : 1);
 		if (sz) {
 			for (unsigned i = 0; i < list->tail.size (); ++i) {
-				out[i] = type_check (list->tail.at (i), NUMERIC)->val;
+				out[i] = type_check (list->tail.at (i), NUMERIC)->val[0];
 			}
-		} else out[0]= type_check (list, NUMERIC)->val;
+		} else out[0]= type_check (list, NUMERIC)->val[0];
 	}
 	AtomPtr array2list (const std::valarray<Real>& out) {
 		AtomPtr list = make_node ();
@@ -770,8 +778,8 @@ namespace f8 {
         } else if (cmd == "range") {
             argnum_check (node, 4);
             std::string tmp = type_check (node->tail.at(1), STRING)->lexeme.substr(
-                type_check (node->tail.at(2), NUMERIC)->val, 
-                type_check (node->tail.at(3), NUMERIC)->val);
+                type_check (node->tail.at(2), NUMERIC)->val[0], 
+                type_check (node->tail.at(3), NUMERIC)->val[0]);
             return make_node ((std::string) "\"" + tmp);
         } else if (cmd == "replace") {
             argnum_check (node, 4);
@@ -836,7 +844,7 @@ namespace f8 {
             if (f) {
                 add_operator(params->tail.at(1)->tail.at(2 * i)->lexeme, 
                     f, 
-                    type_check (params->tail.at(1)->tail.at(2 * i + 1), NUMERIC)->val, env); // silent error
+                    type_check (params->tail.at(1)->tail.at(2 * i + 1), NUMERIC)->val[0], env); // silent error
                 ++ct;
             }
         }
@@ -844,8 +852,6 @@ namespace f8 {
     }
     ///~ ## Built-in operators
     AtomPtr add_core (AtomPtr env) {
-        env->tail.push_back (make_entry (make_node ("nl"), make_node ("\n")));
-        env->tail.push_back (make_entry (make_node ("tab"), make_node ("\t"))); 
         ///~ `quote` *`expr`* <br>
         ///~ The quote operator indicates literal data; it suppresses evaluation.          
         add_operator ("quote", &fn_quote, -1, env); // -1 are checked in the eval function

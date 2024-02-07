@@ -9,8 +9,8 @@
 namespace f8 {
 	AtomPtr fn_opensvg (AtomPtr node, AtomPtr env) {
 		std::string name = type_check (node->tail.at (0), STRING)->lexeme;
-		int width = (int) type_check (node->tail.at (1), NUMERIC)->val;
-		int height = (int) type_check (node->tail.at (2), NUMERIC)->val;
+		int width = (int) type_check (node->tail.at (1), NUMERIC)->val[0];
+		int height = (int) type_check (node->tail.at (2), NUMERIC)->val[0];
 
 		if (width < 200 || height < 200) return make_node ();
 		AtomPtr ll =  make_node ();
@@ -38,18 +38,18 @@ namespace f8 {
 			Real hstep = ((Real) width / pl->tail.size ());
 
 			LineChart chart (30.);
-			Polyline polyline (Stroke (.5, Color (color->tail.at (0)->val,
-				color->tail.at (1)->val, color->tail.at (2)->val)));
-			Real min = pl->tail.at (0)->val;
-			Real max = pl->tail.at (0)->val;
+			Polyline polyline (Stroke (.5, Color (color->tail.at (0)->val[0],
+				color->tail.at (1)->val[0], color->tail.at (2)->val[0])));
+			Real min = pl->tail.at (0)->val[0];
+			Real max = pl->tail.at (0)->val[0];
 			for (auto m : pl->tail) {
-				if (m->val > max) max = m->val;
-				if (m->val < min) min = m->val;
+				if (m->val[0] > max) max = m->val[0];
+				if (m->val[0] < min) min = m->val[0];
 			}
 			Real delta = fabs (max - min);
 			for (unsigned i = 0; i < pl->tail.size (); ++i) {
 				polyline << Point ((hstep * i), 
-					((pl->tail.at (i)->val - min) * height) / delta);
+					((pl->tail.at (i)->val[0] - min) * height) / delta);
 			}
 			chart << polyline;
 			*doc << chart;
@@ -73,15 +73,15 @@ namespace f8 {
 			AtomPtr color = node->tail.at (3);
 			if (color->tail.size () != 3) return make_node(0);
 
-			Real minx = x->tail.at (0)->val;
-			Real maxx = x->tail.at (0)->val;
-			Real miny = y->tail.at (0)->val;
-			Real maxy = y->tail.at (0)->val;		
+			Real minx = x->tail.at (0)->val[0];
+			Real maxx = x->tail.at (0)->val[0];
+			Real miny = y->tail.at (0)->val[0];
+			Real maxy = y->tail.at (0)->val[0];		
 			for (unsigned i = 0; i < x->tail.size (); ++i) {
-				Real xval = x->tail.at(i)->val;
+				Real xval = x->tail.at(i)->val[0];
 				if (xval > maxx) maxx = xval;
 				if (xval < minx) minx = xval;
-				Real yval = y->tail.at(i)->val;
+				Real yval = y->tail.at(i)->val[0];
 				if (yval > maxy) maxy = yval;
 				if (yval < miny) miny = yval;
 			}
@@ -92,11 +92,11 @@ namespace f8 {
 				// polyline << Point ((x->tail.at (i)->value - minx) * width / deltax, 
 				// 	(y->tail.at (i)->value - miny) * height / deltay);
 				*doc << Circle(Point (
-					((x->tail.at (i)->val - minx) * width / deltax) + 30, 
-					((y->tail.at (i)->val - miny) * height / deltay) + 30), 
-					2, Fill(Color(color->tail.at (0)->val, color->tail.at (1)->val, 
-						color->tail.at (2)->val)), Stroke(1, Color(color->tail.at (0)->val, 
-						color->tail.at (1)->val, color->tail.at (2)->val)));
+					((x->tail.at (i)->val[0] - minx) * width / deltax) + 30, 
+					((y->tail.at (i)->val[0] - miny) * height / deltay) + 30), 
+					2, Fill(Color(color->tail.at (0)->val[0], color->tail.at (1)->val[0], 
+						color->tail.at (2)->val[0])), Stroke(1, Color(color->tail.at (0)->val[0], 
+						color->tail.at (1)->val[0], color->tail.at (2)->val[0])));
 			}
 		}
 		return make_node(1);
@@ -110,22 +110,22 @@ namespace f8 {
 			Real height = doc->get_layout ().dimensions.height - 160;
 
 			std::stringstream v;
-			v << std::defaultfloat << node->tail.at (1)->val; 
+			v << std::defaultfloat << node->tail.at (1)->val[0]; 
 			*doc << Text(Point(30, 20), v.str (), Color::Black, Font(6, "Verdana"));
 			std::stringstream vh;
-			vh << std::defaultfloat << (node->tail.at (2)->val - node->tail.at (1)->val) / 2;  
+			vh << std::defaultfloat << (node->tail.at (2)->val[0] - node->tail.at (1)->val[0]) / 2;  
 			*doc << Text(Point(width / 2 + 30, 20), vh.str(), Color::Black, Font(6, "Verdana"));
 			std::stringstream ve;
-			ve << std::defaultfloat << node->tail.at (2)->val;
+			ve << std::defaultfloat << node->tail.at (2)->val[0];
 			*doc << Text(Point(width, 20), ve.str(), Color::Black, Font(6, "Verdana"));
 			Line l1 (Point(width / 2 + 30, 30), Point(width / 2 + 30, height + 30), Stroke (1, Color::Black));
 			*doc << l1;	
 
 			std::stringstream v1;
-			v1 << std::defaultfloat << std::defaultfloat << node->tail.at (3)->val; ;
+			v1 << std::defaultfloat << std::defaultfloat << node->tail.at (3)->val[0]; ;
 			*doc << Text(Point(2, 35), v1.str(), Color::Black, Font(6, "Verdana"));
 			std::stringstream v2;
-			v2 << std::defaultfloat << node->tail.at (4)->val; ;
+			v2 << std::defaultfloat << node->tail.at (4)->val[0]; ;
 			*doc << Text(Point(2, height + 30), v2.str(), Color::Black, Font(6, "Verdana"));		
 			Line l2 (Point(30, height / 2 + 30), Point(30 + width, height / 2 + 30), Stroke (1, Color::Black));
 			*doc << l2;	
@@ -165,8 +165,8 @@ namespace f8 {
 				if (color->tail.size () != 3) return make_node(0);
 				*doc << Text (Point (x, y), 
 					item->lexeme, 
-					Color (color->tail.at (0)->val,
-					color->tail.at (1)->val, color->tail.at (2)->val), 
+					Color (color->tail.at (0)->val[0],
+					color->tail.at (1)->val[0], color->tail.at (2)->val[0]), 
 					Font (8, "Verdana"));
 			}
 

@@ -62,8 +62,8 @@ namespace f8 {
     AtomPtr fn_schedule (AtomPtr params, AtomPtr env) {
         AtomPtr task = type_check (params->tail.at(0), LIST);
         argnum_check (task, 1);
-        int msec = (int) params->tail.at(1)->val;
-        bool async = (bool) params->tail.at (2)->val;
+        int msec = (int) params->tail.at(1)->val[0];
+        bool async = (bool) params->tail.at (2)->val[0];
         AtomPtr l = make_node (); l->tail.push_back (task);
         Later sched (msec, async, &eval, l, env);
         return  make_node();
@@ -123,7 +123,7 @@ namespace f8 {
 
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at(0), STRING)->lexeme.c_str ());
         server.sin_family = AF_INET;
-        server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val);
+        server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val[0]);
     
     if(::bind(sock,(struct sockaddr *)&server , sizeof(server)) < 0) {
             return make_node(0);
@@ -149,7 +149,7 @@ namespace f8 {
         
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at (0), STRING)->lexeme.c_str ());
         server.sin_family = AF_INET;
-        server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val);
+        server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val[0]);
 
         std::stringstream nf;
         print (n->tail.at(2), nf);
