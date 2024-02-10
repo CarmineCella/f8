@@ -149,7 +149,7 @@ namespace f8 {
             if (ctx->module != "") err << ctx->module << ", line " << ctx->linenum << ", ";
             else if (call_frame->module != "") err << call_frame->module << ", line " << call_frame->linenum << ", ";
             err << msg << " "; 
-            if (!is_nil (ctx)) {
+            if (!is_nil (ctx) && ctx->type != LIST && ctx->type != NUMERIC) {
                 err << "'";
                 print (ctx, err);
                 err << "'";

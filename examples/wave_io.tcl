@@ -11,12 +11,12 @@ source "stdlib.tcl"
 set sr 44100
 set ch 2
 set freq 440
-set dur 0.1
+set dur 0.3
 set samples (* dur sr)
 
 set time (tolist (bpf 0 samples (/ samples sr)))
 
-# arrays and lists are connected via torray/tolist
+# arrays and lists are connected via torray/tolist (slow!)
 set sig1 (toarray (-> sin (map (\(x)(* TWOPI freq x)) time)))
 set sig2 (toarray (-> cos (map (\(x)(* TWOPI freq x)) time)))
 
@@ -47,5 +47,16 @@ puts "sr: " (car winfo) ", ch: "(second winfo) "\n"
 set c (openwav "copy.wav" 'output (car winfo) (second winfo))
 puts (writewav c (car sigr)) " samples copied\n"
 closewav c
+
+puts "read sounds/Concertgebouw-s.wav..." 
+set a (openwav "../sounds/Concertgebouw-s.wav" 'input)
+set winfo (infowav a)
+set sigr (readwav a) 
+closewav a
+puts "sr: " (car winfo) ", ch: "(second winfo) "\n"
+
+set c (openwav "copy2.wav" 'output (car winfo) (second winfo))
+puts (writewav c (car sigr) (second sigr)) " samples copied\n"
+closewav c  
 
 # eof

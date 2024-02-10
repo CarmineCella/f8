@@ -29,7 +29,7 @@ set polar (car2pol spec)
 set mag (slice polar 0 (/ (size polar) 2) 2)
 set mag (slice mag offset nwin)
 
-set fftfreqs (bpf 0 (/ (size spec) 4) nyquist)
+set fftfreqs (bpf 0 (/ (size spec) 2) nyquist)
 set fftfreqs (slice fftfreqs offset (size mag))
 
 set amps ()
@@ -71,7 +71,7 @@ set out (* fade out)
 puts "done\n"
 
 set c (openwav "reconstruction.wav" 'output sr 1)
-puts (writewav c 1 out) " samples written\n"
+puts (writewav c out) " samples written\n"
 closewav c
 
 # eof

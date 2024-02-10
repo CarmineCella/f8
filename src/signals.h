@@ -246,7 +246,8 @@ namespace f8 {
 			if (node->tail.size () == 4) {
 				sr = type_check (node->tail.at(2), NUMERIC)->val[0];
 				ch = type_check (node->tail.at(3), NUMERIC)->val[0];
-			} else Context::error ("[openwav] missing sr and ch for output wav", node);
+				if (ch > 2) Context::error ("[openwav] only stereo files are supported", node);
+ 			} else Context::error ("[openwav] missing sr and ch for output wav", node);
 		}
 		AtomPtr s = make_node();
 		AtomPtr ll =  make_node();
@@ -270,26 +271,20 @@ namespace f8 {
 		AtomPtr final = make_node();
 		long sz = in->getNumSamples ();
 		long ch = in->getNumChannels ();
+		if (ch > 2) Context::error ("[openwav] only stereo files are supported", node);
 
 		if (node->tail.size () == 2) sz = type_check (node->tail.at(1), NUMERIC)->val[0];
 
-		std::vector<Real> data (sz * ch);
+		std::valarray<Real> data (sz * ch);
 		in->read (&data[0], sz * ch);
-		std::vector<std::vector<Real>> deinterleaved (ch);
-
-		// int offset = sz / ch;
-		for (unsigned j = 0; j < sz; ++j) {
-			for (int i = 0; i < ch; ++i) {
-				deinterleaved[i].push_back(data[i + (j * ch)]);
-			}
-		}
-
-		for (unsigned i = 0; i < deinterleaved.size (); ++i) {
-			std::valarray<Real> wave (deinterleaved[i].size ());
-			for (unsigned j = 0; j < deinterleaved[i].size (); ++j) {
-				wave[j] =  deinterleaved[i][j];
-			}
-			final->tail.push_back (make_node (wave));
+		if (ch == 1) {
+			final->tail.push_back (make_node (data));
+		} else if (ch == 2) {
+			std::valarray<Real> left (sz);
+			std::valarray<Real> right (sz);
+			deinterleave (&data[0], &left[0], &right[0], ch * sz);
+			final->tail.push_back (make_node (left));
+			final->tail.push_back (make_node (right));
 		}
 		return final;
 	}
@@ -309,22 +304,18 @@ namespace f8 {
 		AtomPtr p = type_check (node->tail.at(0), OBJECT);
 		if (p->obj == 0 || p->lexeme != "outwav") Context::error ("[writewav] cannot write an output file", node);
 		WavOutFile* out = static_cast<WavOutFile*> (p->obj);
-		
-		int sz = 0;
-		for (unsigned i = 1; i < node->tail.size (); ++i) {
-			if (sz <= type_check (node->tail.at (i), NUMERIC)->val.size ()) {
-				sz = node->tail.at (i)->val.size ();
-			}
-		}
-		std::vector<Real> interleaved;
-		for (unsigned j = 0; j < sz; ++j) {
-			for (unsigned i = 1; i < node->tail.size (); ++i) {
-				std::valarray<Real>& channel = node->tail.at (i)->val;
-				interleaved.push_back (channel[j]);
-			}
-		}
+
+		if (node->tail.size () > 3) Context::error ("[writewav] only mono/stereo files are supported", node);		
+		int sz = node->tail.at (1)->val.size ();
 		int ch = node->tail.size () - 1;
-		out->write(&interleaved[0], ch * sz);
+
+		if (ch == 1) {
+			out->write (&node->tail.at (1)->val[0], sz);
+		} else if (ch == 2) {
+			std::valarray<Real> data (sz * ch);
+			interleave (&data[0], &node->tail.at (1)->val[0], &node->tail.at (2)->val[0], sz);
+			out->write (&data[0], ch * sz);
+		}
 		return make_node (sz * ch);
 	}
 	AtomPtr fn_closewav (AtomPtr node, AtomPtr env) {
