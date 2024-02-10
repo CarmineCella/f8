@@ -1,9 +1,7 @@
 // TODO:
 
 // ver. 0.6
-// implement NUMERIC type
 // sndread, sndwrite (stdlib)
-// examples
 // tests
 // features + pitch + onsets
 // pitch2note
