@@ -12,12 +12,12 @@ proc (or x y) (if x x else (if y y else false))
 proc (<> n1 n2) (not (eq n1 n2))
 
 # lists
-proc (car l) (lindex 0 l)
-proc (second l) (lindex 1 l)
+proc (car l) (lindex l 0 )
+proc (second l) (lindex l 1)
 proc (head l) (lappend () (car l))
 proc (cdr l) (lrange l 1 (- (llength l) 1))
-proc (last l) (lindex (- (llength l) 1) l)
-proc (tail l) (lappnd () (last l))
+proc (last l) (lindex l (- (llength l) 1))
+proc (tail l) (lappend () (last l))
 proc (take n l) {
 	proc (take-runner acc n l) {
 		if (<= n 0) acc else {
@@ -97,7 +97,7 @@ proc (dup n x) {
 }
 
 # miscellaneous
-proc (test x y)(if (eq (lappend (list) (eval x)) y) (puts x  " passed" nl) else (throw "*** FAILED ***" x))
+proc (test x y)(if (eq (lappend (list) (eval x)) y) (puts x  " passed\n") else (throw "*** FAILED ***" x))
 
 # arithmetics
 proc (succ x) (+ x 1)
@@ -128,8 +128,8 @@ proc (ack m n) {
 		}
 	}			
 }
-proc (birandn n m)(map (\ (x)(* x n)) (noise m))
-proc (randn n m)(map (\ (x) (/ (+ n x) 2)) (birandn n m))
+proc (birandn n m)(toarray (map (\ (x)(* x n)) (tolist (noise m))))
+proc (randn n m)(toarray (map (\ (x) (/ (+ n x) 2)) (tolist (birandn n m))))
 
 # list-based operators
 proc (zeros n)(bpf 0 n 0)
@@ -218,26 +218,48 @@ proc (udpmonitor addr port) {
 }
 
 # plotting
-set Aqua '(0 255 255)
-set Black '(0 0 0)
-set Blue '(0 0 255)
-set Brown '(165 42 42)
-set Cyan '(0 255 255)
-set Fuchsia '(255 0 255)
-set Green '(0 128 0)
-set Lime '(0 255 0)
-set Magenta '(255 0 255)
-set Orange '(255 165 0)
-set Purple '(128 0 128)
-set Red '(255 0 0)
-set Silver '(192 192 192)
-set White '(255 255 255)
-set Yellow '(255 255 0)
-set Gray '(127 127 127)
+set Aqua (toarray '(0 255 255))
+set Black (toarray '(0 0 0))
+set Blue (toarray '(0 0 255))
+set Brown (toarray '(165 42 42))
+set Cyan (toarray '(0 255 255))
+set Fuchsia (toarray '(255 0 255))
+set Green (toarray '(0 128 0))
+set Lime (toarray '(0 255 0))
+set Magenta (toarray '(255 0 255))
+set Orange (toarray '(255 165 0))
+set Purple (toarray '(128 0 128))
+set Red (toarray '(255 0 0))
+set Silver (toarray '(192 192 192))
+set White (toarray '(255 255 255))
+set Yellow (toarray '(255 255 0))
+set Gray (toarray '(127 127 127))
 proc (plot name x) {
 	set a (opensvg name 512 512)
 	polyline a x Blue
 	closesvg a
+}
+proc (scatplot name x y) {
+	set a (opensvg name 512 512)
+	scatter a x y Blue
+	closesvg a
+}
+
+# signals
+proc (oscbank sr amps freqs tab) {
+    # assumes both freqs and amps have the same number of elems
+	set elems (llength amps) 
+	set outbuff (bpf 0 (size (car freqs)) 0)
+	set i 0
+	while (< i elems) {
+		set f (car freqs)
+		if (eq f ()) {break}
+		! outbuff (+ outbuff (* (car amps) (osc sr (car freqs) tab)))
+		set amps (cdr amps)
+		set freqs (cdr freqs)
+		! i (+ i 1)
+	}
+	+ outbuff
 }
 
 # ;; eof

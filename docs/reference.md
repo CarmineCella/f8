@@ -29,4 +29,4 @@
  The valid types are: numeric, symbol, string, list, operator, lambda, object
  ## Built-in operators
  `quote` *`expr`* <br>
- The quote operator indicates literal data; it suppresses evaluation.
+ The quote operator indicates literal data; it suppresses evaluation.          

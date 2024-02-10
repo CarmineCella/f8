@@ -12,6 +12,7 @@
 #include <cmath>
 #include <fstream>
 #include <valarray>
+#include <thread>
 #include <dlfcn.h>
 
 #define BOLDWHITE   "\033[1m\033[37m"
@@ -36,9 +37,9 @@ namespace f8 {
     bool is_string (const std::string& s);
     struct Atom {
         Atom () {type = LIST;}
-        Atom (std::valarray<Real>& values) {
-            type = LIST;
-            for (unsigned i = 0; i < values.size (); ++i) tail.push_back (make_node (values[i]));
+        Atom (std::valarray<Real>& array) {
+            type = NUMERIC;
+            val = array;
         }
         Atom (Real v) {type = NUMERIC; val.resize (1); val[0] = v;}
         Atom (const std::string& s) {
@@ -80,7 +81,7 @@ namespace f8 {
     bool atom_eq (AtomPtr x, AtomPtr y) {
         if (x->type != y->type) { return 0; }
         switch (x->type) {
-        case NUMERIC: return (x->val[0] == y->val[0]);
+        case NUMERIC: return (x->val == y->val).min ();
         case SYMBOL: case STRING: return (x->lexeme == y->lexeme);
         case LIST: {
             if (x->tail.size () != y->tail.size ()) { return 0; }
@@ -103,7 +104,16 @@ namespace f8 {
 
     // helpers
     std::ostream& print (AtomPtr node, std::ostream& out, bool write = false) {
-        if (node->type == NUMERIC) out << std::fixed  << node->val[0];
+        if (node->type == NUMERIC) {
+            if (node->val.size () > 1) out << "[";
+            for (unsigned i = 0; i < node->val.size (); ++i) {
+                out << (std::fixed) << std::setprecision (15) << node->val[i];
+                if (i != node->val.size () - 1) out << " ";
+                // if (i > 100) break;
+            }
+            // if (node->val.size () > 100) out << "...";
+            if (node->val.size () > 1) out << "]";
+        }            
         if (node->type == SYMBOL || node->type == STRING) {
             if (node->type == STRING && write) out << "\"";
             out << node->lexeme;
@@ -124,9 +134,7 @@ namespace f8 {
             for (unsigned i = 0; i < node->tail.size (); ++i) {
                 print (node->tail.at (i), out);
                 if (i != node->tail.size () - 1) out << " ";
-                if (i > 100) break;
             }
-            if (node->tail.size () > 100) out << "...";
             out << ")";
         }
         if (node->type == OBJECT) {
@@ -142,13 +150,13 @@ namespace f8 {
             else if (call_frame->module != "") err << call_frame->module << ", line " << call_frame->linenum << ", ";
             err << msg << " "; 
             if (!is_nil (ctx)) {
-                err << "[";
+                err << "'";
                 print (ctx, err);
-                err << "]";
+                err << "'";
             }
             if (!is_nil (call_frame)) {
-                err << " in ";
-                print (call_frame, err) << std::endl;
+                err << " in '";
+                print (call_frame, err) << "'" << std::endl;
             }
             throw make_node (err.str ());
         }
@@ -172,7 +180,24 @@ namespace f8 {
         }
         return node;
     }
-
+    class Later {
+    public:
+        template <class callable, class... arguments>
+        Later(int after, bool async, callable&& f, arguments&&... args) {
+            std::function<typename std::result_of<callable(arguments...)>::type()> 
+                task(std::bind(std::forward<callable>(f), std::forward<arguments>(args)...));
+            if (async) {
+                std::thread([after, task]() {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(after));
+                    task();
+                }).detach();
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(after));
+                task();
+            }
+        }
+    };
+    
     // parsing
     std::string next (std::istream& input, int& linenum) {
         std::stringstream accum;
@@ -206,7 +231,7 @@ namespace f8 {
                         while (!input.eof ()) {
                             input.get (c);
                             if (c == '\"') break;
-                            if (c == '\\') {
+                            else if (c == '\\') {
                                 c = input.get ();
                                 switch (c) {
                                     case 'n': accum <<'\n'; ++linenum; break;
@@ -214,8 +239,7 @@ namespace f8 {
                                     case 't': accum <<'\t'; break;
                                     case '\"': accum << "\""; c = 0; break;
                                 }
-                            }                            
-                            accum << c;
+                            } else accum << c;
                         }
                         return accum.str ();
                     }
@@ -338,11 +362,16 @@ namespace f8 {
     AtomPtr fn_if (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_while (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     template <bool dynamic> AtomPtr fn_lambda (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
-    AtomPtr fn_do (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_catch (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
-    AtomPtr fn_break (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+    AtomPtr fn_do (AtomPtr node, AtomPtr env) { return make_node (); } // dummy    
+    AtomPtr fn_thread (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+    AtomPtr fn_schedule (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_eval (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
     AtomPtr fn_apply (AtomPtr node, AtomPtr env) { return make_node (); } // dummy
+    AtomPtr fn_break (AtomPtr node, AtomPtr env) { 
+        throw &fn_break;
+        return make_node (); 
+    }
     AtomPtr eval (AtomPtr node, AtomPtr env) {
     tail_call:
         if (is_nil (node)) return make_node ();
@@ -387,7 +416,7 @@ namespace f8 {
         }
         if (car->action == &fn_if) {
             argnum_check (node, 3);
-            if (eval (node->tail.at (1), env)->val[0] != 0) node = node->tail.at (2);
+            if (type_check (eval (node->tail.at (1), env), NUMERIC)->val[0] != 0) node = node->tail.at (2);
             else {
                 if (node->tail.size () > 3) {
                     argnum_check (node, 5);
@@ -402,7 +431,7 @@ namespace f8 {
             argnum_check (node, 2);
             AtomPtr res = make_node ();
             try {
-                while (eval (node->tail.at (1), env)->val[0] != 0) {
+                while (type_check (eval (node->tail.at (1), env), NUMERIC)->val[0] != 0) {
                     res = eval (node->tail.at (2), env);
                 }
             } catch (Op& e) {
@@ -429,7 +458,24 @@ namespace f8 {
             goto tail_call;
             return res;
         }        
-
+        if (car->action == &fn_thread) {
+            argnum_check (node, 2);
+            AtomPtr task = type_check (node->tail.at(1), LIST);
+            argnum_check (task, 1);
+            std::thread* pt = new std::thread (&eval, task, env);
+            return make_obj ("thread", (void*) pt,  make_node());            
+        }
+        if (car->action == &fn_schedule) {
+            argnum_check (node, 4);
+            AtomPtr task = type_check (node->tail.at(1), LIST);
+            argnum_check (task, 1);
+            int msec = (int) type_check (eval (node->tail.at(2), env), NUMERIC)->val[0];
+            bool async = (bool) type_check (eval (node->tail.at(3), env), NUMERIC)->val[0];
+            AtomPtr l = make_node (); 
+            l->tail.push_back (task);
+            Later sched (msec, async, &eval, l, env);
+            return make_node (1);            
+        }
         // executable
         AtomPtr params = make_node ();
         for (unsigned i = 1; i < node->tail.size (); ++i) {
@@ -438,16 +484,12 @@ namespace f8 {
         AtomPtr exec = eval (car, env);
         if (exec->type == OPERATOR) {
             argnum_check (params, exec->minargs);      
-            if (exec->action == &fn_break) {
-			   throw &fn_break;
-		    }  
             if (exec->action == &fn_eval) {
                 node = params->tail.at (0);
                 goto tail_call;
             } 
             if (exec->action == &fn_apply) {
                 AtomPtr cp = make_node ();
-                
                 cp->tail.push_back (params->tail.at(0));
                 for (unsigned i = 0; i < type_check (params->tail.at (1), LIST)->tail.size (); ++i) {
                     cp->tail.push_back (params->tail.at (1)->tail.at (i));
@@ -484,7 +526,7 @@ namespace f8 {
 
     // procedures
     AtomPtr fn_info (AtomPtr b, AtomPtr env) {
-        std::string cmd = b->tail.at (0)->lexeme;
+        std::string cmd = type_check (b->tail.at (0), SYMBOL)->lexeme;
         AtomPtr l = make_node();
         std::regex r;
         if (cmd == "vars") {
@@ -540,14 +582,14 @@ namespace f8 {
         return node;
     }
     AtomPtr fn_lindex (AtomPtr node, AtomPtr env) {
-        int p  = (int) type_check (node->tail.at (0), NUMERIC)->val[0];
-        AtomPtr o = type_check (node->tail.at (1), LIST);
+        AtomPtr o = type_check (node->tail.at (0), LIST);
+        int p  = (int) type_check (node->tail.at (1), NUMERIC)->val[0];
         if (!o->tail.size ()) return make_node  ();
-        if (p < 0 || p >= o->tail.size ()) Context::error ("[lget] invalid index", node);
+        if (p < 0 || p >= o->tail.size ()) Context::error ("[lindex] invalid index", node);
         return o->tail.at (p);
     }
     AtomPtr fn_llength (AtomPtr node, AtomPtr env) {
-        return make_node (node->tail.at (0)->tail.size ());
+        return make_node (type_check (node->tail.at (0), LIST)->tail.size ());
     }
     AtomPtr append (AtomPtr dst, AtomPtr ll) {
         if (ll->type == LIST) {
@@ -620,17 +662,23 @@ namespace f8 {
 		}
 		return list->tail.size () == 1 ? list->tail.at (0) : list;
 	}    
-	#define MAKE_ARRAYBINOP(op,name) 					\
+    AtomPtr fn_toarray (AtomPtr node, AtomPtr env) {
+        std::valarray<Real> res;
+        list2array (type_check (node->tail.at (0), LIST), res);
+        return make_node (res);
+    }
+    AtomPtr fn_tolist (AtomPtr node, AtomPtr env) {
+        return array2list (type_check (node->tail.at (0), NUMERIC)->val);
+    }       
+	#define MAKE_ARRAYBINOP(op,name) 	\
 		AtomPtr name (AtomPtr n, AtomPtr env) { 	\
-			std::valarray<Real> res; \
-			list2array (n->tail.at (0), res); \
+			std::valarray<Real> res (type_check (n->tail.at (0), NUMERIC)->val); \
 			for (unsigned i = 1; i < n->tail.size (); ++i) {  \
-				std::valarray<Real> a; \
-				list2array (n->tail.at (i), a); \
+				std::valarray<Real>& a = type_check (n->tail.at (i), NUMERIC)->val; \
 				if (a.size () == 1) res = res op a[0]; \
 				else res = res op a; \
 			} \
-			return array2list (res); \
+			return make_node (res); \
 		} \
 
 	MAKE_ARRAYBINOP (+, fn_add);
@@ -641,31 +689,25 @@ namespace f8 {
 	MAKE_ARRAYBINOP (>=, fn_greatereq);
 	MAKE_ARRAYBINOP (<, fn_less);
 	MAKE_ARRAYBINOP (<=, fn_lesseq);
-
 	#define MAKE_ARRAYMETHODS(op,name)									\
 		AtomPtr name (AtomPtr n, AtomPtr env) {						\
-			AtomPtr res = make_node (); \
+			std::valarray<Real> res (n->tail.size ()); \
 			for (unsigned i = 0; i < n->tail.size (); ++i) { \
-				std::valarray<Real> v; \
-				list2array (n->tail.at (i), v); \
-				res->tail.push_back (make_node (v.op ())); \
+				res[i] = (type_check (n->tail.at (i), NUMERIC)->val.op ()); \
 			}\
-			return res->tail.size () == 1 ? res->tail.at (0) : res; \
+			return make_node (res);\
 		}\
 
 	MAKE_ARRAYMETHODS (min, fn_min);
 	MAKE_ARRAYMETHODS (max, fn_max);
 	MAKE_ARRAYMETHODS (sum, fn_sum);
 	MAKE_ARRAYMETHODS (size, fn_size);
-
 	#define MAKE_ARRAYSINGOP(op,name)									\
 		AtomPtr name (AtomPtr n, AtomPtr env) {						\
 			AtomPtr res = make_node (); \
 			for (unsigned i = 0; i < n->tail.size (); ++i) { \
-				std::valarray<Real> v; \
-				list2array (n->tail.at (i), v); \
-				v = op (v); \
-				res->tail.push_back (array2list (v)); \
+                std::valarray<Real> v = op (type_check (n->tail.at (i), NUMERIC)->val); \
+				res->tail.push_back (make_node (v)); \
 			}\
 			return res->tail.size () == 1 ? res->tail.at (0) : res; \
 		}\
@@ -684,29 +726,65 @@ namespace f8 {
 	MAKE_ARRAYSINGOP (sinh, fn_sinh);
 	MAKE_ARRAYSINGOP (cosh, fn_cosh);
 	MAKE_ARRAYSINGOP (tanh, fn_tanh);
-
-    // MAKE_ARRAYSINGOP (floor, fn_floor);
-
     AtomPtr fn_neg (AtomPtr n, AtomPtr env) {						
         AtomPtr res = make_node (); 
         for (unsigned i = 0; i < n->tail.size (); ++i) { 
-            std::valarray<Real> v; 
-            list2array (n->tail.at (i), v); 
-            v = -(v); 
-            res->tail.push_back (array2list (v)); 
-        }\
+            std::valarray<Real> v = -(type_check (n->tail.at (i), NUMERIC)->val); 
+            res->tail.push_back (make_node (v)); 
+        }
         return res->tail.size () == 1 ? res->tail.at (0) : res; 
     }
     AtomPtr fn_floor (AtomPtr n, AtomPtr env) {						
         AtomPtr res = make_node (); 
         for (unsigned i = 0; i < n->tail.size (); ++i) { 
-            std::valarray<Real> v; 
-            list2array (n->tail.at (i), v); 
-            for (unsigned j = 0; j < v.size (); ++j) v[j] = floor (v[j]); 
-            res->tail.push_back (array2list (v)); 
-        }\
+            std::valarray<Real> v (type_check (n->tail.at (i), NUMERIC)->val.size ());
+            for (unsigned j = 0; j < n->tail.at (i)->val.size (); ++j) {
+                v[j] = floor (n->tail.at (i)->val[j]); 
+            } 
+            res->tail.push_back (make_node (v)); 
+        }
         return res->tail.size () == 1 ? res->tail.at (0) : res; 
     }
+	AtomPtr fn_slice (AtomPtr node, AtomPtr env) {
+		std::valarray<Real>& input = type_check (node->tail.at (0), NUMERIC)->val;
+		int i = (int) type_check  (node->tail.at (1), NUMERIC)->val[0];
+		int len = (int) type_check  (node->tail.at (2), NUMERIC)->val[0];
+		int stride = 1;
+
+		if (node->tail.size () == 4) stride = (int) type_check  (node->tail.at (3), NUMERIC)->val[0];
+		if (i < 0 || len < 1 || stride < 1) {
+			Context::error ("[slice] invalid indexing", node);
+		}
+		int j = i; 
+		int ct = 0;
+		while (j < input.size ()) {
+			if (ct >= len) break;
+			j += stride;
+			++ct;
+		}
+		std::valarray<Real> s = input[std::slice (i, ct, stride)];
+		return make_node (s);
+	}    
+	AtomPtr fn_assign (AtomPtr node, AtomPtr env) {
+		std::valarray<Real>& v1 = type_check (node->tail.at (0), NUMERIC)->val;
+		std::valarray<Real>& v2 = type_check (node->tail.at (1), NUMERIC)->val;
+		int i = (int) type_check  (node->tail.at (2), NUMERIC)->val[0];
+		int len = (int) type_check  (node->tail.at (3), NUMERIC)->val[0];
+		int stride = 1;
+		if (node->tail.size () == 5) stride = (int) type_check  (node->tail.at (4), NUMERIC)->val[0];
+		if (i < 0 || len < 1 || stride < 1) {
+			Context::error ("[assign] invalid indexing", node);
+		}
+		int j = i; 
+		int ct = 0;
+		while (j < v1.size ()) {
+			if (ct >= len) break;
+			j += stride;
+			++ct;
+		}        
+		v1[std::slice(i, ct, stride)] = v2;
+		return make_node (v1);
+	}    
     template <int mode>
     AtomPtr fn_format (AtomPtr node, AtomPtr env) {
         std::stringstream tmp;
@@ -733,6 +811,7 @@ namespace f8 {
     }
     AtomPtr fn_read (AtomPtr node, AtomPtr env) {
         int linenum = 1;
+        Context::call_frame = make_node ();
         return read_line (std::cin, linenum, "");
     }
     AtomPtr load (const std::string& name, AtomPtr env) {
@@ -750,6 +829,7 @@ namespace f8 {
             Context::call_frame = res;
             if (!is_nil (res)) eval (res, env);
         }
+        Context::call_frame = make_node ();
         return make_node (1);
     }
     AtomPtr fn_load (AtomPtr node, AtomPtr env) {
@@ -810,6 +890,17 @@ namespace f8 {
         exit (0);
         return make_node ();
     }
+    AtomPtr fn_attach (AtomPtr params, AtomPtr env) {
+        AtomPtr tt = type_check (params->tail.at(0), OBJECT);
+        if (tt->obj == 0 || tt->lexeme != "thread") return  make_node(0);
+        std::thread* pt = (std::thread*) tt->obj;
+        if (pt != nullptr) {
+            pt->join ();
+            delete pt;
+            tt->obj = nullptr;
+        }
+        return  make_node(1);
+    }    
     #define DECLFFI(name, f) \
         AtomPtr name (AtomPtr node, AtomPtr env) { \
             AtomPtr out = nullptr; 	\
@@ -865,6 +956,8 @@ namespace f8 {
         add_operator ("\\", &fn_lambda<0>, -1, env);
         add_operator ("@", &fn_lambda<1>, -1, env);
         add_operator ("do", &fn_do, -1, env);
+        add_operator ("thread", &fn_thread, -1, env);        
+        add_operator ("schedule", &fn_schedule, -1, env);
         add_operator ("catch", &fn_catch, -1, env);
         add_operator ("break", &fn_break, -1, env);
         add_operator ("eval", &fn_eval, 1, env);
@@ -879,6 +972,8 @@ namespace f8 {
         add_operator ("lindex", &fn_lindex, 1, env);
         add_operator ("llength", &fn_llength, 1, env);
         add_operator ("eq", &fn_eqp, 2, env);
+        add_operator ("toarray", &fn_toarray, 1, env);
+        add_operator ("tolist", &fn_tolist, 1, env);
         add_operator ("+", &fn_add, 1, env);
         add_operator ("*", &fn_mul, 1, env);
         add_operator ("-", &fn_sub, 1, env);
@@ -901,6 +996,8 @@ namespace f8 {
         add_operator ("size", &fn_size, 1, env);
         add_operator ("neg", &fn_neg, 1, env);
         add_operator ("floor", &fn_floor, 1, env);
+		add_operator ("slice", fn_slice, 3, env);   
+		add_operator ("assign", fn_assign, 4, env);            
         add_operator ("puts", &fn_format<0>, 1, env);
         add_operator ("gets", &fn_read, 0, env);
         add_operator ("source", &fn_load, 1, env);
@@ -909,6 +1006,7 @@ namespace f8 {
         add_operator ("string", &fn_string, 2, env);
         add_operator ("exec", &fn_exec, 1, env);
         add_operator ("exit", &fn_exit, 0, env);
+        add_operator ("attach", &fn_exit, 1, env);
         add_operator ("import", &fn_import, 1, env);
         return env;    
     }

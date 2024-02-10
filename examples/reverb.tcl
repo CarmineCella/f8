@@ -1,3 +1,12 @@
+# --------------------------------
+# The f8 (fate) scripting language
+# --------------------------------
+#
+# Example: reverberation by convolution
+#
+# (c) www.carminecella.com
+#
+
 source "stdlib.tcl"
 
 set scale 0.1
@@ -11,14 +20,18 @@ set ir (readwav ir_file)
 
 set sr (car (infowav sig_file))
 
+closewav sig_file
+closewav ir_file
+
+puts "applying convolution..."
 set outsigL (conv (car ir) (car sig) scale mix)
 set outsigR (conv (second ir) (car sig) scale mix)
-
-set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
+puts "done\n"
 
 set out (openwav "reverb.wav" 'output sr 2)
-writewav out 2 outsigL outsigR
+writewav out outsigL outsigR
 closewav out
 
+# eof
 
 

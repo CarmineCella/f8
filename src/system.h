@@ -3,7 +3,6 @@
 
 #include "f8.h"
 
-#include <thread>
 #include <fstream>
 #include <vector>
 #include <string>
@@ -24,49 +23,7 @@
 
 namespace f8 {
     AtomPtr fn_ticks (AtomPtr params, AtomPtr env) {
-        return  make_node (clock ());
-    }
-    AtomPtr fn_thread (AtomPtr params, AtomPtr env) {
-        AtomPtr task = type_check (params->tail.at(0), LIST);
-        argnum_check (task, 1);
-        std::thread* pt = new std::thread (&eval, params, env);
-        return make_obj ("thread", (void*) pt,  make_node());
-    }
-    AtomPtr fn_attach (AtomPtr params, AtomPtr env) {
-        AtomPtr tt = params->tail.at(0);
-        std::thread* pt = (std::thread*) tt->obj;
-        if (pt != nullptr) {
-            pt->join ();
-            delete pt;
-            tt->obj = nullptr;
-        }
-        return  make_node();
-    }
-    class Later {
-    public:
-        template <class callable, class... arguments>
-        Later(int after, bool async, callable&& f, arguments&&... args) {
-            std::function<typename std::result_of<callable(arguments...)>::type()> 
-                task(std::bind(std::forward<callable>(f), std::forward<arguments>(args)...));
-            if (async) {
-                std::thread([after, task]() {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(after));
-                    task();
-                }).detach();
-            } else {
-                std::this_thread::sleep_for(std::chrono::milliseconds(after));
-                task();
-            }
-        }
-    };
-    AtomPtr fn_schedule (AtomPtr params, AtomPtr env) {
-        AtomPtr task = type_check (params->tail.at(0), LIST);
-        argnum_check (task, 1);
-        int msec = (int) params->tail.at(1)->val[0];
-        bool async = (bool) params->tail.at (2)->val[0];
-        AtomPtr l = make_node (); l->tail.push_back (task);
-        Later sched (msec, async, &eval, l, env);
-        return  make_node();
+        return make_node (clock ());
     }
     AtomPtr fn_dirlist (AtomPtr params, AtomPtr env) {
         std::string path = type_check (params->tail.at (0), STRING)->lexeme;
@@ -214,7 +171,7 @@ namespace f8 {
         } else if (p->lexeme == "outstream") {
             return  make_node(static_cast<std::ostream*> (p->obj)->good () ? 1 : 0);
         }
-        return  make_node();
+        return make_node(0);
     }
     AtomPtr fn_rwndstream (AtomPtr node, AtomPtr env) {
         AtomPtr p = type_check (node->tail.at(0), OBJECT);
@@ -230,7 +187,6 @@ namespace f8 {
             ostr->seekp (0);
             return  make_node(1);
         }
-
         return  make_node(0);
     }
     AtomPtr fn_writeline (AtomPtr n, AtomPtr env) {
@@ -255,9 +211,6 @@ namespace f8 {
     }
     AtomPtr add_system (AtomPtr env) {
         add_operator ("ticks", &fn_ticks, 0, env);
-        add_operator ("thread", &fn_thread, 1, env);
-        add_operator ("attach", &fn_attach, 1, env);
-        add_operator ("schedule", &fn_schedule, 3, env);
         add_operator ("dirlist", &fn_dirlist, 1, env);
         add_operator ("filestat", &fn_filestat, 1, env);
         add_operator ("getvar", &fn_getvar, 1, env);

@@ -1,4 +1,11 @@
-# {plot}
+# --------------------------------
+# The f8 (fate) scripting language
+# --------------------------------
+#
+# Example: the "plot" function
+#
+# (c) www.carminecella.com
+#
 
 source "stdlib.tcl"
 

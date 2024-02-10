@@ -2,13 +2,16 @@
 
 // ver. 0.6
 // implement NUMERIC type
+// sndread, sndwrite (stdlib)
 // examples
 // tests
 // features + pitch + onsets
 // pitch2note
 // clustering/gmm
 // blockconv / pvoc
-// more examples: math, strings, osc-like udpsend, descriptors, knn, pitch to osc
+// write/read floats
+// biquad
+// more examples: math, strings, osc-like udpsend, descriptors, knn class, pitch to osc
 
 // ver. 0.7
 // load db

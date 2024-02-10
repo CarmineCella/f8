@@ -61,7 +61,7 @@ public:
 	}
 	void process (std::valarray<T>& out) {
 		int s = len ();
-		if (out.size () < s) out.resize (s);
+		if (out.size () < s) out.resize (s, 0);
 		int offset = 0;
 		for (unsigned i = 0; i < _segments.size (); ++i) {
 			std::valarray<T> tmp;

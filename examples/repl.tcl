@@ -1,5 +1,13 @@
-# repl
+# --------------------------------
+# The f8 (fate) scripting language
+# --------------------------------
+#
+# Example: self-boostrap in f8
+#
+# (c) www.carminecella.com
+#
 
+source "stdlib.tcl"
   
 proc (repl) {
     while true {
@@ -8,9 +16,9 @@ proc (repl) {
           puts ">> "
           puts (eval (gets))
         }
-      } nl
+      } "\n"
     }
 }
 
-puts "[minimal f8 repl]" nl nl
+puts "[minimal f8 repl]\n\n"
 repl
