@@ -43,6 +43,8 @@ int main (int argc, char* argv[]) {
         ofstream out (argv[1]);
         if (!out.good ()) throw runtime_error ("cannot create output file");
 
+        out << "version " << VERSION << "<br>" << endl << endl;
+
         cout << "documenting code..."; cout.flush ();
         for (unsigned int i = 2; i < argc; ++i) {
             ifstream in (argv[i]);

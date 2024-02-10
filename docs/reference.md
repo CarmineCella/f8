@@ -1,3 +1,5 @@
+version 0.5<br>
+
  # The f8 (fate) reference manual<br>
  ## Overview
  This manual is a of the *f8* runtime system. It is intended to be a reference document for programmers. It does not describe how to run *f8* or how to interact with it.
