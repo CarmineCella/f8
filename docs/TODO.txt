@@ -1,13 +1,16 @@
 // TODO:
 
+// ver. 0.5
+// tests
+// issues
+
 // ver. 0.6
 // sndread, sndwrite (stdlib)
-// tests
+// write/read floats
 // features + pitch + onsets
 // pitch2note
 // clustering/gmm
 // blockconv / pvoc
-// write/read floats
 // biquad
 // more examples: math, strings, osc-like udpsend, descriptors, knn class, pitch to osc
 // reference manaul
@@ -26,4 +29,9 @@
 // ambidec
 
 // ISSUES:
+
+// slow speed compared to quile
+// set v 1 # comment
+// if () break
+// function EOF -- does not raise error
 

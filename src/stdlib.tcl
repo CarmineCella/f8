@@ -51,6 +51,14 @@ proc (reverse l) {
 	}
 	reverse-runner l ()
 }
+proc (zip l1 l2) {
+	proc (zip-worker l1 l2) {
+		if (or (eq () l1) (eq () l2)) () else {
+			lappend (lappend (head l1) (head l2)) (zip-worker  (cdr l1) (cdr l2))
+		}
+	}
+	split (llength l1) (zip-worker l1 l2)
+}
 
 # higher order operators
 proc (map f l) {
@@ -128,8 +136,8 @@ proc (ack m n) {
 		}
 	}			
 }
-proc (birandn n m)(toarray (map (\ (x)(* x n)) (tolist (noise m))))
-proc (randn n m)(toarray (map (\ (x) (/ (+ n x) 2)) (tolist (birandn n m))))
+proc (birandn n m)(array (map (\ (x)(* x n)) (array2list (noise m))))
+proc (randn n m)(array (map (\ (x) (/ (+ n x) 2)) (array2list (birandn n m))))
 
 # list-based operators
 proc (zeros n)(bpf 0 n 0)
@@ -157,12 +165,12 @@ proc (mean l) {
 }
 proc (stddev l) {
 	set mu (mean l)
-	set normal (/ 1. (- (llength l) 1))
+	set normal (/ 1. (- (size l) 1))
 	# sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal)
 	sqrt (* (sum (square (- l mu))) normal)
 }
 proc (dot a b) {
-	-> + (* a b)
+	sum (* a b)
 }
 proc (ortho a b)(eq (dot a b) 0)
 proc (standard l) {
@@ -218,22 +226,22 @@ proc (udpmonitor addr port) {
 }
 
 # plotting
-set Aqua (toarray '(0 255 255))
-set Black (toarray '(0 0 0))
-set Blue (toarray '(0 0 255))
-set Brown (toarray '(165 42 42))
-set Cyan (toarray '(0 255 255))
-set Fuchsia (toarray '(255 0 255))
-set Green (toarray '(0 128 0))
-set Lime (toarray '(0 255 0))
-set Magenta (toarray '(255 0 255))
-set Orange (toarray '(255 165 0))
-set Purple (toarray '(128 0 128))
-set Red (toarray '(255 0 0))
-set Silver (toarray '(192 192 192))
-set White (toarray '(255 255 255))
-set Yellow (toarray '(255 255 0))
-set Gray (toarray '(127 127 127))
+set Aqua (array '(0 255 255))
+set Black (array '(0 0 0))
+set Blue (array '(0 0 255))
+set Brown (array '(165 42 42))
+set Cyan (array '(0 255 255))
+set Fuchsia (array '(255 0 255))
+set Green (array '(0 128 0))
+set Lime (array '(0 255 0))
+set Magenta (array '(255 0 255))
+set Orange (array '(255 165 0))
+set Purple (array '(128 0 128))
+set Red (array '(255 0 0))
+set Silver (array '(192 192 192))
+set White (array '(255 255 255))
+set Yellow (array '(255 255 0))
+set Gray (array '(127 127 127))
 proc (plot name x) {
 	set a (opensvg name 512 512)
 	polyline a x Blue

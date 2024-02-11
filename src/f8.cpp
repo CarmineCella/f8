@@ -7,6 +7,8 @@
 
 using namespace std;
 
+float cvt (float x) { return (int) x; } 
+
 int main (int argc, char* argv[]) {
 	srand (time (NULL));
 	try {
@@ -24,7 +26,7 @@ int main (int argc, char* argv[]) {
 			}
 		}
 	} catch (f8::AtomPtr& e) {
-		cout << RED << "error: "; f8::print (e, cout) << RESET << std::endl;
+		cout << RED << "error: "; f8::puts (e, cout) << RESET << std::endl;
 	} catch (exception& e) {
 		cout << RED << "exception: " << e.what () << RESET << std::endl;
 	} catch (...) {

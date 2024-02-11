@@ -78,10 +78,20 @@ namespace f8 {
         o->tail.push_back (cb);
         return o;
     }
+    template <typename T>
+    bool is_equal (const std::valarray<T>& x,const std::valarray<T>& b) {
+        bool equals = true;
+
+        for (auto it = std::make_pair(std::begin(x), std::begin(b));it.first != std::end(x);++it.first,++it.second) {
+            equals &= ((*it.first) == (*it.second));
+            if (!equals) break;
+        }
+        return equals;
+    }
     bool atom_eq (AtomPtr x, AtomPtr y) {
         if (x->type != y->type) { return 0; }
         switch (x->type) {
-        case NUMERIC: return (x->val == y->val).min ();
+        case NUMERIC: return is_equal (x->val, y->val);
         case SYMBOL: case STRING: return (x->lexeme == y->lexeme);
         case LIST: {
             if (x->tail.size () != y->tail.size ()) { return 0; }
@@ -103,7 +113,7 @@ namespace f8 {
     }
 
     // helpers
-    std::ostream& print (AtomPtr node, std::ostream& out, bool write = false) {
+    std::ostream& puts (AtomPtr node, std::ostream& out, bool write = false) {
         if (node->type == NUMERIC) {
             if (node->val.size () > 1) out << "[";
             for (unsigned i = 0; i < node->val.size (); ++i) {
@@ -125,14 +135,14 @@ namespace f8 {
         }
         if (node->type == LAMBDA) {
             out << "(lambda ";
-            print (node->tail.at (0), out) << " ";
-            print (node->tail.at (1), out);
+            puts (node->tail.at (0), out) << " ";
+            puts (node->tail.at (1), out);
             out << ")";
         }
         if (node->type == LIST) {
             out << "(";
             for (unsigned i = 0; i < node->tail.size (); ++i) {
-                print (node->tail.at (i), out);
+                puts (node->tail.at (i), out);
                 if (i != node->tail.size () - 1) out << " ";
             }
             out << ")";
@@ -151,12 +161,12 @@ namespace f8 {
             err << msg << " "; 
             if (!is_nil (ctx) && ctx->type != LIST && ctx->type != NUMERIC) {
                 err << "'";
-                print (ctx, err);
+                puts (ctx, err);
                 err << "'";
             }
             if (!is_nil (call_frame)) {
                 err << " in '";
-                print (call_frame, err) << "'" << std::endl;
+                puts (call_frame, err) << "'" << std::endl;
             }
             throw make_node (err.str ());
         }
@@ -646,14 +656,18 @@ namespace f8 {
         if (atom_eq (node->tail[0], node->tail[1])) return make_node (1);
         else return make_node (0);	
     }
-	void list2array (AtomPtr list, std::valarray<Real>& out) {
-		int sz = list->tail.size (); 
-		out.resize (sz ? sz : 1);
-		if (sz) {
-			for (unsigned i = 0; i < list->tail.size (); ++i) {
-				out[i] = type_check (list->tail.at (i), NUMERIC)->val[0];
-			}
-		} else out[0]= type_check (list, NUMERIC)->val[0];
+	void list2vector (AtomPtr list, std::vector<Real>& out) {
+		for (unsigned i = 0; i < list->tail.size (); ++i) {
+            if (list->tail.at (i)->type == LIST) {
+                list2vector (list->tail.at (i), out);
+		    }  else if (list->tail.at (i)->type == NUMERIC) {
+                 for (unsigned k = 0; k < list->tail.at (i)->val.size (); ++k) {
+                    out.push_back (list->tail.at (i)->val[k]);
+                }
+            } else {
+                Context::error ("numeric or list expected", list);
+            }
+        }
 	}
 	AtomPtr array2list (const std::valarray<Real>& out) {
 		AtomPtr list = make_node ();
@@ -662,22 +676,23 @@ namespace f8 {
 		}
 		return list->tail.size () == 1 ? list->tail.at (0) : list;
 	}    
-    AtomPtr fn_toarray (AtomPtr node, AtomPtr env) {
-        std::valarray<Real> res;
-        list2array (type_check (node->tail.at (0), LIST), res);
-        return make_node (res);
+    AtomPtr fn_array (AtomPtr node, AtomPtr env) {
+        std::vector<Real> res;
+        list2vector (node, res);
+        std::valarray<Real> f (res.data (), res.size ());
+        return make_node (f);
     }
-    AtomPtr fn_tolist (AtomPtr node, AtomPtr env) {
+    AtomPtr fn_array2list (AtomPtr node, AtomPtr env) {
         return array2list (type_check (node->tail.at (0), NUMERIC)->val);
     }       
-	#define MAKE_ARRAYBINOP(op,name) 	\
+    #define MAKE_ARRAYBINOP(op,name) 	\
 		AtomPtr name (AtomPtr n, AtomPtr env) { 	\
 			std::valarray<Real> res (type_check (n->tail.at (0), NUMERIC)->val); \
 			for (unsigned i = 1; i < n->tail.size (); ++i) {  \
 				std::valarray<Real>& a = type_check (n->tail.at (i), NUMERIC)->val; \
 				if (a.size () == 1) res = res op a[0]; \
 				else res = res op a; \
-			} \
+ 			} \
 			return make_node (res); \
 		} \
 
@@ -685,10 +700,23 @@ namespace f8 {
 	MAKE_ARRAYBINOP (-, fn_sub);
 	MAKE_ARRAYBINOP (*, fn_mul);
 	MAKE_ARRAYBINOP (/, fn_div);
-	MAKE_ARRAYBINOP (>, fn_greater);
-	MAKE_ARRAYBINOP (>=, fn_greatereq);
-	MAKE_ARRAYBINOP (<, fn_less);
-	MAKE_ARRAYBINOP (<=, fn_lesseq);
+	#define MAKE_ARRAYCMPOP(op,name) 	\
+		AtomPtr name (AtomPtr n, AtomPtr env) { 	\
+            std::valarray<Real> res; \
+			for (unsigned i = 0; i < n->tail.size () - 1; ++i) {  \
+				std::valarray<Real>& a = type_check (n->tail.at (i), NUMERIC)->val; \
+                std::valarray<Real>& b = type_check (n->tail.at (i + 1), NUMERIC)->val; \
+				if (a.size () == 1) res = a op b[0]; \
+				else res = a op b; \
+                if (res.sum () < res.size ()) break; \
+ 			} \
+			return make_node (res); \
+		} \
+
+	MAKE_ARRAYCMPOP (>, fn_greater);
+	MAKE_ARRAYCMPOP (>=, fn_greatereq);
+	MAKE_ARRAYCMPOP (<, fn_less);
+	MAKE_ARRAYCMPOP (<=, fn_lesseq);
 	#define MAKE_ARRAYMETHODS(op,name)									\
 		AtomPtr name (AtomPtr n, AtomPtr env) {						\
 			std::valarray<Real> res (n->tail.size ()); \
@@ -789,7 +817,7 @@ namespace f8 {
     AtomPtr fn_format (AtomPtr node, AtomPtr env) {
         std::stringstream tmp;
         for (unsigned i = mode == 2 ? 1 : 0; i < node->tail.size (); ++i) {
-            print (node->tail.at (i), tmp, mode == 2); // set write flag if necessary
+            puts (node->tail.at (i), tmp, mode == 2); // set write flag if necessary
         }
         switch (mode) {
             case 0: // print
@@ -809,7 +837,7 @@ namespace f8 {
             break;	
         }
     }
-    AtomPtr fn_read (AtomPtr node, AtomPtr env) {
+    AtomPtr fn_gets (AtomPtr node, AtomPtr env) {
         int linenum = 1;
         Context::call_frame = make_node ();
         return read_line (std::cin, linenum, "");
@@ -972,8 +1000,8 @@ namespace f8 {
         add_operator ("lindex", &fn_lindex, 1, env);
         add_operator ("llength", &fn_llength, 1, env);
         add_operator ("eq", &fn_eqp, 2, env);
-        add_operator ("toarray", &fn_toarray, 1, env);
-        add_operator ("tolist", &fn_tolist, 1, env);
+        add_operator ("array", &fn_array, 1, env);
+        add_operator ("array2list", &fn_array2list, 1, env);
         add_operator ("+", &fn_add, 1, env);
         add_operator ("*", &fn_mul, 1, env);
         add_operator ("-", &fn_sub, 1, env);
@@ -999,7 +1027,7 @@ namespace f8 {
 		add_operator ("slice", fn_slice, 3, env);   
 		add_operator ("assign", fn_assign, 4, env);            
         add_operator ("puts", &fn_format<0>, 1, env);
-        add_operator ("gets", &fn_read, 0, env);
+        add_operator ("gets", &fn_gets, 0, env);
         add_operator ("source", &fn_load, 1, env);
         add_operator ("save", &fn_format<2>, 2, env);
         add_operator ("tostr", &fn_format<1>, 1, env); 
@@ -1018,10 +1046,10 @@ namespace f8 {
         while (true){
             out << ">> ";
             try {
-                print (eval (read_line (*current, linenum, ""), env), out);
+                puts (eval (read_line (*current, linenum, ""), env), out);
                 out << std::endl;
             } catch (f8::AtomPtr& e) {
-                std::cout << RED << "error: "; f8::print (e, out) << RESET << std::endl;
+                std::cout << RED << "error: "; f8::puts (e, out) << RESET << std::endl;
             } catch (std::exception& e) {
                 std::cout << RED << "exception: " << e.what () << RESET << std::endl;
             } catch (...) {

@@ -109,7 +109,7 @@ namespace f8 {
         server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val[0]);
 
         std::stringstream nf;
-        print (n->tail.at(2), nf);
+        puts (n->tail.at(2), nf);
 
         if (sendto(sock, nf.str ().c_str (), n->tail.at(2)->lexeme.size (), 0, 
             (struct sockaddr *)&server , sizeof(server)) < 0) {
