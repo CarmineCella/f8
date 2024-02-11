@@ -225,8 +225,8 @@ namespace f8 {
                     }
                 break;
                 case '#':
-                    while (c != '\n' && !input.eof ())  { c = input.get (); }
-                    ++linenum;
+                    do { c = input.get (); } while (c != '\n' && !input.eof ());
+                    input.putback(c);
                 break;		            
                 case ' ': case '\t': case '\r':  case '\0':
                     if (accum.str ().size ()) return accum.str ();
@@ -258,6 +258,7 @@ namespace f8 {
                     if (c > 0) accum << c;
             }
         }
+        std::cout << "EOF " << accum.str ();
         return accum.str ();
     }
     bool is_number (std::string token) {
@@ -269,6 +270,7 @@ namespace f8 {
     AtomPtr read_line (std::istream& in, int& linenum, const std::string& module);
     AtomPtr read (std::istream& in, int& linenum, const std::string& module) {
         std::string token = next (in, linenum);
+        std::cout << "tok " << token << std::endl;
         AtomPtr l = make_node();
         if (token == "(") {
             AtomPtr a = make_node ();
@@ -305,10 +307,9 @@ namespace f8 {
     }
     AtomPtr read_line (std::istream& in, int& linenum, const std::string& module) {
         AtomPtr l = make_node ();
-        while (!in.eof ()) {
+        while (true) {
             AtomPtr a = read (in, linenum, module);
-            if (in.eof ()) break;
-            if (atom_eq (a, make_node ("}"))) {
+            if (in.eof () || atom_eq (a, make_node ("}"))) {
                 l->tail.push_back (a);
                 break;
             }

@@ -1,7 +1,6 @@
 // TODO:
 
 // ver. 0.5
-// tests
 // issues
 
 // ver. 0.6
@@ -31,7 +30,5 @@
 // ISSUES:
 
 // slow speed compared to quile
-// set v 1 # comment
-// if () break
-// function EOF -- does not raise error
+
 

@@ -7,8 +7,6 @@
 
 using namespace std;
 
-float cvt (float x) { return (int) x; } 
-
 int main (int argc, char* argv[]) {
 	srand (time (NULL));
 	try {
