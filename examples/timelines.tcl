@@ -50,14 +50,14 @@ closewav ir_file
 set irL (car ir)
 set irR (second ir)
 
-set scale 0.01
-set mix 0.4
+set scale 0.05
+set mix 0.1
 
 set outsigL (conv irL timeline1 scale mix)
 set outsigR (conv irR timeline1 scale mix)
 
 set out (openwav "timelines.wav" 'output sr 2)
-writewav out outsigL outsigR
+writewav out (list outsigL outsigR)
 closewav out
 
 # eof

@@ -310,16 +310,12 @@ namespace f8 {
 		int sz = final->tail.at (0)->val.size ();
 		int ch = final->tail.size ();
 
-		std::cout << ch << " ch" << std::endl;
-
 		if (ch == 1) {
-			std::cout << "data " << final->tail.at (0)->val.size () << std::endl;
 			out->write (&final->tail.at (0)->val[0], sz);
 		} else if (ch == 2) {
 			std::valarray<Real> data (sz * ch);
 			interleave (&data[0], &final->tail.at (0)->val[0], &final->tail.at (1)->val[0], sz);
 			out->write (&data[0], ch * sz);
-			std::cout << "data " << data.size () << std::endl;
  		}
 		return make_node (sz * ch);
 	}

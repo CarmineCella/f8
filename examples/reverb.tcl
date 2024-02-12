@@ -29,7 +29,7 @@ set outsigR (conv (second ir) (car sig) scale mix)
 puts "done\n"
 
 set out (openwav "reverb.wav" 'output sr 2)
-writewav out outsigL outsigR
+writewav out (list outsigL outsigR)
 closewav out
 
 # eof

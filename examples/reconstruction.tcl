@@ -67,11 +67,11 @@ puts "done\n" "synthesising..."
 set out (oscbank1 sr amps freqs tab1)
 set norm 0.8
 set fade (bpf norm samps 0.0)
-set out (* fade out)
+# set out (* fade out)
 puts "done\n"
 
 set c (openwav "reconstruction.wav" 'output sr 1)
-puts (writewav c out) " samples written\n"
+puts (writewav c (list out)) " samples written\n"
 closewav c
 
 # eof

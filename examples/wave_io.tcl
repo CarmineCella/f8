@@ -22,7 +22,7 @@ set sig2 (array (-> cos (map (\(x)(* TWOPI freq x)) time)))
 
 puts "write wave data..."
 set a (openwav "test.wav" 'output sr ch)
-puts (writewav a (lappend () sig1 sig2)) " samples written\n"
+puts (writewav a (list sig1 sig2)) " samples written\n"
 closewav a
 
 puts "read wave data..." 

@@ -66,7 +66,7 @@ while (< i min_len) {
 puts  "min = " (min outsig) ", max = " (max outsig) "\n"
 
 set outf (openwav "xsynth.wav" 'output sr 1)
-puts (writewav outf outsig) " samples written\n"
+puts (writewav outf (list outsig)) " samples written\n"
 closewav outf
 
 # eof
