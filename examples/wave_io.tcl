@@ -14,15 +14,15 @@ set freq 440
 set dur 0.3
 set samples (* dur sr)
 
-set time (tolist (bpf 0 samples (/ samples sr)))
+set time (array2list (bpf 0 samples (/ samples sr)))
 
 # arrays and lists are connected via torray/tolist (slow!)
-set sig1 (toarray (-> sin (map (\(x)(* TWOPI freq x)) time)))
-set sig2 (toarray (-> cos (map (\(x)(* TWOPI freq x)) time)))
+set sig1 (array (-> sin (map (\(x)(* TWOPI freq x)) time)))
+set sig2 (array (-> cos (map (\(x)(* TWOPI freq x)) time)))
 
 puts "write wave data..."
 set a (openwav "test.wav" 'output sr ch)
-puts (writewav a sig1 sig2) " samples written\n"
+puts (writewav a (lappend () sig1 sig2)) " samples written\n"
 closewav a
 
 puts "read wave data..." 
@@ -34,7 +34,7 @@ closewav a
 
 puts  "write again data..."
 set a (openwav "test2.wav" 'output sr ch)
-puts (writewav a (car sigr) (second sigr)) " samples written\n"
+puts (writewav a sigr) " samples written\n"
 closewav a
 
 puts "read sounds/archeos-bell.wav..." 
@@ -45,7 +45,7 @@ closewav a
 puts "sr: " (car winfo) ", ch: "(second winfo) "\n"
 
 set c (openwav "copy.wav" 'output (car winfo) (second winfo))
-puts (writewav c (car sigr)) " samples copied\n"
+puts (writewav c sigr) " samples copied\n"
 closewav c
 
 puts "read sounds/Concertgebouw-s.wav..." 
@@ -56,7 +56,12 @@ closewav a
 puts "sr: " (car winfo) ", ch: "(second winfo) "\n"
 
 set c (openwav "copy2.wav" 'output (car winfo) (second winfo))
-puts (writewav c (car sigr) (second sigr)) " samples copied\n"
+puts (writewav c sigr) " samples copied\n"
 closewav c  
+
+puts "sndread/sndwrite wrappers...\n" 
+set w (sndread "../sounds/cage.wav")
+puts (llength w) " " (size (car w)) "\n" 
+puts (sndwrite "copy3.wav" 44100 w) " samples copied\n"
 
 # eof

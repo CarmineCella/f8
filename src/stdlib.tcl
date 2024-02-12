@@ -269,5 +269,18 @@ proc (oscbank sr amps freqs tab) {
 	}
 	+ outbuff
 }
+proc (sndread fname) {
+    set h (openwav fname 'input)
+    set b (readwav h)
+    closewav h
+    lappend b
+}
+proc (sndwrite fname sr data) {
+    set ch (llength data)
+    set h (openwav fname 'output sr ch)
+    set b (writewav h data)
+    closewav h
+    lappend b
+}
 
 # eof

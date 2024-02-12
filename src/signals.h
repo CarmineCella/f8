@@ -305,17 +305,22 @@ namespace f8 {
 		if (p->obj == 0 || p->lexeme != "outwav") Context::error ("[writewav] cannot write an output file", node);
 		WavOutFile* out = static_cast<WavOutFile*> (p->obj);
 
-		if (node->tail.size () > 3) Context::error ("[writewav] only mono/stereo files are supported", node);		
-		int sz = node->tail.at (1)->val.size ();
-		int ch = node->tail.size () - 1;
+		AtomPtr final = type_check (node->tail.at (1), LIST);
+		if (final->tail.size () > 2 || !final->tail.size ()) Context::error ("[writewav] only mono/stereo files are supported", node);		
+		int sz = final->tail.at (0)->val.size ();
+		int ch = final->tail.size ();
+
+		std::cout << ch << " ch" << std::endl;
 
 		if (ch == 1) {
-			out->write (&node->tail.at (1)->val[0], sz);
+			std::cout << "data " << final->tail.at (0)->val.size () << std::endl;
+			out->write (&final->tail.at (0)->val[0], sz);
 		} else if (ch == 2) {
 			std::valarray<Real> data (sz * ch);
-			interleave (&data[0], &node->tail.at (1)->val[0], &node->tail.at (2)->val[0], sz);
+			interleave (&data[0], &final->tail.at (0)->val[0], &final->tail.at (1)->val[0], sz);
 			out->write (&data[0], ch * sz);
-		}
+			std::cout << "data " << data.size () << std::endl;
+ 		}
 		return make_node (sz * ch);
 	}
 	AtomPtr fn_closewav (AtomPtr node, AtomPtr env) {

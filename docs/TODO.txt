@@ -2,17 +2,19 @@
 
 // ver. 0.5
 // issues
+// sndread, sndwrite (stdlib)
+// reference manaul
+// more examples: math, strings, osc-like udpsend
 
 // ver. 0.6
-// sndread, sndwrite (stdlib)
 // write/read floats
 // features + pitch + onsets
 // pitch2note
 // clustering/gmm
 // blockconv / pvoc
 // biquad
-// more examples: math, strings, osc-like udpsend, descriptors, knn class, pitch to osc
-// reference manaul
+// more examples: escriptors, knn class, pitch to osc
+
 
 // ver. 0.7
 // load db
