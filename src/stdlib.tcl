@@ -1,4 +1,10 @@
-# f8 - standard library
+# --------------------------------
+# The f8 (fate) scripting language
+# --------------------------------
+#
+# Standard library
+#
+# (c) www.carminecella.com
 #
 
 # true/false
@@ -59,6 +65,15 @@ proc (zip l1 l2) {
 	}
 	split (llength l1) (zip-worker l1 l2)
 }
+proc (dup n x) {
+	proc (dup-runner acc n x) {
+		if (<= n 0) acc else {
+			lappend acc x
+			dup-runner acc (- n 1) x
+		}
+	}
+	dup-runner () n x
+}
 
 # higher order operators
 proc (map f l) {
@@ -94,20 +109,13 @@ proc (foldl f z l) {
 }
 proc (flip f a b) (f b a)
 proc (comp f g x) (f (g x))
-proc (dup n x) {
-	proc (dup-runner acc n x) {
-		if (<= n 0) acc else {
-			lappend acc x
-			dup-runner acc (- n 1) x
-		}
-	}
-	dup-runner () n x
-}
 
 # miscellaneous
 proc (test x y)(if (eq (lappend (list) (eval x)) y) (puts x  " passed\n") else (throw "*** FAILED ***" x))
 
 # arithmetics
+proc (getval x n) (slice x n 1)
+proc (setval x v n) (assign x v n 1)
 proc (succ x) (+ x 1)
 proc (pred x) (- x 1)
 proc (quotient a b) (floor (/ a b))
@@ -117,11 +125,38 @@ proc (twice x) (+ x x)
 proc (square x) (* x x)
 proc (mul-neg) (comp neg (unpack *))
 proc (round x) (floor (+ x 0.5))
+proc (birandn n m)(* (noise m) n)
+proc (randn n m)(/ (+ (birandn n m) n) 2)
+proc (zeros n)(bpf 0 n 0)
+proc (ones n)(bpf 1 n 1)
+proc (mean l) {
+	/ (sum l) (size l)
+}
+proc (stddev l) {
+	set mu (mean l)
+	set normal (/ 1. (- (size l) 1))
+	# sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal)
+	sqrt (* (sum (square (- l mu))) normal)
+}
+proc (standard l) {
+	set mu (mean l)
+	set s (stddev l)
+	# map (\ (x)(/ x s)) (map (\ (x)(-  x mu)) l)
+	/ (-  l mu) s
+}
+proc (normal l) {
+	/ l (max l)
+}
+proc (dot a b) {
+	sum (* a b)
+}
+proc (ortho a b)(eq (dot a b) 0)
+proc (diff x )(- (slice x 1 (size x)) x)
 proc (fac x) {
-	proc (fact-iter a product) {
-		if (eq a 0) product else (fact-iter (- a 1) (* product a))
+	proc (fact-worker a product) {
+		if (eq a 0) product else (fact-worker (- a 1) (* product a))
 	}
-	fact-iter x 1
+	fact-worker x 1
 }
 proc (fib n) {
 	proc (fib-worker a b count) {
@@ -136,21 +171,8 @@ proc (ack m n) {
 		}
 	}			
 }
-proc (birandn n m)(array (map (\ (x)(* x n)) (array2list (noise m))))
-proc (randn n m)(array (map (\ (x) (/ (+ n x) 2)) (array2list (birandn n m))))
 
 # list-based operators
-proc (zeros n)(bpf 0 n 0)
-proc (ones n)(bpf 1 n 1)
-proc (diff l) {
-	proc(diff-runner acc l) {
-		if (eq (cdr l) ()) acc else {
-			lappend acc (- (car (cdr l)) (car l))
-			diff-runner acc (cdr l)
-		}
-	}
-	diff-runner () l
-}
 proc (sign l) {
 	proc (sign-runner acc l) {
 		if (eq l ()) acc else {
@@ -159,25 +181,6 @@ proc (sign l) {
 		}
 	}
 	sign-runner () l
-}
-proc (mean l) {
-	/ (sum l) (size l)
-}
-proc (stddev l) {
-	set mu (mean l)
-	set normal (/ 1. (- (size l) 1))
-	# sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal)
-	sqrt (* (sum (square (- l mu))) normal)
-}
-proc (dot a b) {
-	sum (* a b)
-}
-proc (ortho a b)(eq (dot a b) 0)
-proc (standard l) {
-	set mu (mean l)
-	set s (stddev l)
-	# map (\ (x)(/ x s)) (map (\ (x)(-  x mu)) l)
-	/ (-  l mu) s
 }
 proc (compare op l) {	
 	proc (cmp-runner n l) {
@@ -190,13 +193,10 @@ proc (compare op l) {
 	}
 	cmp-runner (car l) l
 }
-proc (normal l) {
-	/ l (max l)
-}
 proc (. f l1 l2) {
 	map2 (\ (x y) (f x y)) l1 l2
-
 }
+
 # constants
 set TWOPI 6.2831853072
 set SQRT2 1.4142135624

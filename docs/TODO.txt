@@ -1,10 +1,7 @@
 // TODO:
 
 // ver. 0.5
-// issues
-// sndread, sndwrite (stdlib)
-// reference manaul
-// more examples: math, strings, osc-like udpsend
+// more examples: strings, osc-like udpsend
 
 // ver. 0.6
 // write/read floats
@@ -13,13 +10,14 @@
 // clustering/gmm
 // blockconv / pvoc
 // biquad
-// more examples: escriptors, knn class, pitch to osc
-
+// more examples: descriptors, knn class, pitch to osc
+// reference manaul
 
 // ver. 0.7
 // load db
 // maple/slip (?)
 // grain-orch
+// debugger (?)
 
 // ver. 0.8
 // orchidea
@@ -31,6 +29,6 @@
 
 // ISSUES:
 
-// slow speed compared to quile
+// a bit slower speed compared to quile
 
 

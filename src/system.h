@@ -22,7 +22,7 @@
 #include<arpa/inet.h>
 
 namespace f8 {
-    AtomPtr fn_ticks (AtomPtr params, AtomPtr env) {
+    AtomPtr fn_clock (AtomPtr params, AtomPtr env) {
         return make_node (clock ());
     }
     AtomPtr fn_dirlist (AtomPtr params, AtomPtr env) {
@@ -210,7 +210,7 @@ namespace f8 {
         return make_node ((std::string) "\"" + buff);
     }
     AtomPtr add_system (AtomPtr env) {
-        add_operator ("ticks", &fn_ticks, 0, env);
+        add_operator ("clock", &fn_clock, 0, env);
         add_operator ("dirlist", &fn_dirlist, 1, env);
         add_operator ("filestat", &fn_filestat, 1, env);
         add_operator ("getvar", &fn_getvar, 1, env);

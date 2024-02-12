@@ -9,10 +9,10 @@
 
 source "stdlib.tcl"
 
-set tic (ticks)
-puts "current ticks " tic "\n"
-set toc (ticks)
-puts "current ticks " toc "\n"
+set tic (clock)
+puts "current clock " tic "\n"
+set toc (clock)
+puts "current clock " toc "\n"
 puts "ticks elapsed " (- toc tic) "\n\n"
 
 # they should be different

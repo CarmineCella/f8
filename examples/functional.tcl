@@ -16,7 +16,17 @@ proc (mylen l) {
 	}
 	mylen-runner 0 l
 }
-puts "length of a long list = " (mylen (tolist (noise 10000))) "\n"
+puts "length of a long list = " (mylen (array2list (noise 10000))) "\n"
+proc (mydiff l) {
+	proc(mydiff-runner acc l) {
+		if (eq (cdr l) ()) acc else {
+			lappend acc (- (car (cdr l)) (car l))
+			mydiff-runner acc (cdr l)
+		}
+	}
+	mydiff-runner () l
+}
+puts "diff of '(1 2 3 4 5) = " (mydiff '(1 2 3 4 5 )) "\n"
 
 # non tail-recursive functions - it may crash if applied to very long lists
 proc (mydot a b) {
@@ -46,6 +56,13 @@ proc (mymax l) ((compare >) l)
 puts "min of a list  = " (mymin '(1 2 3 4)) "\n"
 puts "max of a list  = " (mymax '(1 2 3 4)) "\n\n"
 
+# map
+proc (mybirandn n m)(array (map (\ (x)(* x n)) (array2list (noise m))))
+proc (myrandn n m)(array (map (\ (x) (/ (+ n x) 2)) (array2list (mybirandn n m))))
+puts "bipolar random numbers = " (mybirandn 10 5) "\n"
+puts "unipolar random numbers = " (myrandn 10 5) "\n"
+
 # eof
+
 
 
