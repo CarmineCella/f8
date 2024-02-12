@@ -47,24 +47,8 @@ while (< i (size fftfreqs)) {
     set i (+ i 1)
 }
 
-proc (oscbank1 sr amps freqs tab) {
-    # assumes both freqs and amps have the same number of elems
-	set elems (llength amps) 
-	set outbuff (bpf 0 (size (car freqs)) 0)
-	set i 0
-	while (< i elems) {
-		set f (car freqs)
-		if (eq f ()) {break}
-		! outbuff (+ outbuff (* (car amps) (osc sr (car freqs) tab)))
-		set amps (cdr amps)
-		set freqs (cdr freqs)
-		! i (+ i 1)
-	}
-	+ outbuff
-}
-
 puts "done\n" "synthesising..."
-set out (oscbank1 sr amps freqs tab1)
+set out (oscbank sr amps freqs tab1)
 set norm 0.8
 set fade (bpf norm samps 0.0)
 # set out (* fade out)

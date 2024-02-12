@@ -2,7 +2,7 @@
 # The f8 (fate) scripting language
 # --------------------------------
 #
-# Math tests
+# Maths tests
 #
 # (c) www.carminecella.com
 #

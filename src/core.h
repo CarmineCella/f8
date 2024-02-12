@@ -16,6 +16,7 @@
 #include <dlfcn.h>
 
 #define BOLDWHITE   "\033[1m\033[37m"
+#define BOLDBLUE    "\033[1m\033[34m"
 #define RED     	"\033[31m" 
 #define RESET   	"\033[0m"
 
@@ -150,7 +151,6 @@ namespace f8 {
         if (node->type == OBJECT) {
             out << "<object: " << node->lexeme << " @" << &node->obj << ">";    
         }
-        out.flush ();
         return out;
     } 
     struct Context {
@@ -820,7 +820,7 @@ namespace f8 {
         }
         switch (mode) {
             case 0: // print
-                std::cout << tmp.str ();
+                std::cout << tmp.str (); std::cout.flush ();
                 return make_node ("");
             break;
             case 1: // to string
@@ -841,7 +841,7 @@ namespace f8 {
         Context::call_frame = make_node ();
         return read_line (std::cin, linenum, "");
     }
-    bool load (const std::string& name, AtomPtr env) {
+    bool source (const std::string& name, AtomPtr env) {
         std::ifstream in (name.c_str ());
         if (!in.good ()) {
             std::string longname = getenv("HOME");
@@ -851,16 +851,19 @@ namespace f8 {
         }
         AtomPtr res = make_node ();
         int linenum = 1;
+        AtomPtr code = make_node ();
         while (!in.eof ()) {
-            res = read_line (in, linenum, name);
-            Context::call_frame = res;
-            if (!is_nil (res)) eval (res, env);
+            code->tail.push_back (read_line (in, linenum, name));
         }
+        for (unsigned i = 0; i < code->tail.size (); ++i) {
+            Context::call_frame = code->tail.at (i);
+            eval (Context::call_frame, env);
+        }        
         Context::call_frame = make_node ();
         return true;
     }
-    AtomPtr fn_load (AtomPtr node, AtomPtr env) {
-        return make_node (load (type_check (node->tail.at (0), STRING)->lexeme, env));
+    AtomPtr fn_source (AtomPtr node, AtomPtr env) {
+        return make_node (source (type_check (node->tail.at (0), STRING)->lexeme, env));
     }
     void replace (std::string &s, std::string from, std::string to) {
         int idx = 0;
@@ -1027,7 +1030,7 @@ namespace f8 {
 		add_operator ("assign", fn_assign, 4, env);            
         add_operator ("puts", &fn_format<0>, 1, env);
         add_operator ("gets", &fn_gets, 0, env);
-        add_operator ("source", &fn_load, 1, env);
+        add_operator ("source", &fn_source, 1, env);
         add_operator ("save", &fn_format<2>, 2, env);
         add_operator ("tostr", &fn_format<1>, 1, env); 
         add_operator ("string", &fn_string, 2, env);
