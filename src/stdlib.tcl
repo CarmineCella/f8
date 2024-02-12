@@ -270,5 +270,4 @@ proc (oscbank sr amps freqs tab) {
 	+ outbuff
 }
 
-# ;; eof
-
+# eof

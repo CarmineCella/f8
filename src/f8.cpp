@@ -20,7 +20,9 @@ int main (int argc, char* argv[]) {
 		}
 		else {
 			for (unsigned int i = 1; i < argc; ++i) {
-				f8::load (argv[i], environment);
+				if (!f8::load (argv[i], environment)) {
+					std::cout << "warning: cannot open input file " << argv[i] << std::endl;
+				}
 			}
 		}
 	} catch (f8::AtomPtr& e) {

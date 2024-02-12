@@ -258,7 +258,6 @@ namespace f8 {
                     if (c > 0) accum << c;
             }
         }
-        std::cout << "EOF " << accum.str ();
         return accum.str ();
     }
     bool is_number (std::string token) {
@@ -270,7 +269,6 @@ namespace f8 {
     AtomPtr read_line (std::istream& in, int& linenum, const std::string& module);
     AtomPtr read (std::istream& in, int& linenum, const std::string& module) {
         std::string token = next (in, linenum);
-        std::cout << "tok " << token << std::endl;
         AtomPtr l = make_node();
         if (token == "(") {
             AtomPtr a = make_node ();
@@ -310,7 +308,7 @@ namespace f8 {
         while (true) {
             AtomPtr a = read (in, linenum, module);
             if (in.eof () || atom_eq (a, make_node ("}"))) {
-                l->tail.push_back (a);
+                if (a->lexeme.size ()) l->tail.push_back (a);
                 break;
             }
             if (atom_eq (a, make_node ("\n"))) {
@@ -843,13 +841,13 @@ namespace f8 {
         Context::call_frame = make_node ();
         return read_line (std::cin, linenum, "");
     }
-    AtomPtr load (const std::string& name, AtomPtr env) {
+    bool load (const std::string& name, AtomPtr env) {
         std::ifstream in (name.c_str ());
         if (!in.good ()) {
             std::string longname = getenv("HOME");
             longname += "/.f8/" + name;
             in.open (longname.c_str());
-            if (!in.good ()) return make_node(0);
+            if (!in.good ()) return false;
         }
         AtomPtr res = make_node ();
         int linenum = 1;
@@ -859,10 +857,10 @@ namespace f8 {
             if (!is_nil (res)) eval (res, env);
         }
         Context::call_frame = make_node ();
-        return make_node (1);
+        return true;
     }
     AtomPtr fn_load (AtomPtr node, AtomPtr env) {
-        return load (type_check (node->tail.at (0), STRING)->lexeme, env);
+        return make_node (load (type_check (node->tail.at (0), STRING)->lexeme, env));
     }
     void replace (std::string &s, std::string from, std::string to) {
         int idx = 0;
