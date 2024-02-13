@@ -3,7 +3,7 @@
 
 ### Introduction
 
-The *f8 (fate)* scripting language is a hybrid dialect of Lisp, Scheme and TCL; for more info, please see the [genealogy](docs/f8_anchestors.png) and the [reference manual](docs/reference.md).
+The *f8 (fate)* scripting language is a hybrid dialect of Lisp, Scheme and TCL; for more info, please see the [genealogy](docs/f8_anchestors.png) and the [reference manual (in progress)](docs/reference.md).
 
 It has been designed to be small, easy to expand and easy to embed in host applications. 
 The core of the language is made of a single [C++ header](src/core.h) (~ 1000 loc in total) and a  [small library](src/stdlib.tcl) written using *f8* itself.
@@ -45,5 +45,9 @@ To compile, from *root* folder type:
 `make`
 
 
-(c) 2024 www.carminecella.com
+### Licensing
+
+The f8 language source code is released under the [BSD 2-clause license](LICENSE.md).
+
+(c) 2024 by Carmine-Emanuele Cella
 
