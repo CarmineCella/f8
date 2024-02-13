@@ -4,9 +4,10 @@
 // more examples: strings, osc-like udpsend
 
 // ver. 0.6
-// write/read floats
+// write/read double (add again the 'mode to streams)
 // features + pitch + onsets
 // pitch2note
+// csvread
 // clustering/gmm
 // blockconv / pvoc
 // biquad

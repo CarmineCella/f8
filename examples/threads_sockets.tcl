@@ -12,9 +12,11 @@ source "stdlib.tcl"
 # NB: threads are not exception safe!
 puts "launch a thread that will listen to socket...\n" 
 proc (listener) {
-    udprecv "127.0.0.1" 10000
-    puts "MSG RECEIVED!\n"
-    exit
+    if (eq (udprecv "127.0.0.1" 10000) 0) {
+        puts "error: cannot open socket\n"
+    } else {
+       puts "MSG RECEIVED!\n"
+    }
 }
 
 set t1 (thread (listener))
@@ -27,8 +29,7 @@ proc (sender) {
     puts "hello\n"
 }
 
-schedule (sender) 5000 1
-gets
+schedule (sender) 5000 0
 
 # eof
 

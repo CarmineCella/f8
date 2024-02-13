@@ -1,8 +1,7 @@
-udpsend "127.0.0.1" 10000 "/gimme some 1000"
+source "stdlib.tcl"
 
-schedule (udpsend "127.0.0.1" 10000 "/freq 1000") 1000 1
-schedule (udpsend "127.0.0.1" 10000 "/freq 2000") 2000 1
-schedule (udpsend "127.0.0.1" 10000 "/freq 10000") 5000 1
+schedule (udpsend "127.0.0.1" 10000 "/giveme some 44") 2000 0
+schedule (udpsend "127.0.0.1" 10000 "/giveme some 55") 2000 0
+schedule (udpsend "127.0.0.1" 10000 "/giveme some 66") 2000 0
 
-puts "press ENTER..."
-gets
+# eof

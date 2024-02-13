@@ -110,8 +110,8 @@ namespace f8 {
 
         std::stringstream nf;
         puts (n->tail.at(2), nf);
-
-        if (sendto(sock, nf.str ().c_str (), n->tail.at(2)->lexeme.size (), 0, 
+        nf << '\0'; // null terminator
+        if (sendto(sock, nf.str ().c_str (), nf.str ().size () + 5, 0, 
             (struct sockaddr *)&server , sizeof(server)) < 0) {
             return  make_node(0);
         }

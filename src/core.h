@@ -159,7 +159,7 @@ namespace f8 {
             if (ctx->module != "") err << ctx->module << ", line " << ctx->linenum << ", ";
             else if (call_frame->module != "") err << call_frame->module << ", line " << call_frame->linenum << ", ";
             err << msg << " "; 
-            if (!is_nil (ctx) && ctx->type != LIST && ctx->type != NUMERIC) {
+            if (!is_nil (ctx)) { //&& ctx->type != LIST && ctx->type != NUMERIC) {
                 err << "'";
                 puts (ctx, err);
                 err << "'";
@@ -383,11 +383,13 @@ namespace f8 {
     }
     AtomPtr eval (AtomPtr node, AtomPtr env) {
     tail_call:
+
         if (is_nil (node)) return make_node ();
-        if (node->type == SYMBOL) { // && node->lexeme.size ()) {
+        if (node->type == SYMBOL) {
             return assoc (node, env); 
         }
         if (node->type != LIST) return node;
+
         // composite type
         AtomPtr car = eval (node->tail.at (0), env);
         if (car->action == &fn_quote) {
@@ -480,9 +482,7 @@ namespace f8 {
             argnum_check (task, 1);
             int msec = (int) type_check (eval (node->tail.at(2), env), NUMERIC)->val[0];
             bool async = (bool) type_check (eval (node->tail.at(3), env), NUMERIC)->val[0];
-            AtomPtr l = make_node (); 
-            l->tail.push_back (task);
-            Later sched (msec, async, &eval, l, env);
+            Later sched (msec, async, &eval, task, env);
             return make_node (1);            
         }
         // executable
@@ -851,15 +851,21 @@ namespace f8 {
         }
         AtomPtr res = make_node ();
         int linenum = 1;
-        AtomPtr code = make_node ();
+        // AtomPtr code = make_node ();
+        // while (!in.eof ()) {
+        //     code->tail.push_back (read_line (in, linenum, name));
+        // }
+        // for (unsigned i = 0; i < code->tail.size (); ++i) {
+        //     Context::call_frame = code->tail.at (i);
+        //     eval (Context::call_frame, env);
+        // }        
+        // Context::call_frame = make_node ();
         while (!in.eof ()) {
-            code->tail.push_back (read_line (in, linenum, name));
+            res = read_line (in, linenum, name);
+            Context::call_frame = res;
+            if (!is_nil (res)) eval (res, env);
         }
-        for (unsigned i = 0; i < code->tail.size (); ++i) {
-            Context::call_frame = code->tail.at (i);
-            eval (Context::call_frame, env);
-        }        
-        Context::call_frame = make_node ();
+        Context::call_frame = make_node ();        
         return true;
     }
     AtomPtr fn_source (AtomPtr node, AtomPtr env) {
