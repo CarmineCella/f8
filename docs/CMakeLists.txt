@@ -22,7 +22,6 @@ target_include_directories(makeref
 
 # rebuild documentation
 add_custom_command(TARGET makeref POST_BUILD
-	COMMAND $<TARGET_FILE:makeref> ../../docs/reference.md ../../src/f8.h ../../src/core.h ../../src/system.h ../../src/signals.h ../../src/plotting.h ../../src/stdlib.tcl
-    # COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:orchestrate> ${PROJECT_SOURCE_DIR}/../../build/bin/
 	COMMENT "Rebuilding documentation..."
+	COMMAND $<TARGET_FILE:makeref> ../../docs/reference.md ../../src/f8.h ../../src/core.h ../../src/system.h ../../src/signals.h ../../src/plotting.h ../../src/stdlib.tcl
 )

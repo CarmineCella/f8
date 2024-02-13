@@ -11,3 +11,9 @@ INSTALL(
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION $ENV{HOME}/.f8
     ARCHIVE DESTINATION $ENV{HOME}/.f8)
+
+# add_custom_command(TARGET f8 POST_BUILD
+# 	COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/../../build/bin/
+#     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:f8> ${PROJECT_SOURCE_DIR}/../../build/bin/
+# )
+
