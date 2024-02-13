@@ -30,7 +30,7 @@ It can [bootstrap](examples/repl.tcl) itself. For an overview on the language, p
 * basic neural networks
 * [plotting](examples/plot1.tcl)
 
-It also comes with a system library that provides several functionalities, including [threading and sockets](examples/threads_sockets.tcl).
+It also comes with a system library that provides several functionalities, including [threading and sockets](examples/threads_sockets.tcl), and it can also send [OSC messages](examples/osc_like.tcl).
 
 ### Building
 
