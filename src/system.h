@@ -94,6 +94,38 @@ namespace f8 {
         ::close (sock);
         return make_node ((std::string) "\"" + client_message);
     }
+    class OSCstring {
+    public:
+        OSCstring () { osc_msg = 0; }
+        ~OSCstring () {
+            if (osc_msg) delete [] osc_msg;
+        }
+        const char* encode (const std::string& msg, size_t& out_sz) {
+            size_t in_sz = msg.size (); 
+            int pad = (padding (in_sz) == 0 ? 4 : padding (in_sz));
+            out_sz = in_sz + pad + 4;
+            if (osc_msg) delete [] osc_msg;
+            osc_msg = new char[out_sz];
+            for (unsigned i = 0; i < in_sz; ++i) osc_msg[i] = msg[i];
+            for (unsigned i = in_sz; i < in_sz + pad; ++i) osc_msg[i] = '\0';
+            osc_msg[in_sz + pad] = ',';
+            osc_msg[in_sz + pad + 1] = '\0';
+            osc_msg[in_sz + pad + 2] = '\0';
+            osc_msg[in_sz + pad + 3] = '\0';
+            return osc_msg;
+        }
+    private:
+        bool isAligned(size_t n)  {
+            return (n & 3) == 0;
+        }
+        size_t align(size_t n) {
+            return (n + 3) & -4;
+        }
+        size_t padding(size_t n) {
+            return align(n) - n;
+        }
+        char* osc_msg;
+    };
     AtomPtr fn_udpsend (AtomPtr n, AtomPtr env) {
         struct sockaddr_in server;
         char server_reply[MESSAGE_SIZE];
@@ -107,14 +139,21 @@ namespace f8 {
         server.sin_addr.s_addr = inet_addr(type_check (n->tail.at (0), STRING)->lexeme.c_str ());
         server.sin_family = AF_INET;
         server.sin_port = htons((long)type_check (n->tail.at(1), NUMERIC)->val[0]);
+        bool is_osc = false;
+        if (n->tail.size () == 4) is_osc = (bool) type_check (n->tail.at (3), NUMERIC)->val[0];
 
         std::stringstream nf;
         puts (n->tail.at(2), nf);
-        nf << '\0'; // null terminator
-        if (sendto(sock, nf.str ().c_str (), nf.str ().size () + 5, 0, 
-            (struct sockaddr *)&server , sizeof(server)) < 0) {
-            return  make_node(0);
+        int res = 0;
+        if (is_osc) {
+            OSCstring enc;
+            size_t sz = 0;
+            const char* out = enc.encode (nf.str ().c_str (), sz);
+            res = sendto(sock, out, sz, 0, (struct sockaddr *)&server , sizeof(server));
+        } else {
+            res = sendto(sock, nf.str ().c_str (), nf.str ().size (), 0, (struct sockaddr *)&server , sizeof(server));
         }
+        if (res < 0) return  make_node(0);
         ::close (sock);
         return  make_node (1);
     }

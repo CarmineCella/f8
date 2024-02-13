@@ -1,7 +1,7 @@
 // TODO:
 
 // ver. 0.5
-// more examples: strings, osc-like udpsend
+// more examples: strings
 
 // ver. 0.6
 // write/read double (add again the 'mode to streams)
