@@ -21,7 +21,7 @@ It can [bootstrap](examples/repl.tcl) itself. For an overview on the language, p
 
 ### Processing libraries
 
-*f8* comes with several libraries, dedicated to signal processing and machine learning. Ammong the functionalities there are:
+*f8* comes with several libraries, dedicated to signal processing and machine learning. Among the functionalities there are:
 
 * [fft/ifft](examples/cross_synth.tcl)
 * [convolution](examples/reverb.tcl)
@@ -47,7 +47,7 @@ To compile, from *root* folder type:
 
 ### Licensing
 
-The f8 language source code is released under the [BSD 2-clause license](LICENSE.md).
+The f8 language is released under the [BSD 2-Clause license](LICENSE.md).
 
 (c) 2024 by Carmine-Emanuele Cella
 
