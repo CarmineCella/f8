@@ -1,23 +1,22 @@
 // TODO:
 
-// ver. 0.5
-// more examples: strings
-
 // ver. 0.6
 // write/read double (add again the 'mode to streams)
+// csvread
 // features + pitch + onsets
 // pitch2note
-// csvread
-// clustering/gmm
+// kmeans/gmm clustering
+// knn classif
 // blockconv / pvoc
-// biquad
-// more examples: descriptors, knn class, pitch to osc
-// reference manaul
+// biquad / fir design
+// more examples: strings (?), descriptors, knn class, pitch to osc
+// reference manual
 
 // ver. 0.7
 // load db
 // maple/slip (?)
 // grain-orch
+// granulator (?)
 // debugger (?)
 
 // ver. 0.8

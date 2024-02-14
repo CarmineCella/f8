@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(makeref)
 
-SET(CMAKE_CXX_FLAGS "-Wall -O2 -std=c++11 -I . -Wunused-function")
+SET(CMAKE_CXX_FLAGS "-Wall -O3 -std=c++14 -I . -Wunused-function")
 
 set(binary_SOURCES makeref.cpp)
 

@@ -383,7 +383,6 @@ namespace f8 {
     }
     AtomPtr eval (AtomPtr node, AtomPtr env) {
     tail_call:
-
         if (is_nil (node)) return make_node ();
         if (node->type == SYMBOL) {
             return assoc (node, env); 

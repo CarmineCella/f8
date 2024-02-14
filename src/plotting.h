@@ -1,4 +1,4 @@
-// plotting.cpp -- sound library for f8
+// plotting.h
 //
 
 #include "f8.h"

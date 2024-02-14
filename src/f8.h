@@ -6,6 +6,7 @@
 #include "core.h"
 #include "system.h"
 #include "signals.h"
+#include "learning.h"
 #include "plotting.h"
 
 ///~ # The f8 (fate) reference manual<br>
@@ -42,6 +43,7 @@ namespace f8 {
         add_core (env);
         add_system (env);
         add_signals (env);
+        add_learning (env);
         add_plotting (env);
         return env;
     }
