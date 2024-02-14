@@ -13,8 +13,8 @@ set sr 44100
 set hop 512
 set sz 2048
 
-set sig_file (openwav "../sounds/Vox.wav" 'input)
-set ir_file  (openwav "../sounds/Beethoven_Symph7.wav" 'input)
+set sig_file (openwav "../data/Vox.wav" 'input)
+set ir_file  (openwav "../data/Beethoven_Symph7.wav" 'input)
 
 set sig1 (car (readwav sig_file))
 set sig2 (car (readwav ir_file))

@@ -4,4 +4,4 @@ build
 examples/*.wav
 examples/*.svg
 examples/*.txt
-
+examples/*.bin

@@ -17,7 +17,7 @@ set y (median x 10)
 
 puts (size y) " " (size x) "\n"
 
-set g (opensvg "median.svg" 512 512)
+set g (opensvg "median_denoise.svg" 512 512)
 polyline g x Blue
 polyline g y Red
 legend g "noisy signal" Blue "filtered signal" Red

@@ -20,7 +20,7 @@ set offset 128
 set tab1 (gen nwin 1)
 
 puts "analysing......"
-set a (openwav "../sounds/gong_c#3.wav" 'input)
+set a (openwav "../data/gong_c#3.wav" 'input)
 set input (car (readwav a))
 closewav a
 

@@ -38,7 +38,7 @@ puts (writewav a sigr) " samples written\n"
 closewav a
 
 puts "read sounds/archeos-bell.wav..." 
-set a (openwav "../sounds/archeos-bell.wav" 'input)
+set a (openwav "../data/archeos-bell.wav" 'input)
 set winfo (infowav a)
 set sigr (readwav a) 
 closewav a
@@ -49,7 +49,7 @@ puts (writewav c sigr) " samples copied\n"
 closewav c
 
 puts "read sounds/Concertgebouw-s.wav..." 
-set a (openwav "../sounds/Concertgebouw-s.wav" 'input)
+set a (openwav "../data/Concertgebouw-s.wav" 'input)
 set winfo (infowav a)
 set sigr (readwav a) 
 closewav a
@@ -60,7 +60,7 @@ puts (writewav c sigr) " samples copied\n"
 closewav c  
 
 puts "sndread/sndwrite wrappers...\n" 
-set w (sndread "../sounds/cage.wav")
+set w (sndread "../data/cage.wav")
 puts (llength w) " " (size (car w)) "\n" 
 puts (sndwrite "copy3.wav" 44100 w) " samples copied\n"
 

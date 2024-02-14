@@ -43,7 +43,7 @@ set s4 (* env (osc sr (bpf 110 samps 60) tab1))
 
 set timeline1 (mix 0 s1 (/ samps 2) s2 (* 3 (/ samps 4)) s3 0 s4))
 
-set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
+set ir_file  (openwav "../data/Concertgebouw-s.wav" 'input)
 set ir (readwav ir_file)  
 closewav ir_file
 

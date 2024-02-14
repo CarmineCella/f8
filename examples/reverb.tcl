@@ -12,8 +12,8 @@ source "stdlib.tcl"
 set scale 0.1
 set mix 0.8
 
-set sig_file (openwav "../sounds/anechoic1.wav" 'input)
-set ir_file  (openwav "../sounds/Concertgebouw-s.wav" 'input)
+set sig_file (openwav "../data/anechoic1.wav" 'input)
+set ir_file  (openwav "../data/Concertgebouw-s.wav" 'input)
 
 set sig (readwav sig_file)
 set ir (readwav ir_file)  
