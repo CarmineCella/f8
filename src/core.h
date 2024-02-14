@@ -116,14 +116,12 @@ namespace f8 {
     // helpers
     std::ostream& puts (AtomPtr node, std::ostream& out, bool write = false) {
         if (node->type == NUMERIC) {
-            if (node->val.size () > 1) out << "[";
+            if (node->val.size () > 1 && !write) out << "[";
             for (unsigned i = 0; i < node->val.size (); ++i) {
                 out << (std::fixed) << std::setprecision (15) << node->val[i];
                 if (i != node->val.size () - 1) out << " ";
-                // if (i > 100) break;
             }
-            // if (node->val.size () > 100) out << "...";
-            if (node->val.size () > 1) out << "]";
+            if (node->val.size () > 1 && !write) out << "]";
         }            
         if (node->type == SYMBOL || node->type == STRING) {
             if (node->type == STRING && write) out << "\"";

@@ -2,6 +2,7 @@
 //
 
 #include "f8.h"
+#include "system/csv_tools.h"
 
 #include <fstream>
 #include <vector>
@@ -161,24 +162,32 @@ namespace f8 {
     AtomPtr fn_openstream (AtomPtr node, AtomPtr env) {
         std::string name = type_check (node->tail.at(0), STRING)->lexeme;
         std::string direction = type_check (node->tail.at(1), SYMBOL)->lexeme;
+        std::string mode = type_check (node->tail.at(2), SYMBOL)->lexeme;
 
         bool input = false;
         if (direction == "input") input = true;
         else if (direction == "output") input = false;
         else Context::error ("[openstream] unsopported direction", node);
+        
+        bool binary = false;
+        if (mode == "binary") binary = true;
+        else if (mode == "text") binary = false;
+        else Context::error ("[openstream] unsopported mode", node);
         AtomPtr s =  make_node();
         AtomPtr ll =   make_node();
         ll->tail.push_back (make_node ((std::string) "\"" + name));
 
         if (input) {
             std::istream* f = nullptr;
-            f = new std::ifstream (name);
+            if (binary) f = new std::ifstream (name, std::ios::binary);
+            else f = new std::ifstream (name);
             if (!f->good ()) return make_node (0);
             s = ( make_obj ("instream", f, ll));
         }
         else {
             std::ostream* f = nullptr;
-            f = new std::ofstream (name);
+            if (binary) f = new std::ofstream (name, std::ios::binary);
+            else f = new std::ofstream (name);
             if (!f->good ()) return make_node (0);
             s = ( make_obj ("outstream", f, ll));        
         }
@@ -236,6 +245,7 @@ namespace f8 {
             *out << type_check (n->tail.at (i), STRING)->lexeme;
             out->flush();
         }
+        *out << std::endl;
         return make_node (1);    
     }
     AtomPtr fn_readline (AtomPtr n, AtomPtr env) {
@@ -248,6 +258,50 @@ namespace f8 {
         std::getline (*in, buff);
         return make_node ((std::string) "\"" + buff);
     }
+    AtomPtr fn_writenumbers (AtomPtr n, AtomPtr env) {
+        AtomPtr p = type_check (n->tail.at(0), OBJECT);
+        if (p->obj == 0 || p->lexeme != "outstream") return  make_node(0);
+        std::ostream* out = static_cast<std::ostream*> (p->obj);
+        int ct = 0;
+        for (unsigned  i = 1; i < n->tail.size (); ++i)  {
+            std::valarray<Real>& v = type_check (n->tail.at (i), NUMERIC)->val;
+            out->write ((char*) &v[0], v.size () * sizeof (Real));
+            ct += v.size (); 
+        }
+        return make_node (ct);    
+    }
+    AtomPtr fn_readnumbers (AtomPtr n, AtomPtr env) {
+        AtomPtr p = type_check (n->tail.at(0), OBJECT);
+        if (p->obj == 0 || p->lexeme != "instream") return  make_node(0);
+        std::istream* in = static_cast<std::istream*> (p->obj);
+        std::string name = p->tail.at(0)->lexeme; // exists by default
+        in->seekg (0, std::ios::end);
+        int sz = in->tellg () / sizeof (Real);
+        in->seekg (0);
+        if (n->tail.size () == 2) sz = type_check (n->tail.at(1), NUMERIC)->val[0];
+        if (!in->good () || in->eof ()) return  make_node(0);
+        std::valarray<Real> inv (sz);
+        in->read ((char*) &inv[0], sizeof (Real) * sz);
+        return make_node (inv);
+    }    
+    AtomPtr fn_readcsv (AtomPtr n, AtomPtr env) {
+        AtomPtr p = type_check (n->tail.at(0), OBJECT);
+        if (p->obj == 0 || p->lexeme != "instream") return  make_node(0);
+        std::istream* in = static_cast<std::istream*> (p->obj);
+        std::string name = p->tail.at(0)->lexeme; // exists by default
+        if (!in->good () || in->eof ()) return  make_node(0);
+        
+        std::vector<std::vector<std::string>> csv = readCSV (*in);
+        AtomPtr ll = make_node ();
+        for (unsigned i = 0; i < csv.size (); ++i) {
+            AtomPtr l = make_node ();
+            for (unsigned j = 0; j < csv.at (i).size (); ++j) {
+                l->tail.push_back (make_node (csv.at (i).at (j)));
+                ll->tail.push_back (l);
+            }
+        }
+        return ll;
+    }
     AtomPtr add_system (AtomPtr env) {
         add_operator ("clock", &fn_clock, 0, env);
         add_operator ("dirlist", &fn_dirlist, 1, env);
@@ -255,12 +309,15 @@ namespace f8 {
         add_operator ("getvar", &fn_getvar, 1, env);
         add_operator ("udpsend", &fn_udpsend, 3, env);
         add_operator ("udprecv", &fn_udprecv, 2, env);
-        add_operator ("openstream", &fn_openstream, 2, env);
+        add_operator ("openstream", &fn_openstream, 3, env);
         add_operator ("closestream", &fn_closestream, 1, env);
         add_operator ("isgood", &fn_isgood, 1, env);
         add_operator ("rewindstream", &fn_rwndstream, 1, env);
         add_operator ("writeline", &fn_writeline, 2, env);
         add_operator ("readline", &fn_readline, 1, env);
+        add_operator ("writenumbers", &fn_writenumbers, 2, env);
+        add_operator ("readnumbers", &fn_readnumbers, 1, env);
+        add_operator ("readcsv", &fn_readcsv, 1, env);
         return env;
     }
 }

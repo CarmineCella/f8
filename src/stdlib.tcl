@@ -208,14 +208,15 @@ proc (fexists fname) {
 	eq (car (filestat fname)) 1
 }
 proc (readlines stream) {	
-	set line ""
-	proc (readlines-runner stream line) {
-		! line (tostr line (readline stream))
-		if (not (isgood stream)) line else {
-			readlines-runner stream line
+	set lines ()
+	proc (readlines-runner stream lines) {
+		set line (readline stream)
+		if (not (eq line "")) (lappend lines line)
+		if (not (isgood stream)) lines else {
+			readlines-runner stream lines
 		}
 	}
-	readlines-runner stream line
+	readlines-runner stream lines
 }
 proc (udpmonitor addr port) {
 	set r (udprecv addr port)

@@ -210,6 +210,15 @@ namespace f8 {
 
 	// ------------------------------------------------------------------//
 
+	class Matrix {
+		std::valarray<Real> data;
+		int dim;
+	public:
+		Matrix(int r, int c) : data(r*c), dim(c) {}
+		Real& operator()(int r, int c) { return data[r * dim + c]; }
+		int trace() const { return data[std::slice(0, dim, dim + 1)].sum(); }
+	};
+
 	template <typename T>
 	void covmat(T** data, int n, int m, T** symmat) {
 		T* mean = new T[m];
