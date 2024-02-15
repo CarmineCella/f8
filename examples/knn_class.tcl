@@ -31,17 +31,6 @@ puts "done\n"
 
 set classes (knntest model testset)
 
-proc (accuracy classes gt) {
-    set total (llength classes)
-    set i 0
-    set ct 0
-    while (< i total) {
-        if (eq (lindex classes i) (last (lindex gt i))) (! ct (+ ct 1))
-        ! i (+ i 1)
-    }
-    / ct total
-}
-
 puts "accuracy = " (accuracy classes testset) "\n"
 
 # eof
