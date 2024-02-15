@@ -297,8 +297,8 @@ namespace f8 {
             AtomPtr l = make_node ();
             for (unsigned j = 0; j < csv.at (i).size (); ++j) {
                 l->tail.push_back (make_node (csv.at (i).at (j)));
-                ll->tail.push_back (l);
             }
+            ll->tail.push_back (l);
         }
         return ll;
     }

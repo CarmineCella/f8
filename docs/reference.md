@@ -1,4 +1,4 @@
-version 0.5<br>
+version 0.6<br>
 
  # The f8 (fate) reference manual<br>
  ## Overview

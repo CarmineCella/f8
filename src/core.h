@@ -13,6 +13,9 @@
 #include <fstream>
 #include <valarray>
 #include <thread>
+#include <algorithm>
+#include <iterator>
+#include <random>
 #include <dlfcn.h>
 
 #define BOLDWHITE   "\033[1m\033[37m"
@@ -648,6 +651,14 @@ namespace f8 {
         }
         return r;
     }    
+    AtomPtr fn_lshuffle (AtomPtr node, AtomPtr env) {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        AtomPtr ll = make_node ();
+        ll->tail = type_check (node->tail.at (0), LIST)->tail;
+        std::shuffle (ll->tail.begin (), ll->tail.end (), g);
+        return ll;
+    }
     AtomPtr fn_eqp (AtomPtr node, AtomPtr env) {
         if (atom_eq (node->tail[0], node->tail[1])) return make_node (1);
         else return make_node (0);	
@@ -1002,6 +1013,7 @@ namespace f8 {
         add_operator ("lappend", &fn_lappend, 1, env);
         add_operator ("lreplace", &fn_lreplace, 4, env);
         add_operator ("lrange", &fn_lrange, 3, env);
+        add_operator ("lshuffle", &fn_lshuffle, 1, env);
         add_operator ("lindex", &fn_lindex, 1, env);
         add_operator ("llength", &fn_llength, 1, env);
         add_operator ("eq", &fn_eqp, 2, env);

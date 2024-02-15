@@ -4,10 +4,11 @@
 // features + pitch + onsets
 // pitch2note
 // kmeans/gmm clustering
-// knn classif
+// eig/pca
+// linreg
 // blockconv / pvoc
 // biquad / fir design
-// more examples: strings (?), descriptors, knn class, pitch to osc
+// more examples: strings (?), descriptors, pitch to osc, filters, dim reduction
 // reference manual
 
 // ver. 0.7

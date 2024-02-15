@@ -27,7 +27,7 @@ proc (tail l) (lappend () (last l))
 proc (take n l) {
 	proc (take-runner acc n l) {
 		if (<= n 0) acc else {
-			lappend acc (car l)
+			lappend acc (car l) 
 			take-runner acc (- n 1) (cdr l)
 		}
 	}

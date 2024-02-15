@@ -7,25 +7,26 @@
 #include <vector>
 #include <limits>
 #include <stdexcept>
+#include <string>
 #include <cmath>
 
 #include <iostream>
 
-namespace soundmath {
+namespace f8 {
 	template <typename T>
 	//! Basic structure to describe data observations
 	struct Observation {
-		Observation () : classlabel (0) {}
+		Observation () : classlabel ("") {}
 		
 		std::vector<T> attributes;
-		T classlabel;
+		std::string classlabel;
 	};
 	
 	template <typename T>
 	struct Item {
-		Item () : distance (0), classlabel (0) {}
+		Item () : distance (0), classlabel ("") {}
 		T distance;
-		T classlabel;
+		std::string classlabel;
 	};
 	
 	template <typename T> //, template <typename X> class DistanceType>
@@ -46,13 +47,13 @@ namespace soundmath {
 			memset (m_knn, 0, sizeof (Item<T>) * m_K);
 		}
 		virtual ~KNN () {
+			for (unsigned i = 0; i < m_trainingSet.size (); ++i) delete m_trainingSet[i];
 			delete [] m_freq;
 			delete [] m_knn;
 		}
 		
 		unsigned int addObservation (Observation<T>* v) {
 			if (v->attributes.size () != m_features) {
-				std::cout << v->attributes.size () << " " << m_features << std::endl;
 				throw std::runtime_error ("invalid number of features for the given observation");
 				
 			}
@@ -62,10 +63,10 @@ namespace soundmath {
 		unsigned int samples () const {
 			return m_trainingSet.size ();
 		}
-		T classify (const Observation<T>& v) {
+		std::string classify (const Observation<T>& v) {
 			T dd = 0;
 			int maxn = 0;
-			double mfreqC = 0;
+			std::string mfreqC;
 			memset (m_freq, 0, sizeof (int) * m_K);
 			
 			for (int i = 0; i < m_K; ++i) m_knn[i].distance = std::numeric_limits<T>::max ();
