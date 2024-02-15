@@ -26,7 +26,7 @@ It can [bootstrap](examples/repl.tcl) itself. For an overview on the language, p
 * [fft/ifft](examples/cross_synth.tcl)
 * [convolution](examples/reverb.tcl)
 * sound decomposition
-* clustering and classification
+* clustering and [classification](examples/knn_class.tcl)
 * basic neural networks
 * [plotting](examples/plot1.tcl)
 
