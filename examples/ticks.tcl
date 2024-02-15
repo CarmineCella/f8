@@ -16,7 +16,7 @@ puts "current clock " toc "\n"
 puts "ticks elapsed " (- toc tic) "\n\n"
 
 # they should be different
-test '(<> toc tic)'(1) 
+test '(<> toc tic) '1
 
 # eof
 

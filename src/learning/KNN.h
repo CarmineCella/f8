@@ -5,6 +5,7 @@
 #define KNN_H 
 
 #include <vector>
+#include <valarray>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -18,7 +19,7 @@ namespace f8 {
 	struct Observation {
 		Observation () : classlabel ("") {}
 		
-		std::vector<T> attributes;
+		std::valarray<T> attributes;
 		std::string classlabel;
 	};
 	

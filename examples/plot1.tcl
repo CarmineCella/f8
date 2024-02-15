@@ -15,7 +15,7 @@ set s0 (cos (bpf 0 256 32))
 set s1 (sin (bpf 0 128 16))
 set s2 (sqrt (bpf 0 1024 1))
 # example of interoperability between numeric and list
-set s3 (toarray (map (\(x)(* x x)) (tolist (bpf 0 1024 1))))
+set s3 (array (map (\(x)(* x x)) (array2list (bpf 0 1024 1))))
 
 polyline a s0 Aqua
 polyline a s1 Blue

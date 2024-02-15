@@ -19,25 +19,41 @@ proc (<> n1 n2) (not (eq n1 n2))
 
 # lists
 proc (car l) (lindex l 0 )
-proc (second l) (lindex l 1)
-proc (head l) (lappend () (car l))
 proc (cdr l) (lrange l 1 (- (llength l) 1))
-proc (last l) (lindex l (- (llength l) 1))
-proc (tail l) (lappend () (last l))
-proc (take n l) {
-	proc (take-runner acc n l) {
+proc (second l) (lindex l 1)
+proc (third l) (lindex l 2)
+proc (lhead l) (lappend () (car l))
+proc (llast l) (lindex l (- (llength l) 1))
+proc (ltail l) (lappend () (llast l))
+proc (ltake l n) {
+	proc (ltake-runner acc l n) {
 		if (<= n 0) acc else {
-			lappend acc (car l) 
-			take-runner acc (- n 1) (cdr l)
+			if (not (eq (car l) ())) (lappend acc (car l))
+			ltake-runner acc (cdr l) (- n 1)
 		}
 	}
-	take-runner () n l
+	ltake-runner () l n
 }
-proc (drop n l) {
-	if (<= n 0) l else (drop (- n 1) (cdr l))
+proc (ldrop l n) {
+	if (<= n 0) l else (ldrop (cdr l)(- n 1))
 }
-proc (split n l) {
- 	list (take n l) (drop n l)
+proc (lsplit l n) {
+ 	list (ltake l n) (ldrop l n) 
+}
+proc (lreverse l) {
+	proc (lreverse-runner l acc) {
+		if (eq l ()) acc else (lreverse-runner (cdr l) (lappend () (car l) acc))
+	}
+	lreverse-runner l ()
+}
+proc (lreverse l) {
+    set res ()
+    set i (- (llength l) 1)
+    while (>= i 0) {
+		lappend res (lindex l i)
+		! i (- i 1)
+	}
+    set res res
 }
 proc (match e l) {
 	proc (match-runner acc n e l)  {
@@ -51,19 +67,8 @@ proc (match e l) {
 proc (elem x l) {
 		if (eq 0 (llength (match x l))) false else true
 }
-proc (reverse l) {
-	proc (reverse-runner l acc) {
-		if (eq l ()) acc else (reverse-runner (cdr l) (lappend (head l) acc))
-	}
-	reverse-runner l ()
-}
 proc (zip l1 l2) {
-	proc (zip-worker l1 l2) {
-		if (or (eq () l1) (eq () l2)) () else {
-			lappend (lappend (head l1) (head l2)) (zip-worker  (cdr l1) (cdr l2))
-		}
-	}
-	split (llength l1) (zip-worker l1 l2)
+	map2 list l1 l2
 }
 proc (dup n x) {
 	proc (dup-runner acc n x) {
@@ -97,21 +102,17 @@ proc (map2 f l1 l2) {
 proc (filter f l) {
 	proc (filter-runner acc f l) {
 		if (eq l ()) acc else {
-			lappend acc (if (f (car l)) (head l))
+			if (f (car l)) (lappend acc (car l))
 			filter-runner acc f (cdr l)
 		}
 	}
 	filter-runner () f l
 }
-proc (unpack f l) (eval (lappend () f l))
 proc (foldl f z l) {
  	if (eq () l) z else (foldl f (f z (car l)) (cdr l))
 }
 proc (flip f a b) (f b a)
 proc (comp f g x) (f (g x))
-
-# miscellaneous
-proc (test x y)(if (eq (lappend (list) (eval x)) y) (puts x  " passed\n") else (throw "*** FAILED ***" x))
 
 # arithmetics
 proc (getval x n) (slice x n 1)
@@ -123,7 +124,6 @@ proc (remainder a b) (floor (- a (* b (quotient a b))))
 proc (mod a b) (floor (- a (* b (quotient a b))))
 proc (twice x) (+ x x)
 proc (square x) (* x x)
-proc (mul-neg) (comp neg (unpack *))
 proc (round x) (floor (+ x 0.5))
 proc (birandn n m)(* (noise m) n)
 proc (randn n m)(/ (+ (birandn n m) n) 2)
@@ -132,26 +132,26 @@ proc (ones n)(bpf 1 n 1)
 proc (mean l) {
 	/ (sum l) (size l)
 }
-proc (stddev l) {
-	set mu (mean l)
-	set normal (/ 1. (- (size l) 1))
+proc (stddev x) {
+	set mu (mean x)
+	set normal (/ 1. (- (size x) 1))
 	# sqrt (* (sum (map square (map (\ (x)(- x mu)) l))) normal)
-	sqrt (* (sum (square (- l mu))) normal)
+	sqrt (* (sum (square (- x mu))) normal)
 }
-proc (standard l) {
-	set mu (mean l)
-	set s (stddev l)
+proc (standard x) {
+	set mu (mean x)
+	set s (stddev x)
 	# map (\ (x)(/ x s)) (map (\ (x)(-  x mu)) l)
-	/ (-  l mu) s
+	/ (-  x mu) s
 }
-proc (normal l) {
-	/ l (max l)
+proc (normal x) {
+	/ x (max x)
 }
 proc (dot a b) {
 	sum (* a b)
 }
 proc (ortho a b)(eq (dot a b) 0)
-proc (diff x )(- (slice x 1 (size x)) x)
+proc (diff x)(- (slice x 1 (size x)) x)
 proc (fac x) {
 	proc (fact-worker a product) {
 		if (eq a 0) product else (fact-worker (- a 1) (* product a))
@@ -203,29 +203,6 @@ set SQRT2 1.4142135624
 set LOG2 0.3010299957
 set E 2.7182818284
 
-# system
-proc (fexists fname) {
-	eq (car (filestat fname)) 1
-}
-proc (readlines stream) {	
-	set lines ()
-	proc (readlines-runner stream lines) {
-		set line (readline stream)
-		if (not (eq line "")) (lappend lines line)
-		if (not (isgood stream)) lines else {
-			readlines-runner stream lines
-		}
-	}
-	readlines-runner stream lines
-}
-proc (udpmonitor addr port) {
-	set r (udprecv addr port)
-	if (eq r "disconnect") 1 else {
-		puts r nl
-		udpmonitor addr port
-	}
-}
-
 # signals
 proc (oscbank sr amps freqs tab) {
     # assumes both freqs and amps have the same number of elems
@@ -253,7 +230,7 @@ proc (sndwrite fname sr data) {
     set h (openwav fname 'output sr ch)
     set b (writewav h data)
     closewav h
-    lappend b
+    set b b
 }
 
 # learning
@@ -262,10 +239,24 @@ proc (accuracy classes gt) {
     set i 0
     set ct 0
     while (< i total) {
-        if (eq (lindex classes i) (last (lindex gt i))) (! ct (+ ct 1))
+        if (eq (lindex classes i) (llast (lindex gt i))) (! ct (+ ct 1))
         ! i (+ i 1)
     }
     / ct total
+}
+proc (make-features data) {
+    set Xy ()
+    set i 0
+    set samples (llength data)
+    set features (- (llength (car data)) 1)
+    while (< i samples) {
+        set item (lindex data i)
+        set f (array (lrange item 0 features))
+        set l (car (lrange item features 1))
+        lappend Xy (list f l)
+        ! i (+ i 1)
+    }
+    set Xy Xy
 }
 
 # plotting
@@ -294,6 +285,32 @@ proc (scatplot name x y) {
 	set a (opensvg name 512 512)
 	scatter a x y Blue
 	closesvg a
+}
+
+# system
+proc (test x y) {
+	if (eq (eval x) y) (puts x  " passed\n") else (throw (tostr x " *** FAILED ***"))
+}
+proc (fexists fname) {
+	eq (car (filestat fname)) 1
+}
+proc (readlines stream) {	
+	set lines ()
+	proc (readlines-runner stream lines) {
+		set line (readline stream)
+		if (not (eq line "")) (lappend lines line)
+		if (not (isgood stream)) lines else {
+			readlines-runner stream lines
+		}
+	}
+	readlines-runner stream lines
+}
+proc (udpmonitor addr port) {
+	set r (udprecv addr port)
+	if (eq r "disconnect") 1 else {
+		puts r nl
+		udpmonitor addr port
+	}
 }
 
 # eof

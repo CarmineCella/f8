@@ -309,7 +309,7 @@ namespace f8 {
         while (true) {
             AtomPtr a = read (in, linenum, module);
             if (in.eof () || atom_eq (a, make_node ("}"))) {
-                if (a->lexeme.size ()) l->tail.push_back (a);
+                if (!is_nil (a)) l->tail.push_back (a);
                 break;
             }
             if (atom_eq (a, make_node ("\n"))) {
@@ -581,7 +581,7 @@ namespace f8 {
         return false;
     }
     AtomPtr fn_unset (AtomPtr n, AtomPtr env) {
-        return make_node(unbind(type_check (n->tail.at(0), SYMBOL), env));
+        return make_node((Real) unbind(type_check (n->tail.at(0), SYMBOL), env));
     }
     AtomPtr fn_throw (AtomPtr node, AtomPtr env) {
         throw node->tail.at (0);
@@ -600,18 +600,10 @@ namespace f8 {
     AtomPtr fn_llength (AtomPtr node, AtomPtr env) {
         return make_node (type_check (node->tail.at (0), LIST)->tail.size ());
     }
-    AtomPtr append (AtomPtr dst, AtomPtr ll) {
-        if (ll->type == LIST) {
-            for (unsigned i = 0; i < ll->tail.size (); ++i) {
-                dst->tail.push_back (ll->tail.at (i));
-            }
-        } else dst->tail.push_back (ll);
-        return dst;
-    }
     AtomPtr fn_lappend (AtomPtr n, AtomPtr env) {
-        AtomPtr dst = n->tail.at(0);
+        AtomPtr dst = type_check (n->tail.at(0), LIST);
         for (unsigned i = 1; i < n->tail.size (); ++i){
-            dst = append (dst, n->tail.at(i));
+            dst->tail.push_back (n->tail.at (i));
         }	
         return dst;
     }
@@ -1013,9 +1005,9 @@ namespace f8 {
         add_operator ("lappend", &fn_lappend, 1, env);
         add_operator ("lreplace", &fn_lreplace, 4, env);
         add_operator ("lrange", &fn_lrange, 3, env);
-        add_operator ("lshuffle", &fn_lshuffle, 1, env);
         add_operator ("lindex", &fn_lindex, 1, env);
         add_operator ("llength", &fn_llength, 1, env);
+        add_operator ("lshuffle", &fn_lshuffle, 1, env);        
         add_operator ("eq", &fn_eqp, 2, env);
         add_operator ("array", &fn_array, 1, env);
         add_operator ("array2list", &fn_array2list, 1, env);

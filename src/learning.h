@@ -34,16 +34,16 @@ namespace f8 {
 		int obs = data->tail.size ();
 		if (obs < 1) Context::error ("[knntrain] insufficient number of observations", node);
 		if (k < 1 || k > obs) Context::error ("[knntrain] invalid K parameter", node);
-		int features = data->tail.at (0)->tail.size () - 1; // take the first sample for dimensions
+		int features = data->tail.at (0)->tail.at (0)->val.size (); // take the first sample for dimensions
 		if (features < 1) Context::error ("[knntrain] invalid number of features", node);
 
 		KNN<Real>* knn = new KNN<Real>(k, features);
 		for (unsigned i = 0; i < data->tail.size (); ++i) {
 			Observation<Real>* o = new Observation<Real> ();
 			AtomPtr item = type_check (data->tail.at (i), LIST);
-			for (unsigned k = 0; k < features; ++k) o->attributes.push_back (atof (type_check (item->tail.at (k), SYMBOL)->lexeme.c_str ()));
+			o->attributes = type_check (item->tail.at (0), NUMERIC)->val;
 			std::stringstream s;
-			puts (item->tail.at (features), s);
+			puts (item->tail.at (1), s);
 			o->classlabel = s.str ();
 			knn->addObservation (o);
 		} 
@@ -58,9 +58,7 @@ namespace f8 {
 		for (unsigned i = 0; i < data->tail.size (); ++i) {
 			AtomPtr item =  type_check (data->tail.at(i), LIST);
 			Observation<Real> o;
-			for (unsigned j = 0; j < item->tail.size () -1; ++j) {
-				o.attributes.push_back (atof (type_check (item->tail.at (j), SYMBOL)->lexeme.c_str ()));
-			}
+			o.attributes = item->tail.at (0)->val;
 			classif->tail.push_back (make_node (knn->classify (o)));
 		}
 		return classif;

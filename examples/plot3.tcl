@@ -11,7 +11,7 @@ source "stdlib.tcl"
 set a (birandn 30 64)
 set b (birandn 30 64)
 
-set s0 (toarray (-> cos (map (\(x)(/ x 32 )) (tolist (bpf 0 256 256)))))
+set s0 (array (-> cos (map (\(x)(/ x 32 )) (array2list (bpf 0 256 256)))))
 
 set g (opensvg "scatter.svg" 512 512)
 scatter g a b Blue

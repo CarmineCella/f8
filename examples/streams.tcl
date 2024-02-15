@@ -14,7 +14,7 @@ puts "home folder is: " (getvar "HOME") "\n"
 puts "writing data to file..." "\n"
 set astream (openstream "test.txt" 'output 'text)
 if (not (isgood astream)) (throw "invalid output stream")
-writeline astream "this text " (tostr '(should be written)) " " (tostr (lappend 1)) " time\n"
+writeline astream "this text " (tostr '(should be written)) " " (tostr (lappend () 1)) " time\n"
 writeline astream "this is another line\n"
 closestream astream
 

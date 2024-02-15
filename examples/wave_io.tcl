@@ -65,3 +65,4 @@ puts (llength w) " " (size (car w)) "\n"
 puts (sndwrite "copy3.wav" 44100 w) " samples copied\n"
 
 # eof
+

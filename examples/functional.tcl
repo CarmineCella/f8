@@ -62,6 +62,10 @@ proc (myrandn n m)(array (map (\ (x) (/ (+ n x) 2)) (array2list (mybirandn n m))
 puts "bipolar random numbers = " (mybirandn 10 5) "\n"
 puts "unipolar random numbers = " (myrandn 10 5) "\n"
 
+# map2
+
+puts "zip of '(1 2 3) and '(a b c) = " (map2 list '(1 2 3) '(a b c)) "\n"
+
 # eof
 
 

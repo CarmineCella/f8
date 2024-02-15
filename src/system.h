@@ -296,7 +296,10 @@ namespace f8 {
         for (unsigned i = 0; i < csv.size (); ++i) {
             AtomPtr l = make_node ();
             for (unsigned j = 0; j < csv.at (i).size (); ++j) {
-                l->tail.push_back (make_node (csv.at (i).at (j)));
+                std::stringstream item;
+                item << csv.at (i).at (j);
+                int line = 0;
+                l->tail.push_back (read (item, line, ""));
             }
             ll->tail.push_back (l);
         }

@@ -32,10 +32,10 @@ proc (dynamic_bar) {
  
  puts  "--- static vs dynamic scope ---\n\n"
 
-test '(static_foo) '(10)
-test '(static_bar) '(10)
+test '(static_foo) '10
+test '(static_bar) '10
 
-test (dynamic_foo) '(10)
-test (dynamic_bar) '(7)
+test (dynamic_foo) '10
+test (dynamic_bar) '7
 
 puts "\nALL TESTS PASSED\n\n"

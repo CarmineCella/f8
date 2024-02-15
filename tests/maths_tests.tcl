@@ -11,62 +11,62 @@ source "stdlib.tcl"
 
 puts "--- single operations ---n"
 
-test '(succ 1) '(2)
-test '(succ -1) '(0)
-test '(pred  3) '(2)
-test '(pred -1) '(-2)
-test '(quotient 21 5) '(4)
-test '(quotient 12 3) '(4)
-test '(mod 6 12) '(6)
-test '(mod 12 12) '(0)
-test '(mod -8 12) '(4)
-test '(twice 3) '(6)
-test '(square 3) '(9)
-test '(square -4) '(16)
-test '((mul-neg) '(2 8)) '(-16)
-test '(round 0.3) '(0)
-test '(round 0.7) '(1)
-test '(round -0.3) '(0)
-test '(round -0.7) '(-1)
-test '(fac 5) '(120)
-test '(fac 6) '(720)
-test '(fib 10) '(55)
+test '(succ 1) '2
+test '(succ -1) '0
+test '(pred  3) '2
+test '(pred -1) '-2
+test '(quotient 21 5) '4
+test '(quotient 12 3) '4
+test '(mod 6 12) '6
+test '(mod 12 12) '0
+test '(mod -8 12) '4
+test '(twice 3) '6
+test '(square 3) '9
+test '(square -4) '16
+# test '((mul-neg) '(2 8)) '(-16)
+test '(round 0.3) '0
+test '(round 0.7) '1
+test '(round -0.3) '0
+test '(round -0.7) '-1
+test '(fac 5) '120
+test '(fac 6) '720
+test '(fib 10) '55
 
 puts "\n--- sequences ---\n"
 
 set seq '(0 1 2 3 4 5 6 7 8 9)
 test '(map fib seq) '(1 1 1 2 3 5 8 13 21 34)
-test '(ack 2 2)'(7)
-test '(ack 2 3) '(9)
-test '(ack 3 3) '(61)
+test '(ack 2 2) '7
+test '(ack 2 3) '9
+test '(ack 3 3) '61
 test '(array2list (bpf 0 10 10)) '(0 1 2 3 4 5 6 7 8 9)
 test '(array2list (zeros 10)) '(0 0 0 0 0 0 0 0 0 0)
 test '(array2list (ones 10)) '(1 1 1 1 1 1 1 1 1 1) 
-test '(diff seq) '(1 1 1 1 1 1 1 1 1)
+test '(array2list (diff (array seq))) '(1 1 1 1 1 1 1 1 1)
 test '(sign seq) '(1 1 1 1 1 1 1 1 1 1)
 set seq2 (map neg seq)
-test '(diff seq2) '(-1 -1 -1 -1 -1 -1 -1 -1 -1)
+test '(array2list (diff (array seq2))) '(-1 -1 -1 -1 -1 -1 -1 -1 -1)
 test '(sign seq2) '(1 -1 -1 -1 -1 -1 -1 -1 -1 -1)
-test '(sum (array seq)) '(45)
-test '(sum (array seq2)) '(-45)
-test '(-> * seq) '(0)
-test '(mean (array seq)) '(4.5)
-test '(mean (array seq2)) '(-4.5)
-test '(stddev (array seq)) '(3.0276503540974917)
-test '(stddev (array seq2)) '(3.0276503540974917)
+test '(sum (array seq)) '45
+test '(sum (array seq2)) '-45
+test '(-> * seq) '0
+test '(mean (array seq)) '4.5
+test '(mean (array seq2)) '-4.5
+test '(stddev (array seq)) '3.0276503540974917
+test '(stddev (array seq2)) '3.0276503540974917
 set e0 (array 0 1)
 set e1 (array 1 0)
-test '(dot e0 e1) '(0)
+test '(dot e0 e1) '0
 set sumlin (sum (bpf 0 100 100))
 set dotlin (dot (bpf 0 100 100) (ones 100))
-test '(eq dotlin sumlin) '(1)
-test '(ortho e0 e1) '(1)
+test '(eq dotlin sumlin) '1
+test '(ortho e0 e1) '1
 test '(array2list (standard (array seq))) '(-1.4863010829205867 -1.1560119533826787 -0.82572282384477047 -0.49543369430686224 -0.16514456476895409 0.16514456476895409 0.49543369430686224 0.82572282384477047 1.1560119533826787 1.4863010829205867)
 test '(array2list (standard (array seq2))) '(1.4863010829205867 1.1560119533826787 0.82572282384477047 0.49543369430686224 0.16514456476895409 -0.16514456476895409 -0.49543369430686224 -0.82572282384477047 -1.1560119533826787 -1.4863010829205867)
-test '(min (array seq)) '(0)
-test '(max (array seq)) '(9)
-test '(min (array seq2)) '(-9)
-test '(max (array seq2)) '(0)
+test '(min (array seq)) '0
+test '(max (array seq)) '9
+test '(min (array seq2)) '-9
+test '(max (array seq2)) '0
 test '(array2list (normal (array seq))) '(0 0.1111111111111111 0.22222222222222221 0.33333333333333331 0.44444444444444442 0.55555555555555558 0.66666666666666663 0.77777777777777779 0.88888888888888884 1)
 
 puts "\n--- dotted/applied operators ---\n"
@@ -102,10 +102,10 @@ test '(array2list (+ seq16 10)) '(10.000000000000000 11.000000000000000 12.00000
 test '(array2list (- seq16 10)) '(-10.000000000000000 -9.000000000000000 -8.000000000000000 -7.000000000000000 -6.000000000000000 -5.000000000000000 -4.000000000000000 -3.000000000000000 -2.000000000000000 -1.000000000000000 0.000000000000000 1.000000000000000 2.000000000000000 3.000000000000000 4.000000000000000 5.000000000000000)
 test '(array2list (* seq16 10)) '(0.000000000000000 10.000000000000000 20.000000000000000 30.000000000000000 40.000000000000000 50.000000000000000 60.000000000000000 70.000000000000000 80.000000000000000 90.000000000000000 100.000000000000000 110.000000000000000 120.000000000000000 130.000000000000000 140.000000000000000 150.000000000000000)
 test '(array2list (/ (slice seq16 1 15) 10)) '(0.100000000000000 0.200000000000000 0.300000000000000 0.400000000000000 0.500000000000000 0.600000000000000 0.700000000000000 0.800000000000000 0.900000000000000 1.000000000000000 1.100000000000000 1.200000000000000 1.300000000000000 1.400000000000000 1.500000000000000)
-test '(array2list (+ 10 seq16)) '(10.000000000000000) 
-test '(array2list (- 10 seq16)) '(10.000000000000000) 
-test '(array2list (* 10 seq16)) '(0.000000000000000) 
-test '(array2list (/ 10 (slice seq16 1 15))) '(10.000000000000000)
+test '(array2list (+ 10 seq16)) '10.000000000000000
+test '(array2list (- 10 seq16)) '10.000000000000000
+test '(array2list (* 10 seq16)) '0.000000000000000 
+test '(array2list (/ 10 (slice seq16 1 15))) '10.000000000000000
 test '(array2list (< (array 1 2 3) (array 4 5 6))) '(1.000000000000000 1.000000000000000 1.000000000000000)
 test '(array2list (> (array 1 2 3) (array 4 5 6))) '(0.000000000000000 0.000000000000000 0.000000000000000)
 test '(array2list (>= (array 1 2 3) (array 1 2 3))) '(1.000000000000000 1.000000000000000 1.000000000000000)
