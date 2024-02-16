@@ -63,10 +63,20 @@ namespace f8 {
 		}
 		return classif;
 	}
+	AtomPtr fn_linreg (AtomPtr node, AtomPtr env) {
+		std::valarray<Real>& w = type_check (node->tail.at(0), NUMERIC)->val;
+		std::valarray<Real>& p = type_check (node->tail.at(1), NUMERIC)->val;
+		if (p.size () != w.size ()) Context::error ("[linreg] the weights and the values must have the same size", node);
+		Real interecpt = 0;
+		Real slope = linreg<Real> (&w[0], &p[0], p.size (), interecpt);
+		std::valarray<Real> l ({slope, interecpt});
+		return make_node (l);
+	}	
 	AtomPtr add_learning (AtomPtr env) {
 		add_operator ("median", fn_median, 2, env);
 		add_operator ("knntrain", fn_knntrain, 2, env);
 		add_operator ("knntest", fn_knntest, 2, env);
+		add_operator ("linreg", fn_linreg, 2, env);
 		return env;
 	}
 }
