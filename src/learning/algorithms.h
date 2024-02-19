@@ -81,52 +81,38 @@ namespace f8 {
 	}
 
 	template <typename T>
-	static inline T linreg(
-			const T* weights,
-			const T* values,
-			int N,
-			T& step) {
-		int index;
-		int nbValue = N;
-
-		T Xk = 0;
-		T Yk = 0;
-		T Xk2 = 0;
-		T XkYk = 0;
-
-		T sumXk = 0;
-		T sumYk = 0;
-		T sumXk2 = 0;
-		T sumXkYk = 0;
-
-		T slope = 0;
-
-		for (index = 0; index < nbValue; index++) {
-			Xk = values[index];
-			Yk = weights[index];
-			Xk2 = Xk * Xk;
-			XkYk = Xk * Yk;
-
-			sumXk += Xk;
-			sumYk += Yk;
-			sumXkYk += XkYk;
-			sumXk2 += Xk2;
+	struct LineFit {
+		T _slope, _yInt;
+		T predict (T x) {
+			return _slope * x + _yInt;
 		}
-
-		T numSlope = ((T) nbValue) * sumXkYk - (sumXk * sumYk);
-		T numStep = sumXk2 * sumYk - sumXk * sumXkYk;
-		T denSlope = ((T) nbValue) * sumXk2 - std::pow((T)sumXk, (T)2.0);
-
-		if (0 != denSlope) {
-			slope = numSlope / denSlope;
-			step = numStep / denSlope;
-		} else {
-			slope = 0;
-			step = 0;
+		void get_params (T& slope, T& intercept) {
+			slope = _slope;
+			intercept = _yInt;
 		}
-		return slope;
-	}
-
+		bool fit (const std::valarray<T> &x, const std::valarray<T>& y) {
+			int nPoints = x.size ();
+			if (nPoints < 2) {
+				return false;
+			}
+			T sumX=0, sumY=0, sumXY=0, sumX2=0;
+			for (int i = 0; i < nPoints; i++) {
+				sumX += x[i];
+				sumY += y[i];
+				sumXY += x[i] * y[i];
+				sumX2 += x[i] * x[i];
+			}
+			T xMean = sumX / nPoints;
+			T yMean = sumY / nPoints;
+			T denominator = sumX2 - sumX * xMean;
+			if (std::fabs (denominator) < 1e-7) { // vertical line
+				return false;
+			}
+			_slope = (sumXY - sumX * yMean) / denominator;
+			_yInt = yMean - _slope * xMean;
+			return true;
+		}
+	};
 	// -------------------------------------------------------------- //
 
 	template <typename T>
@@ -206,189 +192,6 @@ namespace f8 {
 		}
 		if (std::isnan(d) || std::isinf(d)) return 0;
 		else return d;
-	}
-
-	// ------------------------------------------------------------------//
-
-	class Matrix {
-		std::valarray<Real> data;
-		int dim;
-	public:
-		Matrix(int r, int c) : data(r*c), dim(c) {}
-		Real& operator()(int r, int c) { return data[r * dim + c]; }
-		int trace() const { return data[std::slice(0, dim, dim + 1)].sum(); }
-	};
-
-	template <typename T>
-	void covmat(T** data, int n, int m, T** symmat) {
-		T* mean = new T[m];
-
-		for (int j = 0; j < m; j++) {
-			mean[j] = 0.0;
-			for (int i = 0; i < n; i++) {
-				mean[j] += data[i][j];
-			}
-			mean[j] /= (T) n;
-		}
-
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < m; j++) {
-				data[i][j] -= mean[j];
-			}
-		}
-
-		for (int j1 = 0; j1 < m; j1++) {
-			for (int j2 = j1; j2 < m; j2++) {
-				symmat[j1][j2] = 0.0;
-				for (int i = 0; i < n; i++) {
-					symmat[j1][j2] += data[i][j1] * data[i][j2];
-				}
-				symmat[j2][j1] = symmat[j1][j2];
-			}
-		}
-
-		delete [] mean;
-	}
-
-	template <typename T>
-	void tred2(T** a, int n, T* d, T* e) {
-		int l, k, j, i;
-		T scale, hh, h, g, f;
-
-		for (i = 0; i < n; ++i) (a[i])--;
-		a--;
-		d--;
-		e--;
-
-		for (i = n; i >= 2; i--) {
-			l = i - 1;
-			h = scale = 0.0;
-			if (l > 1) {
-				for (k = 1; k <= l; k++)
-					scale += fabs(a[i][k]);
-				if (scale == 0.0)
-					e[i] = a[i][l];
-				else {
-					for (k = 1; k <= l; k++) {
-						a[i][k] /= scale;
-						h += a[i][k] * a[i][k];
-					}
-					f = a[i][l];
-					g = f > 0 ? -sqrt(h) : sqrt(h);
-					e[i] = scale * g;
-					h -= f * g;
-					a[i][l] = f - g;
-					f = 0.0;
-					for (j = 1; j <= l; j++) {
-						a[j][i] = a[i][j] / h;
-						g = 0.0;
-						for (k = 1; k <= j; k++)
-							g += a[j][k] * a[i][k];
-						for (k = j + 1; k <= l; k++)
-							g += a[k][j] * a[i][k];
-						e[j] = g / h;
-						f += e[j] * a[i][j];
-					}
-					hh = f / (h + h);
-					for (j = 1; j <= l; j++) {
-						f = a[i][j];
-						e[j] = g = e[j] - hh * f;
-						for (k = 1; k <= j; k++)
-							a[j][k] -= (f * e[k] + g * a[i][k]);
-					}
-				}
-			} else
-				e[i] = a[i][l];
-			d[i] = h;
-		}
-		d[1] = 0.0;
-		e[1] = 0.0;
-		for (i = 1; i <= n; i++) {
-			l = i - 1;
-			if (d[i]) {
-				for (j = 1; j <= l; j++) {
-					g = 0.0;
-					for (k = 1; k <= l; k++)
-						g += a[i][k] * a[k][j];
-					for (k = 1; k <= l; k++)
-						a[k][j] -= g * a[k][i];
-				}
-			}
-			d[i] = a[i][i];
-			a[i][i] = 1.0;
-			for (j = 1; j <= l; j++)
-				a[j][i] = a[i][j] = 0.0;
-		}
-
-		a++;
-		d++;
-		e++;
-		for (i = 0; i < n; ++i) (a[i])++;
-	}
-
-	template <typename T>
-	void tqli(T d[], T e[], int n, T** z) {
-		int m, l, iter, i, k;
-		float s, r, p, g, f, dd, c, b;
-
-		for (i = 0; i < n; ++i) (z[i])--;
-		z--;
-		d--;
-		e--;
-
-		for (i = 2; i <= n; i++)
-			e[i - 1] = e[i];
-		e[n] = 0.0;
-		for (l = 1; l <= n; l++) {
-			iter = 0;
-			do {
-				for (m = l; m <= n - 1; m++) {
-					dd = fabs(d[m]) + fabs(d[m + 1]);
-					if (fabs(e[m]) + dd == dd) break;
-				}
-				if (m != l) {
-					if (iter++ == 30) throw std::runtime_error("no convergence in TLQI");
-					g = (d[l + 1] - d[l]) / (2.0 * e[l]);
-					r = sqrt((g * g) + 1.0);
-					g = d[m] - d[l] + e[l] / (g + PCASIGN(r, g));
-					s = c = 1.0;
-					p = 0.0;
-					for (i = m - 1; i >= l; i--) {
-						f = s * e[i];
-						b = c * e[i];
-						if (fabs(f) >= fabs(g)) {
-							c = g / f;
-							r = sqrt((c * c) + 1.0);
-							e[i + 1] = f * r;
-							c *= (s = 1.0 / r);
-						} else {
-							s = f / g;
-							r = sqrt((s * s) + 1.0);
-							e[i + 1] = g * r;
-							s *= (c = 1.0 / r);
-						}
-						g = d[i + 1] - p;
-						r = (d[i] - g) * s + 2.0 * c * b;
-						p = s * r;
-						d[i + 1] = g + p;
-						g = c * r - b;
-						for (k = 1; k <= n; k++) {
-							f = z[k][i + 1];
-							z[k][i + 1] = s * z[k][i] + c * f;
-							z[k][i] = c * z[k][i] - s * f;
-						}
-					}
-					d[l] = d[l] - p;
-					e[l] = g;
-					e[m] = 0.0;
-				}
-			} while (m != l);
-		}
-
-		z++;
-		d++;
-		e++;
-		for (i = 0; i < n; ++i) (z[i])++;
 	}
 
 	// ------------------------------------------------------------------//

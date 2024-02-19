@@ -196,6 +196,16 @@ proc (compare op l) {
 proc (. f l1 l2) {
 	map2 (\ (x y) (f x y)) l1 l2
 }
+proc (getcolumn l n) {
+    set w ()
+    set sz (llength data)
+    set i 0
+    while (< i sz) {
+        lappend w (lindex (lindex data i) n)
+        ! i (+ i 1)
+    }
+    ! w (array w)
+}
 
 # constants
 set TWOPI 6.2831853072

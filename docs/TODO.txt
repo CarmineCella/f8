@@ -5,7 +5,6 @@
 // pitch2note
 // kmeans/gmm clustering
 // eig/pca
-// linreg
 // blockconv / pvoc
 // biquad / fir design
 // more examples: strings (?), descriptors, pitch to osc, filters, dim reduction

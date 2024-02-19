@@ -47,7 +47,6 @@ namespace f8 {
 				if (pl->val[i] < min) min = pl->val[i];
 			}
 			Real delta = fabs (max - min);
-
 			for (unsigned i = 0; i < pl->val.size (); ++i) {
 				polyline << Point ((hstep * i), 
 					((pl->val[i] - min) * height) / delta);
