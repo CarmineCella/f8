@@ -4,6 +4,7 @@
 #include "f8.h"
 #include "learning/algorithms.h"
 #include "learning/KNN.h"
+#include "learning/linalg.h"
 
 #include <valarray>
 #include <string>
@@ -41,6 +42,7 @@ namespace f8 {
 		for (unsigned i = 0; i < data->tail.size (); ++i) {
 			Observation<Real>* o = new Observation<Real> ();
 			AtomPtr item = type_check (data->tail.at (i), LIST);
+			if (item->tail.size () != 2) Context::error ("[knntrain] malformed item", node);
 			o->attributes = type_check (item->tail.at (0), NUMERIC)->val;
 			std::stringstream s;
 			puts (item->tail.at (1), s);
@@ -74,11 +76,93 @@ namespace f8 {
 		std::valarray<Real> l ({slope, intercept});
 		return make_node (l);
 	}	
+	AtomPtr matrix2list (Real* matrix, int r, int c) {
+		AtomPtr m = make_node ();
+		for (std::size_t row = 0; row < r; row++) {
+			std::valarray<Real> rarray (c);
+			for (std::size_t col = 0; col < c; col++) {
+				rarray[col] = matrix[row * c + col];
+			}
+			m->tail.push_back (make_node (rarray));
+		}
+		return m;
+	}
+	void list2matrix (AtomPtr l, std::vector<Real>& m) {
+		for (unsigned i = 0; i < l->tail.size (); ++i) {
+			std::valarray<Real>& row = type_check (l->tail.at (i), NUMERIC)->val;
+			for (unsigned j = 0; j < row.size (); ++j) {
+				m.push_back (row[j]);
+			}	
+		}
+	}
+	void display_matrix(Real* matrix, int r, int c) {
+		std::cout << "[";
+		for (std::size_t row = 0; row < r; row++) {
+			for (std::size_t col = 0; col < c; col++) {
+				std::cout << matrix[row * c + col];
+				if (col != c - 1) std::cout << ", ";
+			}
+			if (row != r - 1) std::cout << ";\n";
+		}
+		std::cout << "]\n";
+	}
+	AtomPtr fn_dispmat (AtomPtr node, AtomPtr env) {
+		AtomPtr lmatrix = type_check (node->tail.at (0), LIST);
+		int n = lmatrix->tail.size (); // rows
+		if (n < 1) Context::error ("[dispmat] invalid matrix size", node);
+		int m = type_check (lmatrix->tail.at (0), NUMERIC)->val.size (); // cols
+		std::vector<Real> M;
+		list2matrix (lmatrix, M);
+		display_matrix (&M[0], n, m);
+		return make_node ("");
+	}
+	AtomPtr fn_svd (AtomPtr node, AtomPtr env) {
+		AtomPtr lmatrix = type_check (node->tail.at (0), LIST);
+		int n = lmatrix->tail.size (); // rows
+		if (n < 1) Context::error ("[svd] invalid matrix size", node);
+		int m = type_check (lmatrix->tail.at (0), NUMERIC)->val.size (); // cols
+		std::vector<Real> M;
+		list2matrix (lmatrix, M);
+
+		int k = (m<n?m:n);
+
+		Real* tU =new Real[m*k];
+		Real* tS =new Real[k];
+		Real* tVT=new Real[k*n];
+		
+		// Compute SVD
+		int INFO=0;
+		char JOBU  = 'S';
+		char JOBVT = 'S';
+		int wssize = 3*(m<n?m:n)+(m>n?m:n);
+		int wssize1 = 5*(m<n?m:n);
+		wssize = (wssize>wssize1?wssize:wssize1);
+		Real* wsbuf = new Real[wssize];
+		svd(&JOBU, &JOBVT, &m, &n, &M[0], &m, &tS[0], &tU[0], &m, &tVT[0], &k, wsbuf, &wssize, &INFO);
+		delete[] wsbuf;
+
+		AtomPtr u = matrix2list (tU, m, k);
+		std::valarray<Real> sarray (tS, k);
+		AtomPtr s = make_node (sarray);
+		AtomPtr vt = matrix2list (tVT, k, n);	
+		
+		AtomPtr res = make_node ();
+		res->tail.push_back (u);
+		res->tail.push_back (s);
+		res->tail.push_back (vt);
+
+		delete[] tU;
+		delete[] tS;
+		delete[] tVT;	
+		return res;
+	}		
 	AtomPtr add_learning (AtomPtr env) {
 		add_operator ("median", fn_median, 2, env);
 		add_operator ("knntrain", fn_knntrain, 2, env);
 		add_operator ("knntest", fn_knntest, 2, env);
 		add_operator ("linefit", fn_linefit, 2, env);
+		add_operator ("dispmat", fn_dispmat, 1, env);
+		add_operator ("svd", fn_svd, 1, env);
 		return env;
 	}
 }

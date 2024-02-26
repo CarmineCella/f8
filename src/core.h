@@ -43,7 +43,8 @@ namespace f8 {
         Atom () {type = LIST;}
         Atom (std::valarray<Real>& array) {
             type = NUMERIC;
-            val = array;
+            val.resize (array.size ());
+            for (unsigned i = 0; i < array.size (); ++i) val[i] = array[i];
         }
         Atom (Real v) {type = NUMERIC; val.resize (1); val[0] = v;}
         Atom (const std::string& s) {
@@ -121,7 +122,8 @@ namespace f8 {
         if (node->type == NUMERIC) {
             if (node->val.size () > 1 && !write) out << "[";
             for (unsigned i = 0; i < node->val.size (); ++i) {
-                out << (std::fixed) << std::setprecision (15) << node->val[i];
+                // out << (std::fixed) << std::setprecision (15) << node->val[i];
+                out << node->val[i];
                 if (i != node->val.size () - 1) out << " ";
             }
             if (node->val.size () > 1 && !write) out << "]";
@@ -397,6 +399,7 @@ namespace f8 {
             return node->tail.at (1);
         }
         if (car->action == &fn_set || car->action == &fn_updef) {
+            if (node->tail.size () == 2) return eval (node->tail.at (1), env);
             argnum_check (node, 3);
             AtomPtr cenv = env;
             if (car->action == &fn_updef) {
@@ -984,7 +987,7 @@ namespace f8 {
         add_operator ("quote", &fn_quote, -1, env); // -1 are checked in the eval function
         add_operator ("set", &fn_set, -1, env);
         add_operator ("updef", &fn_updef, -1, env);
-        add_operator ("!", &fn_reset, -1, env);
+        add_operator ("=", &fn_reset, -1, env);
         add_operator ("proc", &fn_proc, -1, env);
         add_operator ("dynamic", &fn_dynamic, -1, env);
         add_operator ("if", &fn_if, -1, env);

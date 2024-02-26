@@ -7,29 +7,34 @@
 #include <cassert>
 #include <cmath>
 #include <valarray>
+#include <cstdlib>
 
 namespace f8 {
 	// ------------------------------------------------------------------//
     template <typename T>
 	class Matrix {
-		std::valarray<T> data;
-		int dim;
+		std::valarray<T> m_m;
+		int m_dim;
+        int m_rows;
+        int m_columns;
 	public:
-		Matrix(int r, int c) : data(r*c), dim(c) {}
-		T& operator()(int r, int c) { return data[r * dim + c]; }
-		int trace() const { return data[std::slice(0, dim, dim + 1)].sum(); }
-	};
-
-    template<typename Arg>
-    void mattran (std::vector<std::vector<Arg>> matrix1,
-                        std::vector<std::vector<Arg>>& matrix2) {
-        matrix2.resize(matrix1.size());
-        for (std::size_t row = 0; row < matrix1.size(); row++) {
-            matrix2[row].resize(matrix1[row].size());
-            for (std::size_t col = 0; col < matrix1[row].size(); col++)
-                matrix2[row][col] = matrix1[col][row];
+		Matrix(int r, int c) : m_m(r*c), m_dim(c) {
+            m_rows = r;
+            m_columns = c;
         }
-    }
+		T& operator()(int r, int c) { return m_m[r * m_dim + c]; }
+		int trace() const { return m_m[std::slice(0, m_dim, m_dim + 1)].sum(); }
+		int rows () const {	return m_rows; }
+		int cols () const {	return m_columns; }		
+		void null () {
+            for (int i = 0; i < m_m.size (); i++) {
+                m_m[i] = 0;
+			}
+		}		
+		T** data () {
+			return m_m;
+		}           
+	};
 
     template<typename Arg>
     void matmul (std::vector<std::vector<Arg>> matrix1,
@@ -46,7 +51,9 @@ namespace f8 {
     }
 
 	template <typename T>
-	void covmat (T** data, int n, int m, T** symmat) {
+	void covmat (std::vector<std::vector<T>>& data, std::vector<std::vector<T>>& symmat) {
+        int n = data[0].size ();
+        int m = data.size ();
 		T* mean = new T[m];
 
 		for (int j = 0; j < m; j++) {
@@ -302,7 +309,7 @@ namespace f8 {
                     int *INFO) {
         assert(*JOBU=='S');
         assert(*JOBVT=='S');
-        const size_t dim[2]= {std::max(*N,*M), std::min(*N,*M)};
+        const size_t dim[2]= {(size_t) std::max(*N,*M), (size_t) std::min(*N,*M)};
         T* U_=new T[dim[0]*dim[0]];
         memset(U_, 0, dim[0]*dim[0]*sizeof(T));
         T* V_=new T[dim[1]*dim[1]];

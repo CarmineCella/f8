@@ -12,7 +12,7 @@ source "stdlib.tcl"
 set f (openstream "../data/iris.data.txt" 'input 'text)
 set orig (readcsv f)
 set orig_sh (lshuffle orig)
-set data (make-features orig_sh)
+set data (make-dataset orig_sh)
 
 set samples (llength data)
 set features (size (car (car data)))

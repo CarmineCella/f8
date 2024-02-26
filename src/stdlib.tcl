@@ -51,7 +51,7 @@ proc (lreverse l) {
     set i (- (llength l) 1)
     while (>= i 0) {
 		lappend res (lindex l i)
-		! i (- i 1)
+		= i (- i 1)
 	}
     set res res
 }
@@ -186,7 +186,7 @@ proc (compare op l) {
 	proc (cmp-runner n l) {
 		if (eq l ()) n else {
 			if (op (car l) n) {
-				! n (car l)
+				= n (car l)
 				cmp-runner n (cdr l)
 			} else (cmp-runner n (cdr l))
 		}
@@ -196,15 +196,15 @@ proc (compare op l) {
 proc (. f l1 l2) {
 	map2 (\ (x y) (f x y)) l1 l2
 }
-proc (getcolumn l n) {
+proc (getcolumn data n) {
     set w ()
     set sz (llength data)
     set i 0
     while (< i sz) {
         lappend w (lindex (lindex data i) n)
-        ! i (+ i 1)
+        = i (+ i 1)
     }
-    ! w (array w)
+    = w (array w)
 }
 
 # constants
@@ -222,25 +222,25 @@ proc (oscbank sr amps freqs tab) {
 	while (< i elems) {
 		set f (car freqs)
 		if (eq f ()) {break}
-		! outbuff (+ outbuff (* (car amps) (osc sr (car freqs) tab)))
+		= outbuff (+ outbuff (* (car amps) (osc sr (car freqs) tab)))
 		set amps (cdr amps)
 		set freqs (cdr freqs)
-		! i (+ i 1)
+		= i (+ i 1)
 	}
-	+ outbuff
+	set outbuff
 }
 proc (sndread fname) {
     set h (openwav fname 'input)
     set b (readwav h)
     closewav h
-    lappend b
+    set b
 }
 proc (sndwrite fname sr data) {
     set ch (llength data)
     set h (openwav fname 'output sr ch)
     set b (writewav h data)
     closewav h
-    set b b
+    set b
 }
 
 # learning
@@ -249,12 +249,12 @@ proc (accuracy classes gt) {
     set i 0
     set ct 0
     while (< i total) {
-        if (eq (lindex classes i) (llast (lindex gt i))) (! ct (+ ct 1))
-        ! i (+ i 1)
+        if (eq (lindex classes i) (llast (lindex gt i))) (= ct (+ ct 1))
+        = i (+ i 1)
     }
     / ct total
 }
-proc (make-features data) {
+proc (make-dataset data) {
     set Xy ()
     set i 0
     set samples (llength data)
@@ -264,9 +264,9 @@ proc (make-features data) {
         set f (array (lrange item 0 features))
         set l (car (lrange item features 1))
         lappend Xy (list f l)
-        ! i (+ i 1)
+        = i (+ i 1)
     }
-    set Xy Xy
+    set Xy
 }
 
 # plotting

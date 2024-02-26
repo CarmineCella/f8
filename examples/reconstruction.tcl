@@ -37,10 +37,10 @@ set i 0
 while (< i (size mag)) {
 	set v (slice mag i 1)
     lappend amps (bpf v samps v)
-    ! i (+ i 1)
+    = i (+ i 1)
 }
 set freqs (list)
-! i 0
+= i 0
 while (< i (size fftfreqs)) {
     set v (slice fftfreqs i 1)
     lappend freqs (bpf v samps v)

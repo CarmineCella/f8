@@ -23,7 +23,7 @@ while (< i 50) {
     set freq (+ 220 (birandn 100 1))
     set arg (tostr "/osc/freq " freq)
     set del 200
-    if (> i 25) (! del 100)
+    if (> i 25) (= del 100)
     schedule (udpsend "127.0.0.1" 10000 arg true) del 0
     set i (+ i 1)
 }

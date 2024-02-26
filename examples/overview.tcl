@@ -83,12 +83,11 @@ puts "\n"
 puts "** higher functions with lambdas **" "\n" "\n"
 puts "map " (map (\(x)(* x x)) '(1 2 3 4 5)) "\n"
 puts "filter " (filter (\ (x) (> x 5)) '(5 2 11 -7 8 1)) "\n"
-puts "unpack " (unpack + (list 4 5)) "\n" "\n"
 
 puts "** closures **" "\n" "\n"
 proc (count-down-from n) {
 	\ () {
-		! n (- n 1)
+		= n (- n 1)
 	}
 } 
 set count-down-from-4 (count-down-from 4)

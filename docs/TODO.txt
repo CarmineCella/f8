@@ -4,11 +4,11 @@
 // features + pitch + onsets
 // pitch2note
 // kmeans/gmm clustering
-// eig/pca
 // blockconv / pvoc
 // biquad / fir design
 // more examples: strings (?), descriptors, pitch to osc, filters, dim reduction
 // reference manual
+// svd and dim reduction
 
 // ver. 0.7
 // load db
