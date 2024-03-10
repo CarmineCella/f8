@@ -41,7 +41,7 @@ namespace f8 {
     bool is_string (const std::string& s);
     struct Atom {
         Atom () {type = LIST;}
-        Atom (std::valarray<Real>& array) {
+        Atom (const std::valarray<Real>& array) {
             type = NUMERIC;
             val.resize (array.size ());
             for (unsigned i = 0; i < array.size (); ++i) val[i] = array[i];

@@ -76,60 +76,79 @@ namespace f8 {
 		std::valarray<Real> l ({slope, intercept});
 		return make_node (l);
 	}	
-	AtomPtr matrix2list (Real* matrix, int r, int c) {
-		AtomPtr m = make_node ();
-		for (std::size_t row = 0; row < r; row++) {
-			std::valarray<Real> rarray (c);
-			for (std::size_t col = 0; col < c; col++) {
-				rarray[col] = matrix[row * c + col];
+	AtomPtr matrix2list (Matrix<Real>& m) {
+		AtomPtr l = make_node ();
+		for (std::size_t row = 0; row < m.rows (); ++row) {
+			std::valarray<Real> rarray (m.cols ());
+			for (std::size_t col = 0; col < m.cols (); ++col) {
+				rarray[col] = m (row, col);
 			}
-			m->tail.push_back (make_node (rarray));
+			l->tail.push_back (make_node (rarray));
 		}
-		return m;
+		return l;
 	}
-	void list2matrix (AtomPtr l, std::vector<Real>& m) {
+	AtomPtr matrix2list (Real* m, int r, int c) {
+		Matrix<Real> mm (m, r, c);
+		return matrix2list (mm);
+	}	
+	Matrix<Real> list2matrix (AtomPtr l) {
+        Matrix<Real> m (l->tail.size (), type_check (l->tail.at (0), NUMERIC)->val.size ());
 		for (unsigned i = 0; i < l->tail.size (); ++i) {
 			std::valarray<Real>& row = type_check (l->tail.at (i), NUMERIC)->val;
 			for (unsigned j = 0; j < row.size (); ++j) {
-				m.push_back (row[j]);
+				m (i, j) = row[j];
 			}	
 		}
+		return m;
 	}
-	void display_matrix(Real* matrix, int r, int c) {
+	void display_matrix(Matrix<Real>& m) {
 		std::cout << "[";
-		for (std::size_t row = 0; row < r; row++) {
-			for (std::size_t col = 0; col < c; col++) {
-				std::cout << matrix[row * c + col];
-				if (col != c - 1) std::cout << ", ";
+		for (std::size_t row = 0; row < m.rows (); ++row) {
+			for (std::size_t col = 0; col < m.cols (); ++col) {
+				std::cout << m (row, col);
+				if (col != m.cols () - 1) std::cout << ", ";
 			}
-			if (row != r - 1) std::cout << ";\n";
+			if (row != m.rows () - 1) std::cout << ";\n";
 		}
 		std::cout << "]\n";
 	}
-	AtomPtr fn_dispmat (AtomPtr node, AtomPtr env) {
-		AtomPtr lmatrix = type_check (node->tail.at (0), LIST);
-		int n = lmatrix->tail.size (); // rows
-		if (n < 1) Context::error ("[dispmat] invalid matrix size", node);
-		int m = type_check (lmatrix->tail.at (0), NUMERIC)->val.size (); // cols
-		std::vector<Real> M;
-		list2matrix (lmatrix, M);
-		display_matrix (&M[0], n, m);
+	AtomPtr fn_matdisp (AtomPtr node, AtomPtr env) {
+		for (unsigned i = 0; i < node->tail.size (); ++i) {
+			AtomPtr lmatrix = type_check (node->tail.at (i), LIST);
+			int n = lmatrix->tail.size (); // rows
+			if (n < 1) Context::error ("[matdisp] invalid matrix size", node);
+			Matrix<Real> m = list2matrix (lmatrix);
+			display_matrix (m);
+			std::cout << std::endl;
+		}
 		return make_node ("");
+	}
+	AtomPtr fn_matmul (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		for (unsigned i = 1; i < node->tail.size (); ++i) {
+			Matrix<Real> b = list2matrix (type_check (node->tail.at (i), LIST));
+			if (a.cols () != b.rows ()) Context::error ("[matmul] nonconformant arguments", node);
+			a = matmul<Real> (a, b);
+		}
+		return matrix2list (a);
+	}
+	AtomPtr fn_mattran (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		Matrix<Real> tr = ~a;
+		return matrix2list (tr);
 	}
 	AtomPtr fn_svd (AtomPtr node, AtomPtr env) {
 		AtomPtr lmatrix = type_check (node->tail.at (0), LIST);
 		int n = lmatrix->tail.size (); // rows
 		if (n < 1) Context::error ("[svd] invalid matrix size", node);
-		int m = type_check (lmatrix->tail.at (0), NUMERIC)->val.size (); // cols
-		std::vector<Real> M;
-		list2matrix (lmatrix, M);
-
+		Matrix<Real> M = list2matrix (lmatrix);
+		int m = M.cols ();
 		int k = (m<n?m:n);
 
-		Real* tU =new Real[m*k];
-		Real* tS =new Real[k];
-		Real* tVT=new Real[k*n];
-		
+		Real* tU = new Real[m*k];
+		Real* tS = new Real[k];
+		Real* tVT= new Real[k*n];
+
 		// Compute SVD
 		int INFO=0;
 		char JOBU  = 'S';
@@ -138,13 +157,16 @@ namespace f8 {
 		int wssize1 = 5*(m<n?m:n);
 		wssize = (wssize>wssize1?wssize:wssize1);
 		Real* wsbuf = new Real[wssize];
-		svd(&JOBU, &JOBVT, &m, &n, &M[0], &m, &tS[0], &tU[0], &m, &tVT[0], &k, wsbuf, &wssize, &INFO);
+		svd(&JOBU, &JOBVT, &m, &n, &M.data ()[0], &m, &tS[0], &tVT[0], &m, &tU[0], &k, wsbuf, &wssize, &INFO);
 		delete[] wsbuf;
 
-		AtomPtr u = matrix2list (tU, m, k);
-		std::valarray<Real> sarray (tS, k);
-		AtomPtr s = make_node (sarray);
-		AtomPtr vt = matrix2list (tVT, k, n);	
+		AtomPtr u = matrix2list (tU, k, m);
+		Matrix<Real> s_tmp (k, m);
+		for (unsigned i = 0; i < k; ++i) {
+			s_tmp (i, i) = tS[i];
+		}
+		AtomPtr s = matrix2list (s_tmp);
+		AtomPtr vt = matrix2list (tVT, n, k);	
 		
 		AtomPtr res = make_node ();
 		res->tail.push_back (u);
@@ -161,7 +183,9 @@ namespace f8 {
 		add_operator ("knntrain", fn_knntrain, 2, env);
 		add_operator ("knntest", fn_knntest, 2, env);
 		add_operator ("linefit", fn_linefit, 2, env);
-		add_operator ("dispmat", fn_dispmat, 1, env);
+		add_operator ("matdisp", fn_matdisp, 1, env);
+		add_operator ("matmul", fn_matmul, 2, env);
+		add_operator ("transp", fn_mattran, 1, env);
 		add_operator ("svd", fn_svd, 1, env);
 		return env;
 	}

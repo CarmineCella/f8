@@ -1,3 +1,5 @@
+# temp: SVD tests
+
 source "stdlib.tcl"
 
 set f (openstream "../data/iris.data.txt" 'input 'text)
@@ -16,9 +18,15 @@ while (< i samples) {
 }
 
 puts "data:\n"
-dispmat matrix
-puts "\n"
+matdisp matrix
 
 set usvt (svd matrix) 
-puts "singular values:\n"
-puts (second usvt) "\n"
+
+set u (car usvt)
+set s (second usvt)
+set vt (third usvt)
+
+matdisp u
+matdisp s
+matdisp vt
+

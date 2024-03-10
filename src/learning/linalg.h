@@ -11,45 +11,57 @@
 
 namespace f8 {
 	// ------------------------------------------------------------------//
-    template <typename T>
-	class Matrix {
-		std::valarray<T> m_m;
-		int m_dim;
-        int m_rows;
-        int m_columns;
-	public:
-		Matrix(int r, int c) : m_m(r*c), m_dim(c) {
-            m_rows = r;
-            m_columns = c;
+    template<typename T>
+    class Matrix {
+        int _rows;
+        int _cols;
+        std::valarray<T> _data;   
+    public:
+        Matrix (int r, int c) : _rows (r), _cols(c), _data(r * c){
+            null ();
         }
-		T& operator()(int r, int c) { return m_m[r * m_dim + c]; }
-		int trace() const { return m_m[std::slice(0, m_dim, m_dim + 1)].sum(); }
-		int rows () const {	return m_rows; }
-		int cols () const {	return m_columns; }		
-		void null () {
-            for (int i = 0; i < m_m.size (); i++) {
-                m_m[i] = 0;
-			}
-		}		
-		T** data () {
-			return m_m;
-		}           
-	};
-
-    template<typename Arg>
-    void matmul (std::vector<std::vector<Arg>> matrix1,
-                        std::vector<std::vector<Arg>>& matrix2, std::vector<std::vector<Arg>>& matrix3) {
-        matrix3.resize(matrix1.size());
-        for (std::size_t row = 0; row < matrix1.size(); row++) {
-            matrix3[row].resize(matrix1[row].size());
-            for (std::size_t col = 0; col < matrix1[row].size(); col++) {
-                matrix3[row][col] = 0.00;
-                for (std::size_t k = 0; k < matrix1[row].size(); k++)
-                    matrix3[row][col] += matrix1[row][k] * matrix2[k][col];
+        Matrix (T* d, int r, int c) : _rows (r), _cols(c), _data(d, r * c){}
+        int rows () const { return _rows; }
+        int cols () const { return _cols; }        
+        T& operator()(int r, int c) { return _data[r * _cols + c]; }
+        std::valarray<T>& data () { return _data; }
+        const std::valarray<T>& data () const { return _data; }
+        void null () {
+            for (unsigned i = 0; i < _data.size (); ++i) _data[i] = 0;
+        }
+        void id () {
+            if (_rows != _cols) throw std::runtime_error ("identity matrices must be square");
+            null ();
+            for (unsigned i = 0; i < _rows; ++i) (*this)(i, i) = 1;
+        }
+        T trace() const { return _data[std::slice(0, _cols, _cols + 1)].sum(); }
+        Matrix<T> operator~ () {
+            Matrix<T> temp (cols (), rows ());
+            
+            for (unsigned int i = 0; i < rows (); ++i)
+                for (unsigned int j = 0; j < cols (); ++j) {
+                    T x = (*this)(i, j);
+                    temp (j, i) = x;
+                }
+            return temp;
+        }        
+    };    
+    template<class T>
+    Matrix<T> matmul (const Matrix<T>& a, const Matrix<T>& b) {
+        int acols = a.cols ();
+        int arows = a.rows ();
+        int brows = b.rows ();
+        int bcols = b.cols ();
+        Matrix<T> result (arows, bcols);
+        for(size_t i = 0; i < arows; ++i) {
+            for(size_t j = 0; j < bcols; ++j) {
+                std::valarray<T> row = a.data()[std::slice(acols * i, acols, 1)];
+                std::valarray<T> col = b.data()[std::slice(j, brows, bcols)];
+                result.data()[i * bcols + j] = (row * col).sum ();
             }
-        }
+        } 
+        return result;
     }
-
 	template <typename T>
 	void covmat (std::vector<std::vector<T>>& data, std::vector<std::vector<T>>& symmat) {
         int n = data[0].size ();
@@ -126,7 +138,6 @@ namespace f8 {
     template <class T>
     void SVD (const size_t dim[2], T* U_, T* S_, T* V_, T eps=-1) {
         assert(dim[0]>=dim[1]);
-
         // Bi-diagonalization
         size_t n=std::min(dim[0],dim[1]);
         std::vector<T> house_vec(std::max(dim[0],dim[1]));
@@ -172,7 +183,6 @@ namespace f8 {
                     U(k,j)-=dot_prod*house_vec[j];
                 }
             }
-
             // Row Householder
             if(i>=n-1) continue;
             x1=S(i,i+1);
@@ -305,8 +315,8 @@ namespace f8 {
 
     template<class T>
     inline void svd(char *JOBU, char *JOBVT, int *M, int *N, T *A, int *LDA,
-                    T *S, T *U, int *LDU, T *VT, int *LDVT, T *WORK, int *LWORK,
-                    int *INFO) {
+        T *S, T *U, int *LDU, T *VT, int *LDVT, T *WORK, int *LWORK,
+        int *INFO) {
         assert(*JOBU=='S');
         assert(*JOBVT=='S');
         const size_t dim[2]= {(size_t) std::max(*N,*M), (size_t) std::min(*N,*M)};

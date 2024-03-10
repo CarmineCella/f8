@@ -12,9 +12,6 @@
 #include <cassert>
 
 namespace f8 {
-	#define PCASIGN(a, b) ( (b) < 0 ? -fabs(a) : fabs(a) )
-	#define EPS .0000000000001
-
 	// ------------------------------------------------------------------//
 
 	template <typename T>

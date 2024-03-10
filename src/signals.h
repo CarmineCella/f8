@@ -225,9 +225,15 @@ namespace f8 {
 	}
 	AtomPtr fn_noise (AtomPtr n, AtomPtr env) {
 		int len = (int) type_check (n->tail.at (0), NUMERIC)->val[0];
-		std::valarray<Real> out (len);
-		for (unsigned i = 0; i < len; ++i) out[i] = ((Real) rand () / RAND_MAX) * 2. - 1;
-		return make_node (out);
+		int rows = 1;
+		if (n->tail.size () == 2) rows = (int) type_check (n->tail.at (1), NUMERIC)->val[0];
+		AtomPtr l = make_node ();
+		for (unsigned j = 0; j < rows; ++j) {
+			std::valarray<Real> out (len);
+			for (unsigned i = 0; i < len; ++i) out[i] = ((Real) rand () / RAND_MAX) * 2. - 1;
+			l->tail.push_back (make_node (out));
+		}
+		return l->tail.size () == 1 ? l->tail.at (0) : l;
 	}
 	// I/O  -----------------------------------------------------------------------
 	AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
