@@ -4,14 +4,12 @@
 #include "f8.h"
 #include "learning/algorithms.h"
 #include "learning/KNN.h"
-#include "learning/linalg.h"
+#include "learning/Matrix.h"
 
 #include <valarray>
 #include <string>
 #include <sstream>
 #include <iomanip>
-
-#define MAX_COL 12
 
 namespace f8 {
 	AtomPtr fn_median (AtomPtr node, AtomPtr env) {
@@ -89,10 +87,6 @@ namespace f8 {
 		}
 		return l;
 	}
-	AtomPtr matrix2list (Real* m, int r, int c) {
-		Matrix<Real> mm (m, r, c);
-		return matrix2list (mm);
-	}	
 	Matrix<Real> list2matrix (AtomPtr l) {
         Matrix<Real> m (l->tail.size (), type_check (l->tail.at (0), NUMERIC)->val.size ());
 		for (unsigned i = 0; i < l->tail.size (); ++i) {
@@ -103,51 +97,13 @@ namespace f8 {
 		}
 		return m;
 	}
-	size_t number_of_digits(Real n) {
-		std::ostringstream strs;
-		strs << n;
-		return strs.str().size();
-	}	
-	void display_matrix(Matrix<Real>& m) {
-		std::cout << "[" << std::endl;
-		std::vector<int> max_len_per_col;
-		for (size_t j = 0; j < m.cols (); ++j) {
-			size_t max_len {};
-
-			for (size_t i = 0; i < m.rows (); ++i) {
-				int num_length = number_of_digits(m (i, j));
-				if (num_length > max_len) {
-					max_len = num_length;
-				}
-					
-			}
-			max_len_per_col.push_back (max_len);
-		}
-		for (std::size_t row = 0; row < m.rows (); ++row) {
-			for (std::size_t col = 0; col < m.cols (); ++col) {
-				std::cout <<std::setw (max_len_per_col[col]) << m (row, col);
-				if (col != m.cols () - 1) std::cout << ", ";
-				if (col > MAX_COL) {
-					std::cout << "...";
-					break;
-				}
-			}
-			if (row != m.rows () - 1) std::cout << ";\n";
-			if (row > MAX_PRINT) {
-				std::cout << "...";
-				break;
-			}
-		}
-		std::cout << "\n]\n";
-	}
 	AtomPtr fn_matdisp (AtomPtr node, AtomPtr env) {
 		for (unsigned i = 0; i < node->tail.size (); ++i) {
 			AtomPtr lmatrix = type_check (node->tail.at (i), LIST);
 			int n = lmatrix->tail.size (); // rows
 			if (n < 1) Context::error ("[matdisp] invalid matrix size", node);
 			Matrix<Real> m = list2matrix (lmatrix);
-			display_matrix (m);
-			std::cout << std::endl;
+			m.print (std::cout) << std::endl;
 		}
 		return make_node ("");
 	}
@@ -156,13 +112,13 @@ namespace f8 {
 		for (unsigned i = 1; i < node->tail.size (); ++i) {
 			Matrix<Real> b = list2matrix (type_check (node->tail.at (i), LIST));
 			if (a.cols () != b.rows ()) Context::error ("[matmul] nonconformant arguments", node);
-			a = matmul<Real> (a, b);
+			a = a * b;
 		}
 		return matrix2list (a);
 	}
 	AtomPtr fn_mattran (AtomPtr node, AtomPtr env) {
 		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
-		Matrix<Real> tr = ~a;
+		Matrix<Real> tr = a.transpose ();
 		return matrix2list (tr);
 	}	
 	AtomPtr add_learning (AtomPtr env) {
