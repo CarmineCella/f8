@@ -7,17 +7,17 @@
 # (c) www.carminecella.com
 #
 
-set a (noise 8800 1024)
-set b (noise 400 8800)
-set c (noise 5 3)
+set a (noise 8 4)
+set b (noise 5 8)
+set c (noise 3 5)
 
-set d (matmul a b )
+set d (matmul a b c)
 
-# puts "input matrices:\n"
-# matdisp a
-# matdisp b
-# # matdisp c
+puts "input matrices:\n"
+matdisp a
+matdisp b
+matdisp c
 
-# puts "matrix multiplication:\n"
-# matdisp d
+puts "matrix multiplication:\n"
+matdisp d
 
