@@ -23,6 +23,8 @@
 #define RED     	"\033[31m" 
 #define RESET   	"\033[0m"
 
+#define MAX_PRINT   100
+
 ///~ ## Types
 ///~ The valid types are: numeric, symbol, string, list, operator, lambda, object
 namespace f8 {
@@ -125,6 +127,10 @@ namespace f8 {
                 // out << (std::fixed) << std::setprecision (15) << node->val[i];
                 out << node->val[i];
                 if (i != node->val.size () - 1) out << " ";
+                if (i > MAX_PRINT && write == false) {
+                    out << "...";
+                    break;
+                }
             }
             if (node->val.size () > 1 && !write) out << "]";
         }            
@@ -148,6 +154,10 @@ namespace f8 {
             for (unsigned i = 0; i < node->tail.size (); ++i) {
                 puts (node->tail.at (i), out);
                 if (i != node->tail.size () - 1) out << " ";
+                if (i > MAX_PRINT && write == false) {
+                    out << "...";
+                    break;
+                }                
             }
             out << ")";
         }

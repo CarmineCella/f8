@@ -11,6 +11,8 @@
 #include <sstream>
 #include <iomanip>
 
+#define MAX_COL 12
+
 namespace f8 {
 	AtomPtr fn_median (AtomPtr node, AtomPtr env) {
 		std::valarray<Real>& v = type_check (node->tail.at (0), NUMERIC)->val;
@@ -125,13 +127,13 @@ namespace f8 {
 			for (std::size_t col = 0; col < m.cols (); ++col) {
 				std::cout <<std::setw (max_len_per_col[col]) << m (row, col);
 				if (col != m.cols () - 1) std::cout << ", ";
-				if (col > 10) {
+				if (col > MAX_COL) {
 					std::cout << "...";
 					break;
 				}
 			}
 			if (row != m.rows () - 1) std::cout << ";\n";
-			if (row > 100) {
+			if (row > MAX_PRINT) {
 				std::cout << "...";
 				break;
 			}
