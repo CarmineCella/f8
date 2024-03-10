@@ -101,16 +101,42 @@ namespace f8 {
 		}
 		return m;
 	}
+	size_t number_of_digits(Real n) {
+		std::ostringstream strs;
+		strs << n;
+		return strs.str().size();
+	}	
 	void display_matrix(Matrix<Real>& m) {
-		std::cout << "[";
+		std::cout << "[" << std::endl;
+		std::vector<int> max_len_per_col;
+		for (size_t j = 0; j < m.cols (); ++j) {
+			size_t max_len {};
+
+			for (size_t i = 0; i < m.rows (); ++i) {
+				int num_length = number_of_digits(m (i, j));
+				if (num_length > max_len) {
+					max_len = num_length;
+				}
+					
+			}
+			max_len_per_col.push_back (max_len);
+		}
 		for (std::size_t row = 0; row < m.rows (); ++row) {
 			for (std::size_t col = 0; col < m.cols (); ++col) {
-				std::cout << m (row, col);
+				std::cout <<std::setw (max_len_per_col[col]) << m (row, col);
 				if (col != m.cols () - 1) std::cout << ", ";
+				if (col > 10) {
+					std::cout << "...";
+					break;
+				}
 			}
 			if (row != m.rows () - 1) std::cout << ";\n";
+			if (row > 100) {
+				std::cout << "...";
+				break;
+			}
 		}
-		std::cout << "]\n";
+		std::cout << "\n]\n";
 	}
 	AtomPtr fn_matdisp (AtomPtr node, AtomPtr env) {
 		for (unsigned i = 0; i < node->tail.size (); ++i) {
@@ -136,48 +162,7 @@ namespace f8 {
 		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
 		Matrix<Real> tr = ~a;
 		return matrix2list (tr);
-	}
-	AtomPtr fn_svd (AtomPtr node, AtomPtr env) {
-		AtomPtr lmatrix = type_check (node->tail.at (0), LIST);
-		int n = lmatrix->tail.size (); // rows
-		if (n < 1) Context::error ("[svd] invalid matrix size", node);
-		Matrix<Real> M = list2matrix (lmatrix);
-		int m = M.cols ();
-		int k = (m<n?m:n);
-
-		Real* tU = new Real[m*k];
-		Real* tS = new Real[k];
-		Real* tVT= new Real[k*n];
-
-		// Compute SVD
-		int INFO=0;
-		char JOBU  = 'S';
-		char JOBVT = 'S';
-		int wssize = 3*(m<n?m:n)+(m>n?m:n);
-		int wssize1 = 5*(m<n?m:n);
-		wssize = (wssize>wssize1?wssize:wssize1);
-		Real* wsbuf = new Real[wssize];
-		svd(&JOBU, &JOBVT, &m, &n, &M.data ()[0], &m, &tS[0], &tVT[0], &m, &tU[0], &k, wsbuf, &wssize, &INFO);
-		delete[] wsbuf;
-
-		AtomPtr u = matrix2list (tU, k, m);
-		Matrix<Real> s_tmp (k, m);
-		for (unsigned i = 0; i < k; ++i) {
-			s_tmp (i, i) = tS[i];
-		}
-		AtomPtr s = matrix2list (s_tmp);
-		AtomPtr vt = matrix2list (tVT, n, k);	
-		
-		AtomPtr res = make_node ();
-		res->tail.push_back (u);
-		res->tail.push_back (s);
-		res->tail.push_back (vt);
-
-		delete[] tU;
-		delete[] tS;
-		delete[] tVT;	
-		return res;
-	}		
+	}	
 	AtomPtr add_learning (AtomPtr env) {
 		add_operator ("median", fn_median, 2, env);
 		add_operator ("knntrain", fn_knntrain, 2, env);
@@ -185,8 +170,7 @@ namespace f8 {
 		add_operator ("linefit", fn_linefit, 2, env);
 		add_operator ("matdisp", fn_matdisp, 1, env);
 		add_operator ("matmul", fn_matmul, 2, env);
-		add_operator ("transp", fn_mattran, 1, env);
-		add_operator ("svd", fn_svd, 1, env);
+		add_operator ("mattran", fn_mattran, 1, env);
 		return env;
 	}
 }

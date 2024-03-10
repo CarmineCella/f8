@@ -7,8 +7,8 @@
 # (c) www.carminecella.com
 #
 
-set a (noise 8 4)
-set b (noise 5 8)
+set a (noise 180 4)
+set b (noise 5 180)
 set c (noise 3 5)
 
 set d (matmul a b c)
