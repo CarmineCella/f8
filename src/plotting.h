@@ -70,8 +70,18 @@ namespace f8 {
 			AtomPtr y = type_check (node->tail.at (2), NUMERIC);
 			if (!y->val.size ()) return make_node(0);	
 			if (x->val.size () != y->val.size ()) return make_node (0);	
-			AtomPtr color = type_check (node->tail.at (3), NUMERIC);
-			if (color->val.size () != 3) return make_node(0);
+
+			AtomPtr colors = make_node ();
+			AtomPtr tmp = node->tail.at (3);
+			if (tmp->type == NUMERIC) {
+				if (tmp->val.size () != 3) return make_node(0);
+				for (unsigned i = 0; i < x->val.size (); ++i) {
+					colors->tail.push_back (tmp);
+				}
+			} else if (tmp->type == LIST) {
+				if (tmp->tail.size () != x->val.size ()) return make_node (0);
+				colors = tmp;
+			} else Context::error ("[scatter] invalid list of colors", node);
 
 			Real minx = x->val[0];
 			Real maxx = x->val[0];
@@ -91,6 +101,8 @@ namespace f8 {
 			for (unsigned i = 0; i < x->val.size (); ++i) {
 				// polyline << Point ((x->tail.at (i)->value - minx) * width / deltax, 
 				// 	(y->tail.at (i)->value - miny) * height / deltay);
+				AtomPtr color = type_check (colors->tail.at (i), NUMERIC);
+				if (color->val.size () != 3) return make_node(0);
 				*doc << Circle(Point (
 					((x->val[i] - minx) * width / deltax) + 30, 
 					((y->val[i] - miny) * height / deltay) + 30), 
@@ -110,33 +122,36 @@ namespace f8 {
 			Real width = doc->get_layout ().dimensions.width - 60;
 			Real height = doc->get_layout ().dimensions.height - 160;
 
-			AtomPtr i1 = type_check (node->tail.at (1), NUMERIC);
-			AtomPtr i2 = type_check (node->tail.at (2), NUMERIC);
-			AtomPtr i3 = type_check (node->tail.at (3), NUMERIC);
-			AtomPtr i4 = type_check (node->tail.at (4), NUMERIC);
-			if (i1->val.size () != 1 || i2->val.size () != 1 ||
-				i3->val.size () != 1 || i4->val.size () != 1) return make_node (0);
+			if (node->tail.size () == 5) { 
+				AtomPtr i1 = type_check (node->tail.at (1), NUMERIC);
+				AtomPtr i2 = type_check (node->tail.at (2), NUMERIC);
+				AtomPtr i3 = type_check (node->tail.at (3), NUMERIC);
+				AtomPtr i4 = type_check (node->tail.at (4), NUMERIC);
+				if (i1->val.size () != 1 || i2->val.size () != 1 ||
+					i3->val.size () != 1 || i4->val.size () != 1) return make_node (0);
 
-			std::stringstream v;
-			v << std::defaultfloat << i1->val[0]; 
-			*doc << Text(Point(30, 20), v.str (), Color::Black, Font(6, "Verdana"));
-			std::stringstream vh;
-			vh << std::defaultfloat << (i2->val[0] - i1->val[0]) / 2;  
-			*doc << Text(Point(width / 2 + 30, 20), vh.str(), Color::Black, Font(6, "Verdana"));
-			std::stringstream ve;
-			ve << std::defaultfloat << i2->val[0];
-			*doc << Text(Point(width, 20), ve.str(), Color::Black, Font(6, "Verdana"));
+				std::stringstream v;
+				v << std::defaultfloat << i1->val[0]; 
+				*doc << Text(Point(30, 20), v.str (), Color::Black, Font(6, "Verdana"));
+				std::stringstream vh;
+				vh << std::defaultfloat << (i2->val[0] - i1->val[0]) / 2;  
+				*doc << Text(Point(width / 2 + 30, 20), vh.str(), Color::Black, Font(6, "Verdana"));
+				std::stringstream ve;
+				ve << std::defaultfloat << i2->val[0];
+				*doc << Text(Point(width, 20), ve.str(), Color::Black, Font(6, "Verdana"));
+
+				std::stringstream v1;
+				v1 << std::defaultfloat << std::defaultfloat << i3->val[0]; ;
+				*doc << Text(Point(2, 35), v1.str(), Color::Black, Font(6, "Verdana"));
+				std::stringstream v2;
+				v2 << std::defaultfloat << i4->val[0]; ;
+				*doc << Text(Point(2, height + 30), v2.str(), Color::Black, Font(6, "Verdana"));		
+			}
 			Line l1 (Point(width / 2 + 30, 30), Point(width / 2 + 30, height + 30), Stroke (1, Color::Black));
-			*doc << l1;	
-
-			std::stringstream v1;
-			v1 << std::defaultfloat << std::defaultfloat << i3->val[0]; ;
-			*doc << Text(Point(2, 35), v1.str(), Color::Black, Font(6, "Verdana"));
-			std::stringstream v2;
-			v2 << std::defaultfloat << i4->val[0]; ;
-			*doc << Text(Point(2, height + 30), v2.str(), Color::Black, Font(6, "Verdana"));		
+			*doc << l1;			
 			Line l2 (Point(30, height / 2 + 30), Point(30 + width, height / 2 + 30), Stroke (1, Color::Black));
 			*doc << l2;	
+
 			return  make_node(1);
 		}
 		return  make_node(0);
@@ -200,7 +215,7 @@ namespace f8 {
 		add_operator ("polyline", fn_polyline, 3, env);
 		add_operator ("scatter", fn_scatter, 4, env);
 		add_operator ("closesvg", fn_closesvg, 1, env);
-		add_operator ("grid", fn_grid, 5, env);
+		add_operator ("grid", fn_grid, 1, env);
 		add_operator ("title", fn_title, 2, env);
 		add_operator ("legend", fn_legend, 2, env);
 		return env;

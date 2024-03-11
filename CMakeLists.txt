@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.25)
+
 project (f8)
 
 add_compile_definitions (VERSION="0.6")

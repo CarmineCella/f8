@@ -268,6 +268,9 @@ proc (make-dataset data) {
     }
     set Xy
 }
+proc (matsize m) {
+	set sz (list (cols m) (rows m))
+}
 
 # plotting
 set Aqua (array '(0 255 255))

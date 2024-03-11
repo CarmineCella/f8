@@ -9,7 +9,7 @@
 #include <sstream>
 
 #define MAX_COLS 12
-#define MAX_ROWS 100
+#define MAX_ROWS 200
 
 template <typename T>
 class Matrix {
@@ -22,7 +22,7 @@ private:
 		strs << n;
 		return strs.str().size();
 	}	 
-    Matrix remove_row_col(int r, int c, bool self) { // remove rth row and cth col
+    Matrix remove_row_col(int r, int c) { // remove rth row and cth col
         assert(r < _rows && c < _cols);
         Matrix temp(_rows-1, _cols-1);
         for (int i = 0; i < _rows; i++) {
@@ -38,9 +38,6 @@ private:
                     temp[cur_i][cur_j] = _m[i][j];
                 }
             }
-        }
-        if (self) {
-            *this = temp;
         }
         return temp;
     }    
@@ -75,6 +72,11 @@ public:
             }
         }
     }
+    Matrix (double ** rhs, int r, int c) { // shallow copy
+        _rows = r;
+        _cols = c;
+        _m = rhs;
+    }
     Matrix(const Matrix & rhs) { // copy constructor
         _rows = rhs.rows();
         _cols = rhs.cols();
@@ -87,7 +89,7 @@ public:
                 _m[i][j] = rhs._m[i][j];
             }
         }
-    }
+    } 
     virtual ~Matrix () {
         clear ();
     }     
@@ -97,8 +99,28 @@ public:
     const T& operator()(int r, int c) const { return _m[r][c]; }
     T* operator[](int r) { return _m[r]; }
     const T* operator[](int r) const { return _m[r]; }    
-    std::valarray<T>& data () { return _m; }
-    const std::valarray<T>& data () const { return _m; }
+    T** data () { return _m; }
+    const T** data () const { return _m; }
+    Matrix get_rows(int start, int end) { 
+        assert(start < _rows && end < _rows);
+        Matrix temp(end-start+1, _cols);
+        for (int i = start; i <= end; i++) { // end included
+            for (int j = 0; j < _cols; j++) {
+                temp._m[i-start][j] = _m[i][j];
+            }
+        }
+        return temp;
+    }
+    Matrix get_cols(int start, int end) { 
+        assert(start < _cols && end < _cols);
+        Matrix temp(_rows, end - start + 1);
+        for (int i = 0; i < _rows; i++) {
+            for (int j = start; j <= end; j++) { // end included
+                temp._m[i][j - start] = _m[i][j];
+            }
+        }
+        return temp;
+    }    
 	std::ostream& print (std::ostream& out) {
 		out << "[" << std::endl;
 		std::vector<int> max_len_per_col;
@@ -242,15 +264,12 @@ public:
     bool operator!=(const Matrix & rhs)const { 
         return !(*this == rhs);
     }
-    Matrix transpose (bool self = false) { 
+    Matrix transpose () { 
         Matrix temp(_cols, _rows);
         for (int i = 0; i < _rows; i++) {
             for (int j = 0; j < _cols; j++) {
                 temp._m[j][i] = _m[i][j];
             }
-        }
-        if (self) {
-            *this = temp;
         }
         return temp;
     }
@@ -275,7 +294,7 @@ public:
         for (int i = 0; i < _rows; i++) {
             for (int j = 0; j < _cols; j++) {
                 Matrix temp = remove_row_col(i, j);
-                res[i][j] = temp.determinant() * pow(-1, i+j);
+                res[i][j] = temp.det() * pow(-1, i+j);
             }
         }
         return res;
@@ -291,14 +310,14 @@ public:
         }
     }
     Matrix inverse() { // returns the inverse of the object
-        T det = det ();
-        if (det == 0) {
+        T d = det ();
+        if (d == 0) {
             throw std::runtime_error ("matrix is singular");
         }
-        Matrix inv = cofactor().T()/det; // 1/det(A) * cofactor(A)^T
+        Matrix inv = cofactor().transpose()/d; // 1/det(A) * cofactor(A)^T
         return inv;
     }
-    Matrix sum(int axis, bool self = false) { 
+    Matrix sum(int axis) { 
         Matrix temp;
         if (axis == 0) {
             temp = Matrix(_rows,1);
@@ -321,9 +340,6 @@ public:
                     temp[0][0] += _m[i][j];
                 }
             }
-        }
-        if (self) {
-            *this = temp;
         }
         return temp;
     }

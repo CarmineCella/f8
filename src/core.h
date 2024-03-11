@@ -23,7 +23,7 @@
 #define RED     	"\033[31m" 
 #define RESET   	"\033[0m"
 
-#define MAX_PRINT   100
+#define MAX_PRINT   200
 
 ///~ ## Types
 ///~ The valid types are: numeric, symbol, string, list, operator, lambda, object

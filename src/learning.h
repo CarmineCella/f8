@@ -5,6 +5,7 @@
 #include "learning/algorithms.h"
 #include "learning/KNN.h"
 #include "learning/Matrix.h"
+#include "learning/PCA.h"
 
 #include <valarray>
 #include <string>
@@ -116,11 +117,62 @@ namespace f8 {
 		}
 		return matrix2list (a);
 	}
+	AtomPtr fn_matsum (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		int axis = (int) type_check (node->tail.at (1), NUMERIC)->val[0];
+		Matrix<Real> b = a.sum (axis);
+		return matrix2list (b);
+	}	
+	AtomPtr fn_rows (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		return make_node (a.rows ());
+	}		
+	AtomPtr fn_cols (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		return make_node (a.cols ());
+	}		
 	AtomPtr fn_mattran (AtomPtr node, AtomPtr env) {
 		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
 		Matrix<Real> tr = a.transpose ();
 		return matrix2list (tr);
 	}	
+	template <int MODE>
+	AtomPtr fn_matget (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		int start = (int) type_check (node->tail.at (1), NUMERIC)->val[0];
+		int end = (int) type_check (node->tail.at (2), NUMERIC)->val[0];
+		Matrix<Real> b (1, 1);
+		if (MODE == 0) {
+			if (start < 0 || start >= a.rows () || end < 0 || end >= a.rows ()) Context::error ("[getrows] invalid row selection", node);
+			b = a.get_rows (start, end);
+		}
+		if (MODE == 1) {
+			if (start < 0 || start >= a.cols () || end < 0 || end >= a.cols ()) Context::error ("[getcols] invalid col selection", node);
+			b = a.get_cols (start, end);
+		}
+		return matrix2list (b);
+	}		
+	AtomPtr fn_eye (AtomPtr node, AtomPtr env) {
+		int n = (int) type_check (node->tail.at (0), NUMERIC)->val[0];
+		Matrix<Real> e (n, n);
+		e.id ();
+		return matrix2list (e);
+	}		
+	AtomPtr fn_inv (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		Matrix<Real> tr = a.inverse ();
+		return matrix2list (tr);
+	}		
+	AtomPtr fn_det (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		return make_node (a.det ());
+	}		
+	AtomPtr fn_pca (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		Matrix<Real> eigm (a.cols (), a.cols () + 1, 0); // extra col for eigenvals
+		PCA<Real> (a.data (), eigm.data (), a.cols (), a.rows (), true);
+		return matrix2list (eigm);
+	}		
 	AtomPtr add_learning (AtomPtr env) {
 		add_operator ("median", fn_median, 2, env);
 		add_operator ("knntrain", fn_knntrain, 2, env);
@@ -128,7 +180,16 @@ namespace f8 {
 		add_operator ("linefit", fn_linefit, 2, env);
 		add_operator ("matdisp", fn_matdisp, 1, env);
 		add_operator ("matmul", fn_matmul, 2, env);
-		add_operator ("mattran", fn_mattran, 1, env);
+		add_operator ("matsum", fn_matsum, 2, env);
+		add_operator ("rows", fn_rows, 1, env);
+		add_operator ("cols", fn_cols, 1, env);
+		add_operator ("getrows", fn_matget<0>, 3, env);
+		add_operator ("getcols", fn_matget<1>, 3, env);
+		add_operator ("transp", fn_mattran, 1, env);
+		add_operator ("eye", fn_eye, 1, env);
+		add_operator ("inv", fn_inv, 1, env);
+		add_operator ("det", fn_det, 1, env);
+		add_operator ("pca", fn_pca, 1, env);
 		return env;
 	}
 }
