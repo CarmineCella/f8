@@ -13,7 +13,6 @@
 
 namespace f8 {
 	// ------------------------------------------------------------------//
-
 	template <typename T>
 	void swapElem(T& a, T& b) {
 		T t = (a);
@@ -113,7 +112,7 @@ namespace f8 {
 	// ------------------------------------------------------------------//
 
 	template <typename T>
-	void kmeans(T** data, int n, int m, int k, T t, int* labels, T** centroids) {
+	void kmeans(T** data, int n, int m, int k, T t, T* labels, T** centroids) {
 		int h, i, j;
 		T old_error, error = DBL_MAX;
 		T **c = centroids;
@@ -148,8 +147,8 @@ namespace f8 {
 					}
 				}
 
-				for (j = m; j-- > 0; c1[labels[h]][j] += data[h][j]);
-				counts[labels[h]]++;
+				for (j = m; j-- > 0; c1[(int) labels[h]][j] += data[h][j]);
+				counts[(int) labels[h]]++;
 				error += min_distance;
 			}
 

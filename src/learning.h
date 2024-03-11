@@ -172,6 +172,18 @@ namespace f8 {
 		Matrix<Real> eigm (a.cols (), a.cols () + 1, 0); // extra col for eigenvals
 		PCA<Real> (a.data (), eigm.data (), a.cols (), a.rows ());
 		return matrix2list (eigm);
+	}	
+	AtomPtr fn_kmeans (AtomPtr node, AtomPtr env) {
+		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
+		int K = (int) type_check (node->tail.at (1), NUMERIC)->val[0];
+		Matrix<Real> centroids (K, a.cols ()); 
+		// void kmeans(T** data, int n, int m, int k, T t, int* labels, T** centroids)
+		std::valarray<Real> labels (a.rows ());
+		kmeans<Real> (a.data (), a.rows (), a.cols (), K, .00001,  &labels[0], centroids.data ());
+		AtomPtr res = make_node ();
+		res->tail.push_back (make_node (labels));
+		res->tail.push_back (matrix2list (centroids));
+		return res;
 	}		
 	AtomPtr add_learning (AtomPtr env) {
 		add_operator ("median", fn_median, 2, env);
@@ -190,6 +202,7 @@ namespace f8 {
 		add_operator ("inv", fn_inv, 1, env);
 		add_operator ("det", fn_det, 1, env);
 		add_operator ("pca", fn_pca, 1, env);
+		add_operator ("kmeans", fn_kmeans, 2, env);
 		return env;
 	}
 }
