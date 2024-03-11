@@ -6,9 +6,8 @@
 // kmeans/gmm clustering
 // blockconv / pvoc
 // biquad / fir design
-// more examples: strings (?), descriptors, pitch to osc, filters, dim reduction
+// more examples: descriptors, pitch to osc, filters
 // reference manual
-// svd and dim reduction
 
 // ver. 0.7
 // load db

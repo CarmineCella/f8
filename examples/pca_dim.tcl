@@ -62,7 +62,5 @@ legend g "virginica" Blue "versicolor" Red "setosa" Green
 grid g
 closesvg g
 
-puts "...."
-
 # eof 
 

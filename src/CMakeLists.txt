@@ -1,7 +1,7 @@
 project (f8)
 
 SET(CMAKE_CXX_FLAGS "-Wall -g -O2 -std=c++14 -I . -Wno-return-type-c-linkage")
-add_executable(f8 f8.cpp f8.h core.h system.h signals.h learning.h system/csv_tools.h signals/FFT.h signals/BPF.h signals/WavFile.h plotting.h plotting/svg_tools.h learning/algorithms.h learning/Matrix.h learning/PCA.h)
+add_executable(f8 f8.cpp f8.h core.h system.h signals.h learning.h system/csv_tools.h signals/FFT.h signals/BPF.h signals/FIRDesigner.h signals/WavFile.h plotting.h plotting/svg_tools.h learning/algorithms.h learning/Matrix.h learning/PCA.h)
 target_link_libraries (f8 dl ${LIBS})
 
 INSTALL(PROGRAMS stdlib.tcl DESTINATION $ENV{HOME}/.f8)

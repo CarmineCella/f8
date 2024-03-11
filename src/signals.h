@@ -7,6 +7,7 @@
 #include "signals/BPF.h"
 #include "signals/WavFile.h"
 #include "signals/FFT.h"
+#include "signals/FIRDesigner.h"
 
 #include "f8.h"
 
@@ -235,6 +236,30 @@ namespace f8 {
 		}
 		return l->tail.size () == 1 ? l->tail.at (0) : l;
 	}
+	AtomPtr fn_firdesign (AtomPtr n, AtomPtr env) {
+		std::string design = type_check (n->tail.at (0), SYMBOL)->lexeme;
+		int order = type_check (n->tail.at (1), NUMERIC)->val[0];
+		Real sr =  type_check (n->tail.at (2), NUMERIC)->val[0];
+		Real cutoff =  type_check (n->tail.at (3), NUMERIC)->val[0];
+	
+		std::valarray<Real> h (order);
+		FIRDesigner<Real> fd;
+		if (design == "lowpass") {
+			fd.lowpass (&h[0], order, sr, cutoff);
+		} else if (design == "highpass") {
+			fd.highpass (&h[0], order, sr, cutoff);
+			std::cout << "hp" << std::endl;
+		} else if (design == "bandpass") {
+			if (n->tail.size () != 5) Context::error ("[firdesign] high frequency missing for bandpass", n); 
+			Real cut_high = type_check (n->tail.at (4), NUMERIC)->val[0];
+			fd.bandpass (&h[0], order, sr, cutoff, cut_high);
+		} else if (design == "bandstop") {
+			if (n->tail.size () != 5) Context::error ("[firdesign] high frequency missing for bandstop", n); 
+			Real cut_high = type_check (n->tail.at (4), NUMERIC)->val[0];
+			fd.bandstop (&h[0], order, sr, cutoff, cut_high);
+		}
+		return make_node (h);
+	}
 	// I/O  -----------------------------------------------------------------------
 	AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
 		std::string name = type_check (node->tail.at(0), STRING)->lexeme;
@@ -353,6 +378,7 @@ namespace f8 {
 		add_operator ("pol2car", fn_pol2car, 1, env);
 		add_operator ("conv", fn_conv, 3, env);
 		add_operator ("noise", fn_noise, 1, env);
+		add_operator ("firdesign", fn_firdesign, 4, env);
 		add_operator ("openwav", fn_openwav, 2, env);
 		add_operator ("writewav", fn_writewav, 2, env);
 		add_operator ("readwav", fn_readwav, 1, env);
