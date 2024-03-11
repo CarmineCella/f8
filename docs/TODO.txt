@@ -3,9 +3,8 @@
 // ver. 0.6
 // features + pitch + onsets
 // pitch2note
-// kmeans/gmm clustering
 // blockconv / pvoc
-// biquad / fir design
+// biquad
 // more examples: descriptors, pitch to osc, filters
 // reference manual
 
