@@ -170,7 +170,7 @@ namespace f8 {
 	AtomPtr fn_pca (AtomPtr node, AtomPtr env) {
 		Matrix<Real> a = list2matrix (type_check (node->tail.at (0), LIST));
 		Matrix<Real> eigm (a.cols (), a.cols () + 1, 0); // extra col for eigenvals
-		PCA<Real> (a.data (), eigm.data (), a.cols (), a.rows (), true);
+		PCA<Real> (a.data (), eigm.data (), a.cols (), a.rows ());
 		return matrix2list (eigm);
 	}		
 	AtomPtr add_learning (AtomPtr env) {
