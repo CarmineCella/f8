@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <iterator>
 #include <random>
+#include <functional>
 #include <dlfcn.h>
 
 #define BOLDWHITE   "\033[1m\033[37m"
@@ -708,21 +709,27 @@ namespace f8 {
 			return make_node (res); \
 		} \
 
+
+
 	MAKE_ARRAYBINOP (+, fn_add);
 	MAKE_ARRAYBINOP (-, fn_sub);
 	MAKE_ARRAYBINOP (*, fn_mul);
 	MAKE_ARRAYBINOP (/, fn_div);
 	#define MAKE_ARRAYCMPOP(op,name) 	\
 		AtomPtr name (AtomPtr n, AtomPtr env) { 	\
-            std::valarray<Real> res; \
+            std::valarray<bool> res; \
 			for (unsigned i = 0; i < n->tail.size () - 1; ++i) {  \
 				std::valarray<Real>& a = type_check (n->tail.at (i), NUMERIC)->val; \
                 std::valarray<Real>& b = type_check (n->tail.at (i + 1), NUMERIC)->val; \
-				if (a.size () == 1) res = a op b[0]; \
+                std::valarray<bool> a_bool (a > 0); \
+                std::valarray<bool> b_bool (b > 0); \
+				if (b.size () == 1) res = a op  b[0]; \
 				else res = a op b; \
                 if (res.sum () < res.size ()) break; \
  			} \
-			return make_node (res); \
+            std::valarray<Real> res_r (res.size ()); \
+            for (unsigned i = 0; i < res.size (); ++i) res_r[i] = (Real) res[i]; \
+			return make_node (res_r); \
 		} \
 
 	MAKE_ARRAYCMPOP (>, fn_greater);

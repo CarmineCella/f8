@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 #define MAX_COLS 12
 #define MAX_ROWS 200
