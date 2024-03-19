@@ -1,7 +1,7 @@
 // TODO:
 
 // ver. 0.6
-// features + pitch + onsets
+// locmax/onsets
 // pitch2note / note2pitch / pitch2midi / midi2pitch
 // load db
 // mpan / mpsyn
@@ -11,8 +11,7 @@
 // biquad
 // maple/slip (?)
 // MIDI output (?)
-// more examples: descriptors, pitch to osc, finish filters
-// refactor tcl files in different libs
+// more examples: finish filters
 
 // ver. 0.7
 // genetic optim (?)

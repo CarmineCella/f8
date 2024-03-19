@@ -304,6 +304,16 @@ namespace f8 {
 		Real f = specflux<Real> (&amps[0], &oamps[0], amps.size ());
 		return make_node (f);
 	}		
+	AtomPtr fn_specirr (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& amps = type_check (n->tail.at (0), NUMERIC)->val;
+		Real f = specirr<Real> (&amps[0], amps.size ());
+		return make_node (f);
+	}	
+	AtomPtr fn_specdecr (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& amps = type_check (n->tail.at (0), NUMERIC)->val;
+		Real f = specdecr<Real> (&amps[0], amps.size ());
+		return make_node (f);
+	}				
 	AtomPtr fn_acorrf0 (AtomPtr n, AtomPtr env) {
 		std::valarray<Real>& sig = type_check (n->tail.at (0), NUMERIC)->val;		
 		Real sr = type_check (n->tail.at (1), NUMERIC)->val[0];
@@ -316,6 +326,11 @@ namespace f8 {
 		Real f = energy<Real> (&sig[0], sig.size ());
 		return make_node (f);
 	}		
+	AtomPtr fn_zcr (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& sig = type_check (n->tail.at (0), NUMERIC)->val;		
+		Real f = zcr<Real> (&sig[0], sig.size ());
+		return make_node (f);
+	}			
 	// I/O  -----------------------------------------------------------------------
 	AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
 		std::string name = type_check (node->tail.at(0), STRING)->lexeme;
@@ -441,8 +456,11 @@ namespace f8 {
 		add_operator ("specskew", fn_specsk_kur<1>, 4, env);
 		add_operator ("speckurt", fn_specsk_kur<2>, 4, env);
 		add_operator ("specflux", fn_specflux, 2, env);
+		add_operator ("specirr", fn_specirr, 1, env);
+		add_operator ("specdecr", fn_specdecr, 1, env);						
 		add_operator ("acorrf0", fn_acorrf0, 2, env);
 		add_operator ("energy", fn_energy, 1, env);
+		add_operator ("zcr", fn_zcr, 1, env);		
 		add_operator ("openwav", fn_openwav, 2, env);
 		add_operator ("writewav", fn_writewav, 2, env);
 		add_operator ("readwav", fn_readwav, 1, env);

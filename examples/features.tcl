@@ -28,8 +28,11 @@ set spread ()
 set skew ()
 set kurt ()
 set flux ()
-set f0 ()
+set irr ()
+set decr ()
+set f0b ()
 set nrg ()
+set zx ()
 set c 0
 set s 0
 while (< i (llength data)) {
@@ -46,11 +49,14 @@ while (< i (llength data)) {
     lappend skew (specskew amps freqs c s)
     lappend kurt (speckurt amps freqs c s)
     lappend flux (specflux amps oamps)
+    lappend irr (specirr amps)
+    lappend decr (specdecr amps)
     assign oamps amps 0 N
 
     # time domain
-    lappend f0 (acorrf0 (slice sig (* i hop) N) SR)
+    lappend f0b (acorrf0 (slice sig (* i hop) N) SR)
     lappend nrg (energy (slice sig (* i hop) N))
+    lappend zx (zcr (slice sig (* i hop) N))
     = i (+ i 1)
 }
 
@@ -60,16 +66,19 @@ polyline g (array spread) Green
 polyline g (array skew) Cyan
 polyline g (array kurt) Black
 polyline g (array flux) Red
+polyline g (array irr) Purple
+polyline g (array decr) Gray
 title g "Spectral features"
-legend g "centroid" Blue "spread" Green "skewness" Cyan "kurtosis" Black "flux" Red
+legend g "centroid" Blue "spread" Green "skewness" Cyan "kurtosis" Black "flux" Red "irregulairty" Purple "decrease" Gray
 grid g 0 (/ (size sig) SR)
 closesvg g
 
-= f0 (median (array f0) 5)
+= f0b (median (array f0b) 5)
 = g (opensvg "f0.svg" 512 512)
-polyline g f0 Purple
+polyline g f0b Purple
+polyline g (array zx) Blue
 title g "Fundamental frequency"
-legend g "autocorr f0" Purple
+legend g "autocorr f0" Purple "zero-crossing" Blue
 grid g 0 (/ (size sig) SR) 0 (/ SR 2)
 closesvg g
 
@@ -79,10 +88,11 @@ title g "Energy"
 grid g 0 (/ (size sig) SR)
 closesvg g
 
-set f0s (array (map (\(x)(dup hop x)) (array2list f0)))
-set amps (array (map (\(x)(dup hop x)) nrg))
+set f0bl (array2list f0b)
+set f0s (array (map2 (\(x y)(bpf x hop y)) f0bl (ldrop f0bl 1)))
+set amps (array (map2 (\(x y)(bpf x hop y)) nrg (ldrop nrg 1)))
 
-set t1 (gen 4096 1)
+set t1 (gen 4096 1 0.73 0.6 0.20)
 set synth (* amps (osc SR f0s t1))
 
 sndwrite "f0_synth.wav" SR (list synth)

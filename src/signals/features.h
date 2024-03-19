@@ -137,28 +137,7 @@ namespace f8 {
 		}
 		
 		return decs;
-	}
-	
-	template <typename T>
-	inline T specslope (
-		const T* amplitudes,
-		const T* frequencies,
-		int N) { 
-		double step = 0;
-		double sum = 0;
-		for (int i = 0; i < N; ++i) {
-			sum += amplitudes[i];
-		}
-		
-		T sl = linreg (amplitudes, frequencies, N, step);
-	
-		if (sum != 0.0) {
-			sl /= sum;
-		}
-	
-		return sl;
-	}
-	
+	}	
 	template <typename T>
 	inline T hfc (double* amplitudes, int N) {
 		double hfc = 0; // high frequency content
@@ -193,88 +172,6 @@ namespace f8 {
 		
 		return estInharm;
 	}
- 
-	template <typename T>
-	T fftF0Estimate (const T* amp, const T* freq, int size) {
-		static const int MAXPEAKS = 8;
-		int maxima2[size];
-		int size2 = size >> 1;
-		int numPeaks = locmax2 (amp, size2, maxima2);
-		if (numPeaks == 0) return 0;
-										
-		Peak peaks[MAXPEAKS];
-		for (int i = 0; i < MAXPEAKS; ++i) {
-			peaks[i].freq = 0.;
-			peaks[i].amp = 0;
-		}
-		
-		// estimate fundamental frequency
-		for (int i = 0; i < numPeaks; ++i) {
-			T magnitude = (amp[maxima2[i]] / size);
-			T rfreq = freq[maxima2[i]];
-			if (rfreq > 0.0 && magnitude > peaks[0].amp) {
-				memmove (peaks + 1, peaks, sizeof (Peak) * (MAXPEAKS - 1));
-				peaks[0].freq = rfreq;
-				peaks[0].amp = magnitude;
-			}
-		}
-	
-		int l;
-		int maxharm = 0;
-		int kpos = 0;
-		for (l = 1; l < MAXPEAKS && peaks[l].freq > 0.0; l++) {
-			int harmonic;
-		
-			for (harmonic = 5; harmonic > 1; harmonic--) {
-				T ratio = peaks[0].freq / peaks[l].freq;
-				if (ratio < harmonic + .02 &&
-					ratio > harmonic - .02) {
-					if (harmonic > maxharm &&
-						peaks[0].amp < (peaks[l].amp * .5)) {
-						maxharm = harmonic;
-						kpos = l;
-					}
-				}
-			}
-		}
-		
-		return peaks[kpos].freq;	
-	}
-
-	template <typename T>
-	T cepF0Estimate (T* amp, const T* freq, int size, T R) {
-		static const int MAXPEAKS = 8;
-		int maxima2[size];
-		int size2 = size >> 1;
-		int numPeaks = locmax2 (amp, size2, maxima2);
-		if (numPeaks == 0) return 0;
-									
-		Peak peaks[MAXPEAKS];
-		for (int i = 0; i < MAXPEAKS; ++i) {
-			peaks[i].freq = 0.;
-			peaks[i].amp = 0.;		
-		}
-
-		T mixed[2 * size];
-		for (int i = 0; i < size; ++i) {
-			mixed[i * 2] = amp[i];
-			mixed[i * 2 + 1] = 0.;
-		}
-
-		fft (mixed, size, 1);	
-		T cepmax = 0;
-		int kpos = 0;
-		for (int i = 4; i < size2; ++i) {
-			amp[i] = 2. * sqrt (mixed[2 * i] * mixed[2 * i]
-								+ mixed[2 * i + 1] * mixed[2 * i + 1]);      
-			if (cepmax < amp[i]) {
-				cepmax = amp[i];
-				kpos = i;	
-			}
-		}	
-		return R / (T) kpos;	
-	}
-
 	template <typename T>
 	T acfF0Estimate (T sr, const T* data, T* result, int size) {
 		long i, j, k;
