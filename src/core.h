@@ -899,6 +899,15 @@ namespace f8 {
             idx = next + to.size ();
         } 
     }
+    std::vector<std::string> split (const std::string& in, char separator) {
+        std::istringstream iss(in);
+        std::string s;
+        std::vector<std::string> tokens;
+        while (std::getline(iss, s, separator)) {
+            tokens.push_back (s);
+        }
+        return tokens;
+    }
     AtomPtr fn_string (AtomPtr node, AtomPtr env) {
         std::string cmd = type_check (node->tail.at (0), SYMBOL)->lexeme;
         AtomPtr l = make_node();
@@ -924,7 +933,15 @@ namespace f8 {
                 type_check (node->tail.at(2), STRING)->lexeme, 
                 type_check (node->tail.at(3), STRING)->lexeme);
             return make_node((std::string) "\"" + tmp);
-        } else if (cmd == "regex") {
+        } else if (cmd == "split") {
+            argnum_check (node, 3);
+            std::string tmp = type_check (node->tail.at(1), STRING)->lexeme;
+            char sep =  type_check (node->tail.at(2), STRING)->lexeme[0];
+            std::vector<std::string> tokens = split (tmp, sep);
+            AtomPtr l = make_node ();
+            for (unsigned i = 0; i < tokens.size (); ++i) l->tail.push_back (make_node ((std::string) "\"" + tokens[i]));
+            return l;
+        }else if (cmd == "regex") {
             argnum_check (node, 3);
             std::string str = type_check (node->tail.at(1), STRING)->lexeme;
             std::regex r (type_check (node->tail.at(2), STRING)->lexeme);
