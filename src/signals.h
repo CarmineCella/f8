@@ -36,7 +36,7 @@ namespace f8 {
 		return (1 << count) ;
 	}
 	template <typename T>
-	void complexMultiplyReplace (
+	void complex_mult_replace (
 		const T* src1, const T* src2, T* dest, int num) {
 		while (num--) {
 			T r1 = *src1++;
@@ -214,7 +214,7 @@ namespace f8 {
 		AbstractFFT<Real>* fft = createFFT<Real>(N);
 		fft->forward(&fbuffir[0]);
 		fft->forward(&fbuffsig[0]);
-		complexMultiplyReplace(&fbuffir[0], &fbuffsig[0], &fbuffconv[0], N);
+		complex_mult_replace (&fbuffir[0], &fbuffsig[0], &fbuffconv[0], N);
 		fft->inverse(&fbuffconv[0]);
 		std::valarray<Real> out  (irsamps + sigsamps - 1);
 		for (unsigned i = 0; i < (irsamps + sigsamps) -1; ++i) {
