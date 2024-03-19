@@ -415,7 +415,7 @@ void hanningz (T* out, int N) {
 }
 
 template <typename T>
-void makeWindow (T* out, int N, T a0, T a1, T a2) {
+void make_window (T* out, int N, T a0, T a1, T a2) {
 	// .5, .5, 0     --> hanning
 	// .54, .46, 0   --> hamming
 	// .42, .5, 0.08 --> blackman

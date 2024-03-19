@@ -259,6 +259,16 @@ namespace f8 {
 		}
 		return make_node (h);
 	}
+	AtomPtr fn_makewin (AtomPtr n, AtomPtr env) {
+		int N = type_check (n->tail.at (0), NUMERIC)->val[0];
+		Real a0 =  type_check (n->tail.at (1), NUMERIC)->val[0];
+		Real a1 =  type_check (n->tail.at (2), NUMERIC)->val[0];
+		Real a2 =  type_check (n->tail.at (3), NUMERIC)->val[0];
+
+		std::valarray<Real> win (N);
+		make_window (&win[0], N, a0, a1, a2);
+		return make_node (win);
+	}
 	// I/O  -----------------------------------------------------------------------
 	AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
 		std::string name = type_check (node->tail.at(0), STRING)->lexeme;
@@ -378,6 +388,7 @@ namespace f8 {
 		add_operator ("conv", fn_conv, 3, env);
 		add_operator ("noise", fn_noise, 1, env);
 		add_operator ("firdesign", fn_firdesign, 4, env);
+		add_operator ("makewin", fn_makewin, 4, env);
 		add_operator ("openwav", fn_openwav, 2, env);
 		add_operator ("writewav", fn_writewav, 2, env);
 		add_operator ("readwav", fn_readwav, 1, env);

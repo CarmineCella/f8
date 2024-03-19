@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "signals.tcl"
 
 set sr 44100
 set hop 512
@@ -29,7 +30,7 @@ set min_len (- min_len sz)
 puts "sig 1 len = " (size sig1) ", sig 2 len = " (size sig2) ", min len = " min_len "\n"
 
 set i 0
-set bartlett (bpf 0 (/ sz 2) 1 (/ sz 2) 0)
+set bwin (hanning sz)
 set outsig (bpf 0 (+ sz min_len) 0)
 
 # denoise threshold
@@ -43,14 +44,14 @@ proc (interleave in1 in2) {
 
 while (< i min_len) {
     set buff1 (slice sig1 i sz)
-    set buff1 (* bartlett buff1)
+    set buff1 (* bwin buff1)
     set spec1 (car2pol (fft buff1))
     set amps1 (slice spec1 0 (/ (size spec1) 2) 2)
     set phi1  (slice spec1 1 (/ (size spec1) 2) 2)
     set amps1 (* (> amps1 threshold) amps1)
 
     set buff2 (slice sig2 i sz)
-    set buff2 (* bartlett buff2)
+    set buff2 (* bwin buff2)
     set spec2 (car2pol (fft buff2))
     set amps2 (slice spec2 0 (/ (size spec2) 2) 2)
     set phi2  (slice spec2 1 (/ (size spec2) 2) 2)
@@ -58,7 +59,7 @@ while (< i min_len) {
     set outamps (sqrt (* amps1 amps2))
     set outphi phi2
     set outbuff (ifft (pol2car (interleave outamps outphi)))
-    set outbuff (* bartlett outbuff)
+    set outbuff (* bwin outbuff)
 
     assign outsig (+ (slice outsig i (size outbuff)) outbuff) i (size outbuff)
     set i (+ i hop)

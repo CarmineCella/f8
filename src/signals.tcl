@@ -7,7 +7,19 @@
 # (c) www.carminecella.com
 #
 
- proc (oscbank sr amps freqs tab) {
+proc (bartlett N) {
+	bpf 0 (/ N 2) 1 (/ N 2) 0
+} 
+proc(hanning N) {
+	makewin N 0.5 0.5 0
+}
+proc(hamming N) {
+	makewin N 0.54 0.46 0
+}
+proc(blackman N) {
+	makewin N 0.42 0.5 0.08
+}
+proc (oscbank sr amps freqs tab) {
     # assumes both freqs and amps have the same number of elems
 	set elems (llength amps) 
 	set outbuff (bpf 0 (size (car freqs)) 0)
