@@ -19,6 +19,33 @@ proc(hamming N) {
 proc(blackman N) {
 	makewin N 0.42 0.5 0.08
 }
+proc (stft sig N hop) {
+	set c 0
+	set len (size sig)
+	set spec ()
+	set win (hanning N)
+	while (< c len) {
+		set buff (* win (slice sig c N))
+		lappend spec (fft buff)
+		= c (+ c hop)
+	}
+	list spec len
+}
+proc (istft spec N hop) {
+	set i 0
+	set data (car spec)
+	set sz (second spec)
+	set len (llength data)
+	set win (hanning N)
+	set out ()
+	while (< i len) {
+		set buff (* win (ifft (lindex data i)))
+		lappend out (* i hop) buff
+		= i (+ i 1)
+	}
+	puts out
+	slice (-> mix out) 0 sz
+}
 proc (oscbank sr amps freqs tab) {
     # assumes both freqs and amps have the same number of elems
 	set elems (llength amps) 
