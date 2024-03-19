@@ -9,32 +9,55 @@
 #define FEATURES_H 
 
 #include "FFT.h"
-#include "algorithms.h"
 #include <cmath>
 #include <cstring>
 
-namespace nanoSound { 
+namespace f8 { 
 	typedef struct {
 		double freq;
 		double amp;
 	} Peak;
 	
 // spectral descriptors ------------------------------------------------- //
-	
+	template <typename T>
+	inline T moment(
+			const T* weights,
+			const T* values,
+			int N,
+			int order,
+			T centroid) {
+		T sumWeigth = 0;
+		T sumWeigthDistance = 0;
+		T distance = 0;
+		T weigth = 0;
+		T weigthDistance = 0;
+
+		for (int index = 0; index < N; ++index) {
+			distance = values[index];
+			distance -= centroid;
+			distance = std::pow(distance, order);
+			weigth = weights[index];
+			weigthDistance = weigth * distance;
+			sumWeigth += weigth;
+			sumWeigthDistance += weigthDistance;
+		}
+
+		return (sumWeigth != 0 ? sumWeigthDistance / sumWeigth : 0);
+	}
 	template <typename T>
 	inline T speccentr (
 		const T* amplitudes,
 		const T* frequencies, 
 		int N) {
-		return centroid (amplitudes, frequencies, N);
+		return moment<T> (amplitudes, frequencies, N, 1, 0);
 	}
 	
 	template <typename T>
 	inline T specspread (
 		const T* amplitudes,
 		const T* frequencies, 
-		int N,
-		T centroid) { 
+		T centroid,		
+		int N) { 
 		return std::sqrt (moment<T> (amplitudes, frequencies, N, 2, centroid)); 
 	}
 	
@@ -42,16 +65,15 @@ namespace nanoSound {
 	inline T specskew (
 		const T* amplitudes,
 		const T* frequencies, 
-		int N,
 		T centroid, 
-		T spread) { 
+		T spread,
+		int N) { 
 	
 		T delta = std::pow (spread, 3);
 		T tmp = moment<T>(amplitudes, frequencies, N, 3, centroid);
 		if (delta != 0) {
 			tmp /= delta;
 		}	
-		
 		return tmp;
 	}
 	
@@ -59,28 +81,26 @@ namespace nanoSound {
 	inline T speckurt (
 		const T* amplitudes,
 		const T* frequencies, 
-		int N,
 		T centroid, 
-		T spread) { 
+		T spread,
+		int N) { 
 	
 		T delta = std::pow (spread, 4);
 		T tmp = moment<T>(amplitudes, frequencies, N, 4, centroid);
 		if (delta != 0) {
 			tmp /= delta;
 		}	
-		
 		return tmp;
 	}
 	
 	template <typename T>
 	inline T specflux (T* amplitudes, T* oldAmplitudes, int N) {
-		T sf = 0; // spectral flux
+		T sf = 0;
 		T a = 0;
 		for (int i = 0; i < N; ++i) {
 			a = (amplitudes[i] - oldAmplitudes[i]);
 			oldAmplitudes[i] = amplitudes[i];
 			sf += a < 0 ? 0 : a; // rectification
-			//sf += a;
 		}
 		
 		return sf;
@@ -252,7 +272,6 @@ namespace nanoSound {
 				kpos = i;	
 			}
 		}	
-		std::cout << kpos << std::endl;
 		return R / (T) kpos;	
 	}
 
@@ -287,7 +306,6 @@ namespace nanoSound {
 		for (i = 0; i < size2; i++) {
 			result[i] *=  (k - i) * norm;
 		}
-		std::cout << j << " " << sr << std::endl;
 		if (result[j] == 0) j = 0;
 		else if ((result[j] / result[0]) < .1) j = 0;
 		else if (j > size / 4) j = 0;		
@@ -296,23 +314,16 @@ namespace nanoSound {
 		return (T) f0;
 	}
 
-// temporal descriptors ------------------------------------------------- //
-	
+// temporal descriptors ------------------------------------------------- //	
 	template <typename T>
-	inline T energy (const T* samples, int N, T winEnergy) {
+	inline T energy (const T* samples, int N) {
 		T sum = 0.;
-		T en = 0.;
-		T a = 0.;
 		for (int index = 0; index < N; ++index) {
-			a = samples[index];
+			T a = samples[index];
 			sum += a * a;
 		}
-	
-		if (winEnergy > 0) {
-			en = std::sqrt (sum / winEnergy);
-		}
 		
-		return en;
+		return std::sqrt (sum / N);
 	}
 	
 	template <typename T>

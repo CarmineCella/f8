@@ -49,7 +49,7 @@ namespace f8 {
 			Real delta = fabs (max - min);
 			for (unsigned i = 0; i < pl->val.size (); ++i) {
 				polyline << Point ((hstep * i), 
-					((pl->val[i] - min) * height) / delta);
+					((pl->val[i] - min) * height) / delta);		
 			}
 			chart << polyline;
 			*doc << chart;
@@ -122,13 +122,10 @@ namespace f8 {
 			Real width = doc->get_layout ().dimensions.width - 60;
 			Real height = doc->get_layout ().dimensions.height - 160;
 
-			if (node->tail.size () == 5) { 
+			if (node->tail.size () > 5) { 
 				AtomPtr i1 = type_check (node->tail.at (1), NUMERIC);
 				AtomPtr i2 = type_check (node->tail.at (2), NUMERIC);
-				AtomPtr i3 = type_check (node->tail.at (3), NUMERIC);
-				AtomPtr i4 = type_check (node->tail.at (4), NUMERIC);
-				if (i1->val.size () != 1 || i2->val.size () != 1 ||
-					i3->val.size () != 1 || i4->val.size () != 1) return make_node (0);
+				if (i1->val.size () != 1 || i2->val.size () != 1) return make_node (0);
 
 				std::stringstream v;
 				v << std::defaultfloat << i1->val[0]; 
@@ -140,12 +137,18 @@ namespace f8 {
 				ve << std::defaultfloat << i2->val[0];
 				*doc << Text(Point(width, 20), ve.str(), Color::Black, Font(6, "Verdana"));
 
-				std::stringstream v1;
-				v1 << std::defaultfloat << std::defaultfloat << i3->val[0]; ;
-				*doc << Text(Point(2, 35), v1.str(), Color::Black, Font(6, "Verdana"));
-				std::stringstream v2;
-				v2 << std::defaultfloat << i4->val[0]; ;
-				*doc << Text(Point(2, height + 30), v2.str(), Color::Black, Font(6, "Verdana"));		
+				if (node->tail.size () == 5) {
+					AtomPtr i3 = type_check (node->tail.at (3), NUMERIC);
+					AtomPtr i4 = type_check (node->tail.at (4), NUMERIC);
+					if (i3->val.size () != 1 || i4->val.size () != 1) return make_node (0);
+
+					std::stringstream v1;
+					v1 << std::defaultfloat << std::defaultfloat << i3->val[0]; ;
+					*doc << Text(Point(2, 35), v1.str(), Color::Black, Font(6, "Verdana"));
+					std::stringstream v2;
+					v2 << std::defaultfloat << i4->val[0]; ;
+					*doc << Text(Point(2, height + 30), v2.str(), Color::Black, Font(6, "Verdana"));		
+				}
 			}
 			Line l1 (Point(width / 2 + 30, 30), Point(width / 2 + 30, height + 30), Stroke (1, Color::Black));
 			*doc << l1;			

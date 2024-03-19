@@ -8,6 +8,7 @@
 #include "signals/WavFile.h"
 #include "signals/FFT.h"
 #include "signals/FIRDesigner.h"
+#include "signals/features.h"
 
 #include "f8.h"
 
@@ -269,6 +270,52 @@ namespace f8 {
 		make_window (&win[0], N, a0, a1, a2);
 		return make_node (win);
 	}
+	AtomPtr fn_speccent (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& amps = type_check (n->tail.at (0), NUMERIC)->val;
+		std::valarray<Real>& freqs = type_check (n->tail.at (1), NUMERIC)->val;
+		Real c = speccentr<Real>  (&amps[0], &freqs[0], amps.size ());
+		return make_node (c);
+	}	
+	AtomPtr fn_specspread (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& amps = type_check (n->tail.at (0), NUMERIC)->val;
+		std::valarray<Real>& freqs = type_check (n->tail.at (1), NUMERIC)->val;
+		Real centr = type_check (n->tail.at (2), NUMERIC)->val[0];
+		Real c = specspread<Real>  (&amps[0], &freqs[0], centr, amps.size ());
+		return make_node (c);
+	}		
+	template <int MODE>
+	AtomPtr fn_specsk_kur (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& amps = type_check (n->tail.at (0), NUMERIC)->val;
+		std::valarray<Real>& freqs = type_check (n->tail.at (1), NUMERIC)->val;
+		Real centr = type_check (n->tail.at (2), NUMERIC)->val[0];
+		Real spread = type_check (n->tail.at (3), NUMERIC)->val[0];
+		Real f = 0;
+		if (MODE == 1) { 
+			f = specskew<Real>  (&amps[0], &freqs[0], centr, spread, amps.size ()); 
+		}
+		else { 
+			f = speckurt<Real>  (&amps[0], &freqs[0], centr, spread, amps.size ()); 
+		}
+		return make_node (f);
+	}	
+	AtomPtr fn_specflux (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& amps = type_check (n->tail.at (0), NUMERIC)->val;
+		std::valarray<Real>& oamps = type_check (n->tail.at (1), NUMERIC)->val;
+		Real f = specflux<Real> (&amps[0], &oamps[0], amps.size ());
+		return make_node (f);
+	}		
+	AtomPtr fn_acorrf0 (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& sig = type_check (n->tail.at (0), NUMERIC)->val;		
+		Real sr = type_check (n->tail.at (1), NUMERIC)->val[0];
+		std::valarray<Real> buff (sig.size ());
+		Real f = acfF0Estimate<Real> (sr, &sig[0], &buff[0], sig.size ());
+		return make_node (f);
+	}				
+	AtomPtr fn_energy (AtomPtr n, AtomPtr env) {
+		std::valarray<Real>& sig = type_check (n->tail.at (0), NUMERIC)->val;		
+		Real f = energy<Real> (&sig[0], sig.size ());
+		return make_node (f);
+	}		
 	// I/O  -----------------------------------------------------------------------
 	AtomPtr fn_openwav (AtomPtr node, AtomPtr env) {
 		std::string name = type_check (node->tail.at(0), STRING)->lexeme;
@@ -389,6 +436,13 @@ namespace f8 {
 		add_operator ("noise", fn_noise, 1, env);
 		add_operator ("firdesign", fn_firdesign, 4, env);
 		add_operator ("window", fn_window, 4, env);
+		add_operator ("speccent", fn_speccent, 2, env);
+		add_operator ("specspread", fn_specspread, 3, env);
+		add_operator ("specskew", fn_specsk_kur<1>, 4, env);
+		add_operator ("speckurt", fn_specsk_kur<2>, 4, env);
+		add_operator ("specflux", fn_specflux, 2, env);
+		add_operator ("acorrf0", fn_acorrf0, 2, env);
+		add_operator ("energy", fn_energy, 1, env);
 		add_operator ("openwav", fn_openwav, 2, env);
 		add_operator ("writewav", fn_writewav, 2, env);
 		add_operator ("readwav", fn_readwav, 1, env);

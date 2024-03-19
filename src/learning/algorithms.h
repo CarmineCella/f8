@@ -49,33 +49,6 @@ namespace f8 {
 	T median (T a[], int n) {
 		return kth_smallest(a, n, (((n) & 1) ? ((n) / 2) : (((n) / 2) - 1)));
 	}
-
-	template <typename T>
-	inline T moment(
-			const T* weights,
-			const T* values,
-			int N,
-			int order,
-			T centroid) {
-		T sumWeigth = 0;
-		T sumWeigthDistance = 0;
-		T distance = 0;
-		T weigth = 0;
-		T weigthDistance = 0;
-
-		for (int index = 0; index < N; ++index) {
-			distance = values[index];
-			distance -= centroid;
-			distance = std::pow(distance, order);
-			weigth = weights[index];
-			weigthDistance = weigth * distance;
-			sumWeigth += weigth;
-			sumWeigthDistance += weigthDistance;
-		}
-
-		return (sumWeigth != 0 ? sumWeigthDistance / sumWeigth : 0);
-	}
-
 	template <typename T>
 	struct LineFit {
 		T _slope, _yInt;

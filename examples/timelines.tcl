@@ -9,22 +9,6 @@
 
 source "stdlib.tcl"
 
-proc (oscbank sr amps freqs tab) {
-    # assumes both freqs and amps have the same number of elems
-	set elems (llength amps) 
-	if (not (eq elems 0)) {
-		set outbuff (bpf 0 (size (car freqs)) 0)
-		set i 0
-		while (< i elems) {
-			assign outbuff (+ outbuff (* (car amps) (osc sr (car freqs) tab))) 0 (size outbuff)
-			set amps (cdr amps)
-			set freqs (cdr freqs)
-			set i (+ i 1)
-		}
-		+ outbuff
-	}
-}
-
 set sr 44100
 set samps (* 30 sr)
 
