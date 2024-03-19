@@ -43,24 +43,7 @@ proc (istft spec N hop) {
 		lappend out (* i hop) buff
 		= i (+ i 1)
 	}
-	puts out
 	slice (-> mix out) 0 sz
-}
-proc (magphi spec) {
-	set i 0
-	set data (car spec)
-	set len (llength data)
-	set amps ()
-	set phis ()
-	while (< i len) {
-		set s (lindex data i)
-    	set a (slice s 0 (/ (size s) 2) 2)
-    	set ph  (slice s 1 (/ (size s) 2) 2)
-		lappend amps a
-		lappend phis ph
-		= i (+ i 1)
-	}
-	list amps phis
 }
 proc (oscbank sr amps freqs tab) {
     # assumes both freqs and amps have the same number of elems

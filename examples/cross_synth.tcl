@@ -54,7 +54,7 @@ while (< i min_len) {
 
     set outamps (sqrt (* amps1 amps2))
     set outphi phi2
-    set outbuff (ifft (pol2car (interleave outamps outphi)))
+    set outbuff (ifft (pol2car (interleave (list outamps outphi))))
     set outbuff (* bwin outbuff)
 
     assign outsig (+ (slice outsig i (size outbuff)) outbuff) i (size outbuff)

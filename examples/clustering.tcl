@@ -36,7 +36,6 @@ set centroids (second clusters)
 puts "centroids:\n"
 matdisp centroids
 
-
 set i 0
 while (< i (llength labels)) {
     puts (car (lrange labels i 1)) " = " (car (lrange olabels i 1)) "\n"

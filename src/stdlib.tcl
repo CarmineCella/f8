@@ -177,7 +177,9 @@ proc (deinterleave in) {
     set out2  (slice in 1 (/ sz 2) 2)	
 	list out1 out2
 }
-proc (interleave in1 in2) {
+proc (interleave in) {
+	set in1 (car in)
+	set in2 (second in)
     set out (bpf 0 (+ (size in1) (size in2)) 0)
     assign out in1 0 (size in1) 2
     assign out in2 1 (size in2) 2
