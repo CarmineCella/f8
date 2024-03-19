@@ -7,6 +7,7 @@
 # (c) www.carminecella.com
 #
 source "stdlib.tcl"
+source "system.tcl"
 
 puts "current directory: " (cdr (cdr (dirlist "."))) "\n"
 puts "stats for the first file: " (filestat (car (dirlist "."))) "\n"

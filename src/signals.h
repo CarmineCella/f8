@@ -248,7 +248,6 @@ namespace f8 {
 			fd.lowpass (&h[0], order, sr, cutoff);
 		} else if (design == "highpass") {
 			fd.highpass (&h[0], order, sr, cutoff);
-			std::cout << "hp" << std::endl;
 		} else if (design == "bandpass") {
 			if (n->tail.size () != 5) Context::error ("[firdesign] high frequency missing for bandpass", n); 
 			Real cut_high = type_check (n->tail.at (4), NUMERIC)->val[0];

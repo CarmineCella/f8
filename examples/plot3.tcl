@@ -8,6 +8,8 @@
 #
 
 source "stdlib.tcl"
+source "plotting.tcl"
+
 set a (birandn 30 64)
 set b (birandn 30 64)
 

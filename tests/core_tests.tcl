@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "system.tcl"
 
 puts "\n" "--- builtin operators ---\n"
 test '(list 1 2 3 4) '(1 2 3 4)
@@ -23,7 +24,7 @@ test '(if 1 1)'1
 test '(if 0 1) '()
 test '(if 0 1 else 2) '2
 set dummy 21
-test '(! dummy 22) '22
+test '(= dummy 22) '22
 test '(eq 1 1) '1
 test '(eq 1 2) '0
 test '(eq 1 dummy) '0

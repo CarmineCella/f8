@@ -9,6 +9,7 @@
 #
 
 source "stdlib.tcl"
+source "signals.tcl"
 
 set sr 44100
 set order 51
@@ -30,6 +31,7 @@ puts  h "\n"
 set f (conv w h 1)
 sndwrite "bp.wav" sr (list f)
 
+# TODO: reson, biqud, onepole...
 
 # eof
 

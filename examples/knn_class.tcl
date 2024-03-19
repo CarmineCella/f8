@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "learning.tcl"
 
 set f (openstream "../data/iris.data.txt" 'input 'text)
 set orig (readcsv f)

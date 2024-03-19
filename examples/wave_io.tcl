@@ -6,7 +6,9 @@
 #
 # (c) www.carminecella.com
 #
+
 source "stdlib.tcl"
+source "signals.tcl"
 
 set sr 44100
 set ch 2

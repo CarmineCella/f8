@@ -2,17 +2,21 @@
 
 // ver. 0.6
 // features + pitch + onsets
-// pitch2note
+// pitch2note / note2pitch / pitch2midi / midi2pitch
+// load db
+// mpan / mpsyn
+// string tokenize
 // blockconv / pvoc
+// granulator (?)
 // biquad
-// more examples: descriptors, pitch to osc, filters
-// reference manual
+// maple/slip (?)
+// MIDI output (?)
+// more examples: descriptors, pitch to osc, finish filters
+// refactor tcl files in different libs
 
 // ver. 0.7
-// load db
-// maple/slip (?)
+// genetic optim (?)
 // grain-orch
-// granulator (?)
 // debugger (?)
 
 // ver. 0.8
@@ -22,9 +26,12 @@
 // nn
 // ambienc
 // ambidec
+// reference manual
 
 // ISSUES:
 
 // a bit slower speed compared to quile
+// parser gets stuck when there are comments as last line
+// line numbers are often wrong
 
 

@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "system.tcl"
 
 puts "--- single operations ---n"
 

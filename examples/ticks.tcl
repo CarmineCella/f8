@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "system.tcl"
 
 set tic (clock)
 puts "current clock " tic "\n"

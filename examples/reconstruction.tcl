@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "signals.tcl"
 
 set sr 44100
 set dur 1.2

@@ -709,8 +709,6 @@ namespace f8 {
 			return make_node (res); \
 		} \
 
-
-
 	MAKE_ARRAYBINOP (+, fn_add);
 	MAKE_ARRAYBINOP (-, fn_sub);
 	MAKE_ARRAYBINOP (*, fn_mul);
@@ -725,7 +723,9 @@ namespace f8 {
                 std::valarray<bool> b_bool (b > 0); \
 				if (b.size () == 1) res = a op  b[0]; \
 				else res = a op b; \
-                if (res.sum () < res.size ()) break; \
+                if (std::all_of(std::begin(res), std::end(res), [](bool i) { return !i; })) { \
+                    break; \
+                } \
  			} \
             std::valarray<Real> res_r (res.size ()); \
             for (unsigned i = 0; i < res.size (); ++i) res_r[i] = (Real) res[i]; \

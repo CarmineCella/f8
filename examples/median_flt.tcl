@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "plotting.tcl"
 
 set sr 100
 set t (bpf 0 sr 1)

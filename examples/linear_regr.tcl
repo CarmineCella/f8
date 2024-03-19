@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "plotting.tcl"
 
 set x (bpf 1 50 50)
 set y (+ (* x -0.3) (birandn 1 50))

@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "plotting.tcl"
 
 set a (opensvg "test.svg" 512 512)
 

@@ -8,6 +8,7 @@
 #
 
 source "stdlib.tcl"
+source "plotting.tcl"
 
 plot "test2.svg" (bpf 0 20 1)
 
