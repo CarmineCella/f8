@@ -11,13 +11,13 @@ proc (bartlett N) {
 	bpf 0 (/ N 2) 1 (/ N 2) 0
 } 
 proc(hanning N) {
-	makewin N 0.5 0.5 0
+	window N 0.5 0.5 0
 }
 proc(hamming N) {
-	makewin N 0.54 0.46 0
+	window N 0.54 0.46 0
 }
 proc(blackman N) {
-	makewin N 0.42 0.5 0.08
+	window N 0.42 0.5 0.08
 }
 proc (stft sig N hop) {
 	set c 0

@@ -7,6 +7,16 @@
 # (c) www.carminecella.com
 #
 
+proc (getcolumn data n) {
+    set w ()
+    set sz (llength data)
+    set i 0
+    while (< i sz) {
+        lappend w (lindex (lindex data i) n)
+        = i (+ i 1)
+    }
+    = w (array w)
+}
 proc (accuracy classes gt) {
     set total (llength classes)
     set i 0

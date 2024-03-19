@@ -36,25 +36,21 @@ set outsig (bpf 0 (+ sz min_len) 0)
 # denoise threshold
 set threshold (bpf 0.0001 (/ sz 2) 0.0001) 
 
-proc (interleave in1 in2) {
-    set out (bpf 0 (+ (size in1) (size in2)) 0)
-    assign out in1 0 (size in1) 2
-    assign out in2 1 (size in2) 2
-}
-
 while (< i min_len) {
     set buff1 (slice sig1 i sz)
     set buff1 (* bwin buff1)
     set spec1 (car2pol (fft buff1))
-    set amps1 (slice spec1 0 (/ (size spec1) 2) 2)
-    set phi1  (slice spec1 1 (/ (size spec1) 2) 2)
+    set magphi1 (deinterleave spec1)
+    set amps1 (car magphi1)
+    set phi1  (second magphi1)
     set amps1 (* (> amps1 threshold) amps1)
 
     set buff2 (slice sig2 i sz)
     set buff2 (* bwin buff2)
     set spec2 (car2pol (fft buff2))
-    set amps2 (slice spec2 0 (/ (size spec2) 2) 2)
-    set phi2  (slice spec2 1 (/ (size spec2) 2) 2)
+    set magphi2 (deinterleave spec2)
+    set amps2 (car magphi2)
+    set phi2  (second magphi2)
 
     set outamps (sqrt (* amps1 amps2))
     set outphi phi2

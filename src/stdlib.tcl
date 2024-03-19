@@ -171,6 +171,17 @@ proc (ack m n) {
 		}
 	}			
 }
+proc (deinterleave in) {
+	set sz (size in)
+    set out1 (slice in 0 (/ sz 2) 2)
+    set out2  (slice in 1 (/ sz 2) 2)	
+	list out1 out2
+}
+proc (interleave in1 in2) {
+    set out (bpf 0 (+ (size in1) (size in2)) 0)
+    assign out in1 0 (size in1) 2
+    assign out in2 1 (size in2) 2
+}
 
 # list-based operators
 proc (sign l) {
@@ -195,16 +206,6 @@ proc (compare op l) {
 }
 proc (. f l1 l2) {
 	map2 (\ (x y) (f x y)) l1 l2
-}
-proc (getcolumn data n) {
-    set w ()
-    set sz (llength data)
-    set i 0
-    while (< i sz) {
-        lappend w (lindex (lindex data i) n)
-        = i (+ i 1)
-    }
-    = w (array w)
 }
 
 # constants
