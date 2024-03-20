@@ -918,7 +918,7 @@ namespace f8 {
             argnum_check (node, 3);
             unsigned long pos = type_check (node->tail.at(1), STRING)->lexeme.find (
                 type_check (node->tail.at(2), STRING)->lexeme);
-            if (pos == std::string::npos) return make_node (0);
+            if (pos == std::string::npos) return make_node (-1);
             else return make_node (pos);		
         } else if (cmd == "range") {
             argnum_check (node, 4);

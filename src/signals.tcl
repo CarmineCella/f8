@@ -73,6 +73,22 @@ proc (sndwrite fname sr data) {
     closewav h
     set b
 }
+proc (sndload folder) {
+	set files (dirlist folder)
+	set i 0
+	set db ()
+	while (< i (llength files)) {
+		set f (lindex files i)
+		if (>= (string 'find f ".wav") 0) {
+			set sig (sndread (tostr folder "/" f))
+			set noext (string 'replace f ".wav" "")			
+			set tokens (string 'split noext "-")
+			lappend db (list sig f tokens)
+		}
+		= i (+ i 1)
+	}
+	set db
+}
 
 # eof
 
