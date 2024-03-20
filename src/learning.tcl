@@ -44,6 +44,35 @@ proc (make-dataset data) {
 proc (matsize m) {
 	set sz (list (cols m) (rows m))
 }
+proc (mpdecomp sig t components db) {
+    set decomp ()
+    set c 0
+    set residual sig
+    while (< c components) {
+        set max_i 0
+        set max_abs 0
+        set max_dot 0
+        set n 0
+        while (< n (llength db)) {
+            set item (lindex db n);
+            set atom (car item)
+            set len (size atom)
+            set d (dot (slice sig t len) atom)
+            if (> (abs d) max_abs) {
+                = max_abs (abs d)
+                = max_dot d
+                = max_i n
+            }
+        }
+        set m (car (lindex db max_i))
+        = m (* m max_dot)
+        assign residual t (size m) (- (slice residual t (size m) m))
+        lappend decomp (list t max_i max_dot)
+    }
+}
+proc (mdrebuild decomp db) {
+    set sig ()
+}
 
 # eof
 
