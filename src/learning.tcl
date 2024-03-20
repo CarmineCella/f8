@@ -49,30 +49,70 @@ proc (mpdecomp sig t components db) {
     set c 0
     set residual sig
     while (< c components) {
-        set max_i 0
+        set max_n 0
         set max_abs 0
         set max_dot 0
+        set max_atom 0        
         set n 0
         while (< n (llength db)) {
-            set item (lindex db n);
-            set atom (car item)
+            set item (car (lindex db n))
+            set atom (normal (/ (-> + item) (llength item)))
             set len (size atom)
-            set d (dot (slice sig t len) atom)
+            if (> len (+ t (size residual))) { 
+                = len (- len (+ t (size residual))) 
+                = atom (slice atom 0 len)
+            }
+            set d (/ (dot (slice residual t len) atom) len)
             if (> (abs d) max_abs) {
                 = max_abs (abs d)
                 = max_dot d
-                = max_i n
+                = max_n n
+                = max_atom atom
             }
-        }
-        set m (car (lindex db max_i))
-        = m (* m max_dot)
-        assign residual t (size m) (- (slice residual t (size m) m))
-        lappend decomp (list t max_i max_dot)
+            = n (+ 1 n)
+        }         
+        set m (* max_atom max_dot)
+        set tmp residual
+        assign residual (- (slice residual t (size m)) m) t (size m)
+        lappend decomp (list t max_n max_dot)
+        = c (+ 1 c)
     }
+    list decomp residual
 }
-proc (mdrebuild decomp db) {
+proc (mprebuild decomp db) {
     set sig ()
+    set maxchans 0
+    set i 0
+    while (< i (llength db)) {
+        set item (car (lindex db i))
+        if (< maxchans (llength item)) {
+            = maxchans (llength item)
+        }
+        = i (+ 1 i)
+    }
+
+    = i 0
+    set out (dup maxchans (zeros 1))
+    while (< i (llength decomp)) {
+        set d (lindex decomp i)
+        set start (car d)
+        set index (second d)
+        set amp (third d)
+        set sig (car (lindex db index))
+        set j 0
+        if (< (llength sig) maxchans) {
+            = sig (dup maxchans (/ (-> + sig) maxchans))
+        }
+        while (< j maxchans) {
+            set ch (lindex sig j)
+            lset out (mix 0 (lindex out j) start (* ch amp)) j
+            = j (+ 1 j)
+        }
+        = i (+ 1 i)
+    }
+    set out
 }
+
 
 # eof
 

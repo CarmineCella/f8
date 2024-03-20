@@ -151,6 +151,7 @@ proc (dot a b) {
 	sum (* a b)
 }
 proc (ortho a b)(eq (dot a b) 0)
+proc (norm x) (sqrt (sum (* x x)))
 proc (diff x)(- (slice x 1 (size x)) x)
 proc (fac x) {
 	proc (fact-worker a product) {

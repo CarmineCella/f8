@@ -611,6 +611,15 @@ namespace f8 {
         if (p < 0 || p >= o->tail.size ()) Context::error ("[lindex] invalid index", node);
         return o->tail.at (p);
     }
+    AtomPtr fn_lset (AtomPtr node, AtomPtr env) {
+        AtomPtr o = type_check (node->tail.at (0), LIST);
+        AtomPtr e = node->tail.at (1);
+        int p  = (int) type_check (node->tail.at (2), NUMERIC)->val[0];
+        if (!o->tail.size ()) return make_node  ();
+        if (p < 0 || p >= o->tail.size ()) Context::error ("[lset] invalid index", node);
+        o->tail.at (p) = e;
+        return o;
+    }    
     AtomPtr fn_llength (AtomPtr node, AtomPtr env) {
         return make_node (type_check (node->tail.at (0), LIST)->tail.size ());
     }
@@ -871,15 +880,6 @@ namespace f8 {
         }
         AtomPtr res = make_node ();
         int linenum = 1;
-        // AtomPtr code = make_node ();
-        // while (!in.eof ()) {
-        //     code->tail.push_back (read_line (in, linenum, name));
-        // }
-        // for (unsigned i = 0; i < code->tail.size (); ++i) {
-        //     Context::call_frame = code->tail.at (i);
-        //     eval (Context::call_frame, env);
-        // }        
-        // Context::call_frame = make_node ();
         while (!in.eof ()) {
             res = read_line (in, linenum, name);
             Context::call_frame = res;
@@ -1043,6 +1043,7 @@ namespace f8 {
         add_operator ("lreplace", &fn_lreplace, 4, env);
         add_operator ("lrange", &fn_lrange, 3, env);
         add_operator ("lindex", &fn_lindex, 1, env);
+        add_operator ("lset", &fn_lset, 3, env);
         add_operator ("llength", &fn_llength, 1, env);
         add_operator ("lshuffle", &fn_lshuffle, 1, env);        
         add_operator ("eq", &fn_eqp, 2, env);

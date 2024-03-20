@@ -7,6 +7,8 @@
 # (c) www.carminecella.com
 #
 
+source "stdlib.tcl"
+
 proc (bartlett N) {
 	bpf 0 (/ N 2) 1 (/ N 2) 0
 } 
@@ -45,6 +47,22 @@ proc (istft spec N hop) {
 	}
 	slice (-> mix out) 0 sz
 }
+proc (peaks f) {
+	set p ()
+	if (> (size f) 2) {
+		set i 1
+		while (< i (- (size f) 1)) {
+			set curr (getval f i)
+			set prev (getval f (- i 1))
+			set next (getval f (+ i 1))
+			if (and (> curr prev) (> curr next)) {
+				lappend p i
+			}
+			= i (+ 1 i)
+		}
+	}
+	set p
+}
 proc (oscbank sr amps freqs tab) {
     # assumes both freqs and amps have the same number of elems
 	set elems (llength amps) 
@@ -60,6 +78,38 @@ proc (oscbank sr amps freqs tab) {
 	}
 	set outbuff
 }
+proc (onsets sig sr N hop threshold timegate) {
+	set data (car (stft sig N hop))
+	set i 0
+	set frame (/ hop sr)
+	set flux ()
+	set oamps (zeros N)
+	while (< i (llength data)) {
+		set magphi (car2pol (lindex data i))
+		set magphi_d (deinterleave magphi)
+		set amps (car magphi_d)
+
+		lappend flux (specflux amps oamps)
+		assign oamps amps 0 N
+		= i (+ i 1)
+	}	
+	= flux (array flux)
+	set p (peaks flux)
+	= i 0
+	set ons ()
+	set prev_on 0
+	while (< i (llength p)) {
+		set pos (lindex p i)
+		set f (getval flux pos)
+		set t (* pos frame)
+		set delta (- t prev_on)
+		if (and (> f threshold) (> delta timegate)) {
+			lappend ons (list pos f)
+		}
+		= i (+ 1 i)
+	}
+	set ons
+}
 proc (sndread fname) {
     set h (openwav fname 'input)
     set b (readwav h)
@@ -73,13 +123,14 @@ proc (sndwrite fname sr data) {
     closewav h
     set b
 }
-proc (sndload folder) {
+proc (make-dictionary folder) {
 	set files (dirlist folder)
 	set i 0
 	set db ()
 	while (< i (llength files)) {
 		set f (lindex files i)
 		if (>= (string 'find f ".wav") 0) {
+			# TODO: how to handle different platforms?
 			set sig (sndread (tostr folder "/" f))
 			set noext (string 'replace f ".wav" "")			
 			set tokens (string 'split noext "-")

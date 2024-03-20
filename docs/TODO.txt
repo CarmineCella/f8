@@ -12,6 +12,7 @@
 // maple/slip (?)
 // MIDI output (?)
 // more examples: finish filters
+// consistency of lset/lreplace, lrange/lindex, slice/getval, assign/setval
 
 // ver. 0.7
 // genetic optim (?)
