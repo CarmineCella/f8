@@ -11,12 +11,12 @@ source "stdlib.tcl"
 source "signals.tcl"
 source "plotting.tcl"
 
-set N 4096
+set N 1024
 set hop (/ N 4)
 set SR 44100
 set frame (/ N SR)
-set threshold 0.5
-set timegate 0.1
+set threshold 0.1
+set timegate 0.2
 
 set w (car (sndread "../data/onsets.wav"))
 

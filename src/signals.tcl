@@ -103,8 +103,11 @@ proc (onsets sig sr N hop threshold timegate) {
 		set f (getval flux pos)
 		set t (* pos frame)
 		set delta (- t prev_on)
-		if (and (> f threshold) (> delta timegate)) {
+		puts pos " " f " "  delta "\n" 
+		if (or (and (> f threshold) (> delta timegate)) (eq prev_on 0)) {
+			puts "\ttk " pos "\n"
 			lappend ons (list pos f)
+			= prev_on t
 		}
 		= i (+ 1 i)
 	}
