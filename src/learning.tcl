@@ -74,7 +74,7 @@ proc (mpdecomp sig t components db) {
         set m (* max_atom max_dot)
         set tmp residual
         assign residual (- (slice residual t (size m)) m) t (size m)
-        lappend decomp (list t max_n max_dot)
+        lappend decomp (list t  max_n max_dot)
         = c (+ 1 c)
     }
     list decomp residual
