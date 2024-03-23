@@ -13,12 +13,12 @@ source "learning.tcl"
 source "plotting.tcl"
 
 puts "loading dictionary..."
-# set data (makedict "../data/clarinet")
-set data (makedict "../../../Media/OrchDB_flat")
+set data (makedict "../data/clarinet")
+# set data (makedict "../../../Media/OrchDB_flat")
 # set data (makedict "../../../Media/TinySOL_flat")
 puts (llength data) " elements\n"
 
-set target (car (sndread "../data/Bach_prelude_cut.wav"))
+set target (car (sndread "../data/Vox.wav"))
 # set target (car (sndread "../data/clarinet/ClBb-ord-D3-ff.wav"))
 
 set N 1024
@@ -27,7 +27,7 @@ set SR 44100
 set frame (/ N SR)
 set threshold 0.1
 set timegate 0.1
-set comps 5
+set comps 1
 
 puts "computing onsets....."
 set o (onsets target SR N hop threshold timegate)
@@ -45,8 +45,9 @@ while (< i (llength o)) {
     }
         
     set pos (* (car (lindex o i)) hop)
-    puts "\tonset: " pos "\n"
+    puts "\tonset: " pos " dec "
     set dec (mpdecomp target pos comps data)
+    puts "build\n"
     set w (car (mprebuild (car dec) data))
     = w (slice w 0 next_p)
     set out (mix 0 out 0 w)
