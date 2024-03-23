@@ -40,7 +40,7 @@ namespace f8 {
     const char* TYPE_NAMES[] = {
         "numeric", "symbol", "string", "list", "operator", "lambda", "object"
     };
-    typedef double Real;
+    typedef float Real;
     bool is_string (const std::string& s);
     struct Atom {
         Atom () {type = LIST;}
@@ -1042,7 +1042,7 @@ namespace f8 {
         add_operator ("lappend", &fn_lappend, 1, env);
         add_operator ("lreplace", &fn_lreplace, 4, env);
         add_operator ("lrange", &fn_lrange, 3, env);
-        add_operator ("lindex", &fn_lindex, 1, env);
+        add_operator ("lindex", &fn_lindex, 2, env);
         add_operator ("lset", &fn_lset, 3, env);
         add_operator ("llength", &fn_llength, 1, env);
         add_operator ("lshuffle", &fn_lshuffle, 1, env);        

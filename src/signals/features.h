@@ -107,7 +107,7 @@ namespace f8 {
 	}
 		
 	template <typename T>
-	inline T specirr (double* amplitudes, int N) { 
+	inline T specirr (T* amplitudes, int N) { 
 		if (1 > N) return 0;
 		T si = 0; // spectral irregularity
 		T a = 0;

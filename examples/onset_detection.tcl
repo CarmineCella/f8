@@ -16,9 +16,9 @@ set hop (/ N 4)
 set SR 44100
 set frame (/ N SR)
 set threshold 0.1
-set timegate 0.2
+set timegate 0.1
 
-set w (car (sndread "../data/onsets.wav"))
+set w (car (sndread "../data/Bach_prelude_cut.wav"))
 
 set o (onsets w SR N hop threshold timegate)
 puts o "\n"

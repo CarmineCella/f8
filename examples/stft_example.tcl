@@ -15,14 +15,14 @@ set hop (/ N 4)
 set SR 44100
 set frame (/ N SR)
 
-set w (sndread "../data/cage.wav")
+set w (sndread "../data/Noisy_beka.wav")
 set spec (stft (car w) N hop)
 set magphi (map car2pol (car spec))
 set magphi_d (map deinterleave magphi)
 set amps (map car magphi_d)
 set phis (map second magphi_d)
 # denoising
-= amps (map (\(x)(* (> x 0.01) x)) amps)
+= amps (map (\(x)(* (> x 0.001) x)) amps)
 = magphi_d (zip amps phis)
 set magphi_i (map interleave magphi_d)
 set imre (map pol2car magphi_i)

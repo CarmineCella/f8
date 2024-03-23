@@ -1,11 +1,9 @@
 // TODO:
 
 // ver. 0.6
-// locmax/onsets
 // pitch2note / note2pitch / pitch2midi / midi2pitch
 // load db
 // mpan / mpsyn
-// string tokenize
 // blockconv / pvoc
 // granulator (?)
 // biquad

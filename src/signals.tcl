@@ -103,9 +103,7 @@ proc (onsets sig sr N hop threshold timegate) {
 		set f (getval flux pos)
 		set t (* pos frame)
 		set delta (- t prev_on)
-		puts pos " " f " "  delta "\n" 
 		if (or (and (> f threshold) (> delta timegate)) (eq prev_on 0)) {
-			puts "\ttk " pos "\n"
 			lappend ons (list pos f)
 			= prev_on t
 		}
@@ -126,7 +124,7 @@ proc (sndwrite fname sr data) {
     closewav h
     set b
 }
-proc (make-dictionary folder) {
+proc (makedict folder) {
 	set files (dirlist folder)
 	set i 0
 	set db ()
@@ -138,10 +136,12 @@ proc (make-dictionary folder) {
 			set noext (string 'replace f ".wav" "")			
 			set tokens (string 'split noext "-")
 			lappend db (list sig f tokens)
+			# lappend db (list (tostr folder "/" f) tokens)
 		}
 		= i (+ i 1)
 	}
-	set db
+
+	= db (lshuffle db)
 }
 
 # eof

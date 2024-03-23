@@ -56,13 +56,15 @@ proc (mpdecomp sig t components db) {
         set n 0
         while (< n (llength db)) {
             set item (car (lindex db n))
-            set atom (normal (/ (-> + item) (llength item)))
+            set atom (/ (-> + item) (llength item))
+            set sc (norm atom)
+            = atom (/ atom sc)
             set len (size atom)
             if (> len (+ t (size residual))) { 
                 = len (- len (+ t (size residual))) 
                 = atom (slice atom 0 len)
             }
-            set d (/ (dot (slice residual t len) atom) len)
+            set d (dot (slice residual t len) atom)
             if (> (abs d) max_abs) {
                 = max_abs (abs d)
                 = max_dot d
@@ -72,7 +74,6 @@ proc (mpdecomp sig t components db) {
             = n (+ 1 n)
         }         
         set m (* max_atom max_dot)
-        set tmp residual
         assign residual (- (slice residual t (size m)) m) t (size m)
         lappend decomp (list t  max_n max_dot)
         = c (+ 1 c)
@@ -97,7 +98,7 @@ proc (mprebuild decomp db) {
         set d (lindex decomp i)
         set start (car d)
         set index (second d)
-        set amp (third d)
+        set w (third d)
         set sig (car (lindex db index))
         set j 0
         if (< (llength sig) maxchans) {
@@ -105,7 +106,9 @@ proc (mprebuild decomp db) {
         }
         while (< j maxchans) {
             set ch (lindex sig j)
-            lset out (mix 0 (lindex out j) start (* ch amp)) j
+            set nn (norm ch)
+            = ch (/ ch nn)            
+            lset out (mix 0 (lindex out j) start (* ch w)) j
             = j (+ 1 j)
         }
         = i (+ 1 i)
