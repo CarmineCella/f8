@@ -1,6 +1,6 @@
 project (f8)
 
-SET(CMAKE_CXX_FLAGS "-Wall -O3 -std=c++14 -I . -Wsign-compare -Wno-return-type-c-linkage")
+SET(CMAKE_CXX_FLAGS "-Wsign-compare -Wno-return-type-c-linkage -Wall -O3 -std=c++14 -I .")
 add_executable(f8 f8.cpp f8.h core.h system.h signals.h learning.h system/csv_tools.h signals/FFT.h signals/BPF.h signals/FIRDesigner.h signals/features.h signals/WavFile.h plotting.h plotting/svg_tools.h learning/algorithms.h learning/Matrix.h learning/PCA.h)
 target_link_libraries (f8 dl ${LIBS})
 

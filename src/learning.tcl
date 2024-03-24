@@ -27,7 +27,7 @@ proc (accuracy classes gt) {
     }
     / ct total
 }
-proc (make-dataset data) {
+proc (dataset data) {
     set Xy ()
     set i 0
     set samples (llength data)

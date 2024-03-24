@@ -9,6 +9,19 @@
 
 source "stdlib.tcl"
 
+proc (deinterleave in) {
+	set sz (size in)
+    set out1 (slice in 0 (/ sz 2) 2)
+    set out2  (slice in 1 (/ sz 2) 2)	
+	list out1 out2
+}
+proc (interleave in) {
+	set in1 (car in)
+	set in2 (second in)
+    set out (bpf 0 (+ (size in1) (size in2)) 0)
+    assign out in1 0 (size in1) 2
+    assign out in2 1 (size in2) 2
+}
 proc (bartlett N) {
 	bpf 0 (/ N 2) 1 (/ N 2) 0
 } 
@@ -124,24 +137,37 @@ proc (sndwrite fname sr data) {
     closewav h
     set b
 }
-proc (makedict folder) {
+
+# fare dict con fft media (energia) e/o mfcc medi; sia con files che con onsets
+# fare sia MP che GA con quelle features e per la resintesi (stessa funzione per entrambi?) ricaricare i files dal path (multicanale)
+# harmonic/percussive con kmeans di fft
+proc (makedict folder features SR N hop threshold timegate) {
 	set files (dirlist folder)
 	set i 0
 	set db ()
+
 	while (< i (llength files)) {
 		set f (lindex files i)
 		if (>= (string 'find f ".wav") 0) {
-			# TODO: how to handle different platforms?
+			set item ()
 			set sig (sndread (tostr folder "/" f))
+			# check SR -> resample or quit
 			set noext (string 'replace f ".wav" "")			
 			set tokens (string 'split noext "-")
+			lappend item (tostr folder "/" f) tokens
+			
+			set sig_mean (/ (-> + sig) (llength sig))
+			# compute onsets/percussive elems
+
+			set j 0
+			while (< j (llength features)) {
+
+			}
+
 			lappend db (list sig f tokens)
-			# lappend db (list (tostr folder "/" f) tokens)
 		}
 		= i (+ i 1)
 	}
-
-	= db (lshuffle db)
 }
 
 # eof

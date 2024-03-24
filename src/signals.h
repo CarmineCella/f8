@@ -70,58 +70,6 @@ namespace f8 {
 		for (unsigned i = 0; i < sz; ++i) out[i] = type_check (list->tail.at (i), NUMERIC)->val[0];
 		return out;
 	}
-	template <typename T>
-	using DynamicMatrix = std::vector<std::vector <T> >;	
-	
-	template <typename T>
-	struct Dictionary {
-		DynamicMatrix<T> atoms;
-		std::vector<std::string> features;
-		std::string filename;
-		std::vector<std::string> tags;
-		DynamicMatrix<T> parameters;
-	};
-	
-	Dictionary<Real>* alloc_dict (const std::string& path) {
-        DIR *dir;
-        std::vector<std::string> files;
-        struct dirent *ent;
-        if ((dir = opendir (path.c_str())) != NULL) {
-            while ((ent = readdir (dir)) != NULL) {
-                files.push_back (path + "/" + (std::string) ent->d_name);
-            }
-            closedir (dir);
-        }
-
-		Dictionary<Real>* dict = new Dictionary<Real> ();
-
-		for (unsigned i = 0; i < files.size (); ++i) {
-			if (files.at (i).find (".wav") != files.at (i).size () - 4) continue; // check WAV extension
-			std::string name = files.at (i);
-			dict->filename = name;
-			WavInFile in (name.c_str ());
-			int ch = in.getNumChannels ();
-			int sz = in.getNumSamples ();
-			std::vector<Real> data (sz * ch);
-			if (ch == 1) {
-				in.read (&data[0], sz);
-				dict->atoms.push_back (data);
-				dict->features.push_back ((std::string) "ch1");
-			} 
-			else if (ch == 2) {
-				std::vector<Real> l (sz);
-				std::vector<Real> r (sz);				
-				in.read (&data[0], sz);
-				deinterleave (&data[0], &l[0], &r[0], sz);
-				dict->atoms.push_back (l);
-				dict->atoms.push_back (r);				
-				dict->features.push_back ((std::string) "ch1");	
-				dict->features.push_back ((std::string) "ch2");							
-			}		
-		}
-
-		return dict;
-	}	
 	// signals --------------------------------------------------------------------------------------
 	AtomPtr fn_bpf (AtomPtr node, AtomPtr env) {
 		Real init = type_check (node->tail.at (0), NUMERIC)->val[0];
@@ -490,22 +438,6 @@ namespace f8 {
 		}
 		return make_node(0);
 	}	
-	AtomPtr fn_opendict (AtomPtr node, AtomPtr env) {
-        std::string path = type_check (node->tail.at (0), STRING)->lexeme;
-		Dictionary<Real>* dict = alloc_dict (path);
-		return make_obj ("dict", (void*) dict, make_node ());
-	}		
-	AtomPtr fn_closedict (AtomPtr node, AtomPtr env) {
-		AtomPtr p = type_check (node->tail.at(0), OBJECT);
-		if (p->obj == 0) return make_node();
-		if (p->lexeme == "dict") {
-			Dictionary<Real>* d = static_cast<Dictionary<Real>*> (p->obj);
-			delete d;
-			p->obj = 0;
-			return make_node(1);
-		} 
-		return make_node(0);
-	}		
 	AtomPtr add_signals (AtomPtr env) {
 		add_operator ("bpf", fn_bpf, 3, env);
 		add_operator ("mix", fn_mix, 2, env);	
@@ -535,8 +467,6 @@ namespace f8 {
 		add_operator ("readwav", fn_readwav, 1, env);
 		add_operator ("infowav", fn_infowav, 1, env);
 		add_operator ("closewav", fn_closewav, 1, env);
-		add_operator ("opendict", fn_opendict, 1, env);
-		add_operator ("closedict", fn_closedict, 1, env);
 		return env;
 	}
 }
